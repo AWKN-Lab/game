@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>时空剧场 - 工业革命</title>
+  <link rel="stylesheet" href="engine.css?v=20260525c">
+</head>
+<body>
+
+
+<!-- 游戏场景 -->
+<div class="game-scene" id="gameScene">
+  <div class="scene-bg-text">1764</div>
+  <div class="scene-label" id="sceneLabel">引渡 · 工业革命</div>
+
+  <!-- 游戏控制按钮 -->
+  <div class="game-controls">
+    <button class="game-ctrl-btn" onclick="openCardModal()" title="道法卡牌图鉴">🃏 卡牌</button>
+    <button class="game-ctrl-btn" onclick="confirmMenu()" title="返回菜单">☰ 菜单</button>
+  </div>
+
+  <!-- 四维数值HUD -->
+  <div class="value-hud" id="valueHud"></div>
+
+  <!-- 选择面板 -->
+  <div class="choice-panel" id="choicePanel" style="display:none"></div>
+
+  <!-- 角色立绘显示区域 -->
+  <div id="character-display" style="position:absolute;bottom:176px;left:0;right:0;display:flex;justify-content:center;gap:56px;align-items:flex-end;pointer-events:none;z-index:2">
+    <div id="char-left-wrap" style="position:relative;height:min(54vh,520px);max-height:54vh;max-width:min(32vw,420px);display:none;overflow:visible">
+      <img id="char-left" src="" style="position:relative;z-index:1;width:auto;height:100%;max-width:100%;object-fit:contain;object-position:center bottom;display:block">
+    </div>
+    <div id="char-right-wrap" style="position:relative;height:min(54vh,520px);max-height:54vh;max-width:min(32vw,420px);display:none;overflow:visible">
+      <img id="char-right" src="" style="position:relative;z-index:1;width:auto;height:100%;max-width:100%;object-fit:contain;object-position:center bottom;display:block">
+    </div>
+  </div>
+
+  <!-- 对话框 -->
+  <div class="dialog-box" id="dialogBox" onclick="advanceDialog()">
+    <!-- 语音按钮已移除：espeak-ng 机械音暂不可用，等 GPT-SoVITS 配音就绪后恢复 -->
+    <div class="dialog-speaker" id="dialogSpeaker">
+      <span class="speaker-dot" id="speakerDot"></span>
+      <span id="speakerName"></span>
+    </div>
+    <div class="dialog-text" id="dialogText"></div>
+    <div class="dialog-continue" id="dialogContinue" style="display:none">点击继续 ▼</div>
+  </div>
+</div>
+
+<!-- 卡牌弹窗 -->
+<div class="modal-overlay" id="cardModal">
+  <div class="modal-box">
+    <div class="modal-title">道法卡牌图鉴</div>
+    <div class="modal-desc">（已获取的卡牌可点击查看详情）</div>
+    <div class="card-grid" id="cardGrid"></div>
+    <div class="modal-footer">
+      <button class="modal-close-btn" onclick="closeCardModal()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 卡牌详情弹窗 -->
+<div id="cardDetailOverlay" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;z-index:2000"></div>
+
+<!-- 收集品通知 -->
+<div class="collectible-toast" id="collectibleToast">
+  <div class="toast-title">✨ 获得收集品！</div>
+  <div class="toast-item" id="toastItem"></div>
+</div>
+
+<!-- External JS dependencies -->
+<script src="data-store.js"></script>
+<script src="points-system.js"></script>
+<script src="audio-manager.js?v=20260525c"></script>
+<script src="voice-manager.js?v=20260525d"></script>
+<script src="fireworks.js"></script>
+<script src="data/essay-challenges.js"></script>
+
+<!-- Script data: GAME_CONFIG override + DIALOG_SCRIPT -->
+<script>
+    // ========== 工业革命 - 剧本配置 ==========
+    window.GAME_CONFIG = {
+      scriptId: 'industrial_revolution',
+      title: '时空剧场 - 工业革命',
+      values: { labor: 50, justice: 50, responsibility: 50, life: 50 },
+      valueLabels: { labor: '劳动', justice: '正义', responsibility: '责任', life: '生命' },
+      valueColors: { labor: '#E67E22', justice: '#9B59B6', responsibility: '#1ABC9C', life: '#E74C3C' },
+      charConfig: {
+        fulina: { name: '芙宁娜', color: '#6A5ACD', dir: 'fulina', defaultExpr: 'normal' },
+        hutao: { name: '胡桃', color: '#DC143C', dir: 'hutao', defaultExpr: 'normal' },
+        watt: { name: '瓦特', color: '#4682B4', dir: 'npc', defaultExpr: 'watt', file: 'watt' },
+        hargreaves: { name: '哈格里夫斯', color: '#8B4513', dir: 'npc', defaultExpr: 'hargreaves', file: 'hargreaves' },
+        stephenson: { name: '史蒂芬孙', color: '#2F4F4F', dir: 'npc', defaultExpr: 'stephenson', file: 'stephenson' },
+        blake: { name: '工厂主布莱克', color: '#B8860B', dir: 'npc', defaultExpr: 'factory_owner', file: 'factory_owner' },
+        mary: { name: '纺织女工玛丽', color: '#DB7093', dir: 'npc', defaultExpr: 'worker', file: 'worker' },
+        tom: { name: '童工汤姆', color: '#87CEEB', dir: 'npc', defaultExpr: 'child_worker', file: 'child_worker' }
+      },
+      speakerNameToKey: {
+        '芙宁娜': 'fulina', '胡桃': 'hutao',
+        '哈格里夫斯': 'hargreaves', '瓦特': 'watt',
+        '史蒂芬孙': 'stephenson', '工厂主布莱克': 'blake',
+        '纺织女工玛丽': 'mary', '童工汤姆': 'tom'
+      },
+      sceneBGM: {
+        '时空剧场': AudioManager.BGM.THEATER,
+        '第一幕 · 珍妮机的诞生': AudioManager.BGM.PASTORAL,
+        '第二幕 · 蒸汽机的怒吼': AudioManager.BGM.INDUSTRIAL_STEAM,
+        '第三幕 · 工厂的阴影': AudioManager.BGM.DARK_FACTORY,
+        '第四幕 · 火车的轰鸣': AudioManager.BGM.TRAIN_ADVENTURE,
+        '第五幕 · 工业革命的代价': AudioManager.BGM.SOLEMN,
+      },
+      CARDS: {
+        human_rights: { name: "人权宣言卡", knowledge: "人人生而自由平等", description: "「人人生而自由，在尊严和权利上一律平等。」——《世界人权宣言》", effect: {"justice": 20, "life": 10}, color: "#ffd700" },
+        freedom: { name: "自由卡", knowledge: "自由与责任", description: "自由不是随心所欲，而是在法律框架内追求自身价值的同时，尊重他人的权利和自由。", effect: {"labor": 15}, color: "#4169e1" },
+        equality: { name: "平等卡", knowledge: "机会均等", description: "平等不是结果均等，而是机会均等。每个人都应享有平等的发展机会和法律保护。", effect: {"justice": 15}, color: "#32cd32" },
+        fairness: { name: "公平卡", knowledge: "公平分配", description: "公平分配是社会和谐的基础。工业革命的教训告诉我们，财富集中会导致社会撕裂。", effect: {"justice": 20}, color: "#ff8c00" },
+        justice: { name: "正义卡", knowledge: "正义是社会制度的首要价值", description: "正义是社会制度的首要价值。正如罗尔斯所言：「正义是社会制度的首要美德。」", effect: {"justice": 15}, color: "#dc143c" },
+        rule_of_law: { name: "法治卡", knowledge: "法律保护弱者", description: "法律是保护弱者的盾牌。《工厂法》的出台证明，法治是维护社会公平正义的最后一道防线。", effect: {"responsibility": 15}, color: "#4682b4" },
+        labor: { name: "劳动卡", knowledge: "劳动最光荣", description: "劳动最光荣，劳动最崇高，劳动最伟大，劳动最美丽。劳动是一切幸福的源泉。", effect: {"labor": 15}, color: "#daa520" },
+        responsibility: { name: "责任卡", knowledge: "承担社会责任", description: "每个人都要对自己的行为负责，企业要承担社会责任，政府要保障公民权益。", effect: {"responsibility": 15}, color: "#8b4513" }
+      },
+      NPC_FATE_CONFIG: {
+        mary: {
+          name: "玛丽", title: "纺织女工", avatar: "👩‍🏭",
+          stateLabels: { unknown: "未知", exhausted: "精疲力竭", escaped: "逃离工厂", educated: "自学成才", organized: "参与工会" }
+        },
+        tom: {
+          name: "汤姆", title: "童工", avatar: "👦",
+          stateLabels: { unknown: "未知", injured: "受伤", rescued: "被救", escaped: "逃跑", educated: "获得教育" }
+        },
+        black: {
+          name: "布莱克", title: "工厂主", avatar: "🎩",
+          stateLabels: { unknown: "未知", stubborn: "顽固", reformed: "改良", bankrupt: "破产" }
+        }
+      },
+      ESSAY_QUESTIONS: [
+  { q: "结合工业革命，谈谈你对「劳动的意义」的理解。", template: "①知识点：劳动是财富的源泉。\n②阐述：工人劳动创造了巨大社会财富。\n③结合材料：玛丽每天工作14-16小时。\n④结论：尊重劳动、尊重劳动者。", related: ["k002"], values: ["labor", "justice"] },
+  { q: "工业革命中，工人阶级的权益为什么需要法律保护？", template: "①知识点：法律是维护社会公平正义的重要保障。\n②阐述：资本家追求利润最大化剥削工人。\n③结合材料：《工厂法》出台才初步解决童工问题。\n④结论：依法维权是保障公民权益的有效途径。", related: ["k007"], values: ["justice", "responsibility"] },
+  { q: "如何评价科技发展对社会的影响？（从「责任」角度）", template: "①知识点：科技发展是一把双刃剑。\n②阐述：推动生产力但也带来环境问题。\n③结合材料：瓦特晚年反思技术社会影响。\n④结论：以负责任态度对待科技发展。", related: ["k005"], values: ["responsibility", "life"] },
+  { q: "从工业革命中，我们应吸取哪些关于「公平正义」的教训？", template: "①知识点：公平正义是社会主义核心价值观。\n②阐述：社会财富高度集中。\n③结合材料：工厂主奢华vs工人贫民窟。\n④结论：发展必须兼顾效率与公平。", related: ["k004"], values: ["justice", "life"] },
+  { q: "工业革命与可持续发展有什么关系？", template: "①知识点：可持续发展既满足当代又不损害后代。\n②阐述：高消耗高污染模式。\n③结合材料：曼彻斯特浓烟遮蔽天空。\n④结论：坚持可持续发展战略。", related: ["k006"], values: ["responsibility", "life"] }
+],
+      QUIZ_DATA: [
+  { q: "工业革命首先开始于哪个国家？", opts: ["A. 法国", "B. 美国", "C. 英国", "D. 德国"], ans: 2, explain: "工业革命最早开始于18世纪60年代的英国。" },
+  { q: "哈格里夫斯发明的「珍妮纺纱机」最主要的贡献是什么？", opts: ["A. 使用蒸汽作为动力", "B. 一次能纺多根纱线，大幅提高纺纱效率", "C. 实现了织布的自动化", "D. 发明了铁路运输"], ans: 1, explain: "珍妮纺纱机一次可以同时纺出多根纱线，大幅提高了纺纱效率。" },
+  { q: "1833年英国《工厂法》对童工作出了什么规定？", opts: ["A. 完全禁止使用童工", "B. 规定9岁以下儿童不得在纺织厂工作", "C. 规定童工每天工作不得超过8小时", "D. 要求工厂为童工提供教育"], ans: 1, explain: "1833年《工厂法》规定9岁以下儿童不得在纺织厂工作。" },
+  { q: "工业革命对社会结构产生的最深远影响是什么？", opts: ["A. 农民数量大幅增加", "B. 工业资产阶级和工业无产阶级成为两大对立阶级", "C. 贵族重新掌握了国家政权", "D. 手工业者成为社会的主导力量"], ans: 1, explain: "工业革命形成了工业资产阶级和工业无产阶级两大对立阶级。" },
+  { q: "从工业革命的历史中，我们可以得到什么重要启示？", opts: ["A. 科技发展必然导致社会不公", "B. 发展必须坚持以人为本，实现经济效益与社会公平的统一", "C. 工业化是解决一切社会问题的万能钥匙", "D. 环境保护与经济发展不可兼得"], ans: 1, explain: "科技发展是一把双刃剑。发展必须坚持以人为本。" }
+],
+      endingConditions: {
+        afterlifeMinItems: 4,
+        afterlifeValueKey: 'justice',
+        afterlifeMinValue: 70,
+        dramaticMinHighCount: 2,
+        dramaticMinValue: 80
+      },
+      endingTitles: {
+        historical: "历史的齿轮",
+        dramatic: "蒸汽与自由",
+        afterlife: "机器下的灵魂"
+      },
+      afterlifeDialog: [
+        { speaker: "hutao", text: "（举起护摩之杖）走好……每一个在机器旁倒下的灵魂，每一个在战场上牺牲的灵魂。" },
+        { speaker: "fulina", text: "（轻声）历史不会记住他们的名字。但我们记得。" },
+        { speaker: "hutao", text: "在往生堂，我们说：死亡不是终点，遗忘才是。只要有人记得他们，他们就还活着。" },
+        { speaker: "fulina", text: "（看着你）你记得他们。这就够了。" },
+        { speaker: "hutao", text: "（最后一首）'机器轰鸣声渐远，那些被遗忘的脸，在记忆中重新浮现。'" }
+      ],
+      dramaticDialog: [
+        { speaker: "fulina", text: "你做出了鲜明的选择。在这个时代，这需要非凡的勇气。" },
+        { speaker: "hutao", text: "可选择的勇气，有时候比选择的答案更重要。" },
+        { speaker: "fulina", text: "你比历史上的任何人都更勇敢——因为你敢于在公平和效率之间做出选择。" },
+        { speaker: "hutao", text: "（微笑）也许有一天，你的选择会成为别人历史课本上的一行字。但对你来说，这一刻就足够了。" },
+        { speaker: "fulina", text: "（轻声）……我喜欢你的选择。" }
+      ],
+      historicalText: "历史的车轮滚滚向前。工业革命改变了世界，独立战争诞生了一个新国家。但进步从来不是免费的——它总是由最普通的人付出最大的代价。",
+      choiceReflectionMap: {
+        "第一幕": "当新技术出现时，人们的第一反应往往是恐惧。但历史证明，拥抱变化的人，最终都走在了前面。",
+        "第二幕": "进步的光芒越耀眼，它投下的阴影就越深长。我们不能只看到光明，而忽视阴影中的人。",
+        "第三幕": "真正的力量不在于机器的轰鸣或枪炮的威力，而在于人们为正义而站出来的勇气。",
+        "第四幕": "连接两个地方的不只是铁路和电报，还有那些在旅途中失去家园的人们的眼泪。",
+        "第五幕": "历史不是一道选择题，而是一道论述题——没有标准答案，只有不断追问。"
+      },
+      totalKnowledge: 7,
+      hasNpcFateSummary: true,
+      ESSAY_CHALLENGE: INDUSTRIAL_REVOLUTION_ESSAY
+    };
+
+    // ========== 工业革命 - 剧本数据 ==========
+    window.DIALOG_SCRIPT = [
+  // ===== 开场：纪录片片头 =====
+  {
+    scene: "引渡·工业革命",
+    speaker: "旁白",
+    text: "1760年，英格兰。",
+    bg: "images/bg/steam_workshop.jpg"
+  },
+
+  {
+    scene: "引渡·工业革命",
+    speaker: "旁白",
+    text: "这不是一个关于英雄的故事。",
+    bg: "images/bg/steam_workshop.jpg"
+  },
+
+  {
+    scene: "引渡·工业革命",
+    speaker: "旁白",
+    text: "这是一个关于机器、烟雾、和被遗忘的人的故事。",
+    bg: "images/bg/dark_factory.jpg"
+  },
+
+  {
+    scene: "引渡·工业革命",
+    speaker: "旁白",
+    text: "以下内容，来自当时工厂工人的日记、信件和口述记录。",
+    bg: "images/bg/dark_factory.jpg"
+  },
+
+  {
+    scene: "引渡·工业革命",
+    speaker: "芙宁娜",
+    text: "（纪录片导演语气）我是伊莎贝拉，工厂主的女儿。这是我家的工厂。",
+    bg: "images/bg/cotton_mill_1760.jpg",
+    charLeft: 'normal'
+  },
+
+  {
+    scene: "引渡·工业革命",
+    speaker: "胡桃",
+    text: "（纪录片摄影师语气）我是莉莉，纺织女工。这是我的工厂。",
+    bg: "images/bg/cotton_mill_1760.jpg",
+    charRight: 'normal'
+  },
+
+  // ===== 第一幕 · 珍妮机的诞生 =====
+  {
+    type: "act_transition",
+    actTitle: "第一程",
+    actSubtitle: "珍妮机的诞生",
+    bg: "images/bg/cotton_mill_1760.jpg"
+  },
+
+  {
+    scene: "第一幕 · 珍妮机的诞生",
+    speaker: "旁白",
+    text: "1764年，英国兰开夏郡的一间简陋农舍里，织布工哈格里夫斯正在为纺纱效率发愁。他的女儿珍妮不小心碰倒了纺车，纺锤竖立起来继续旋转——一个灵感由此诞生。",
+    bg: "images/bg/cotton_mill_1760.jpg"
+  },
+
+  {
+    scene: "第一幕 · 珍妮机的诞生",
+    speaker: "哈格里夫斯",
+    text: "珍妮！你看——纺锤竖起来也能转！如果我把多个纺锤装在一起……一台机器就能同时纺出好多根纱线！",
+    bg: "images/bg/cotton_mill_1760.jpg",
+    charLeft: 'watt'
+  },
+
+  {
+    scene: "第一幕 · 珍妮机的诞生",
+    speaker: "胡桃",
+    text: "（扮演莉莉）这就是传说中的「珍妮纺纱机」吗？它一次能纺8根纱线，效率是原来的8倍！",
+    bg: "images/bg/cotton_mill_1760.jpg",
+    charRight: 'excited'
+  },
+
+  {
+    type: "knowledge",
+    category: "科技创新",
+    "name": "珍妮纺纱机",
+    "desc": "1764年，哈格里夫斯发明珍妮纺纱机，一次可纺8根纱线，极大提高了纺纱效率。这是工业革命早期的重要发明之一，标志着手工劳动向机器生产的转变。科技创新是推动社会进步的重要力量，但技术进步也带来了新的社会问题。",
+    },
+
+  {
+    type: "collectible",
+    name: "玛丽阿姨的手摇纺车日记",
+    desc: "'珍妮机来了以后，我失去了工作。我纺了一辈子的纱，现在没人需要我了。'",
+  },
+
+  {
+    scene: "第一幕 · 珍妮机的诞生",
+    speaker: "瓦特",
+    text: "哈格里夫斯先生的珍妮机确实了不起，但纺织业的真正革命，还需要更强大的动力。我在改良蒸汽机——用蒸汽的力量代替人力和畜力！",
+    bg: "images/bg/steam_workshop.jpg",
+    charLeft: 'watt'
+  },
+
+  {
+    scene: "第一幕 · 珍妮机的诞生",
+    speaker: "芙宁娜",
+    text: "（扮演伊莎贝拉）瓦特先生，您的蒸汽机将彻底改变这个世界！但我想知道……这些机器取代了工人的劳动，那些失去工作的人该怎么办呢？",
+    bg: "images/bg/steam_workshop.jpg",
+    charLeft: 'curious'
+  },
+
+  {
+    scene: "第一幕 · 珍妮机的诞生",
+    speaker: "哈格里夫斯",
+    text: "伊莎贝拉小姐问得好。说实话，自从珍妮机推广以来，很多手工纺纱工都失业了。他们愤怒地砸毁机器，称它们为「吃人的铁怪兽」……",
+    bg: "images/bg/steam_workshop.jpg",
+    charLeft: 'watt'
+  },
+
+  {
+    speaker: "哈格里夫斯",
+    text: "（抚摸着珍妮机模型）这台机器可以同时纺出八根纱线。我妻子不小心碰倒了纺车，给了我灵感……有时候，意外就是发明的开始。",
+    scene: "第一幕 · 珍妮机的诞生",
+    bg: "images/bg/steam_workshop.jpg",
+    charLeft: 'normal'
+  },
+  {
+    speaker: "哈格里夫斯",
+    text: "（苦笑）讽刺的是，我本来也是个手工纺纱工。我发明这台机器不是为了抢谁的饭碗，只是想让妻子不用那么辛苦。",
+    scene: "第一幕 · 珍妮机的诞生",
+    bg: "images/bg/steam_workshop.jpg",
+    charLeft: 'normal'
+  },
+  {
+    speaker: "哈格里夫斯",
+    text: "（低声）他们砸了我的机器……但砸不了我的想法。总有一天，人们会明白，机器不是敌人。",
+    scene: "第一幕 · 珍妮机的诞生",
+    bg: "images/bg/steam_workshop.jpg",
+    charLeft: 'solemn'
+  },
+  {
+    speaker: "哈格里夫斯",
+    text: "（对莉莉说）小姑娘，你记住——每一项发明背后都有一个普通人的故事。我只是个纺织工，但我改变了世界。",
+    scene: "第一幕 · 珍妮机的诞生",
+    bg: "images/bg/steam_workshop.jpg",
+    charLeft: 'normal'
+  },
+
+  {
+    scene: "第一幕 · 珍妮机的诞生",
+    speaker: "胡桃",
+    text: "（扮演莉莉）这就是「卢德运动」的由来吗？工人们因为失业而砸毁机器……他们不是反对进步，只是不想被进步抛弃。",
+    bg: "images/bg/steam_workshop.jpg",
+    charRight: 'solemn'
+  },
+
+  {
+    speaker: '胡桃',
+    text: '（看着工厂的烟囱）这些烟囱冒出的黑烟，比往生堂的护摩之火还要浓。但护摩之火是引路的，这些烟……是遮蔽天空的。',
+    scene: '第一幕 · 珍妮机的诞生',
+    bg: 'images/bg/steam_workshop.jpg',
+    charRight: 'solemn'
+  },
+
+  // EV-IR-1：工业革命为什么首先发生在英国
+  {
+    type: "evidence",
+    items: [
+      { type: "📊 数据", title: "英国殖民地贸易统计（1760年）",
+        content: "英国拥有遍布全球的殖民地，海外贸易额占欧洲总贸易额的 30% 以上。庞大的殖民地为英国提供了廉价原材料和广阔的市场。" },
+      { type: "📜 法令", title: "《专利法》（1624年）",
+        content: "英国率先建立专利保护制度，保护发明者的权益。这极大地激励了技术创新——珍妮机、蒸汽机等发明都受到了专利保护。" },
+      { type: "💰 账本", title: "英国工场手工业利润（1760年）",
+        content: "英国工场手工业积累了大量资本，商人阶层拥有充足的资金投资新技术。同时，圈地运动为工厂提供了大量自由劳动力。" }
+    ],
+    question: "工业革命为什么首先发生在英国，而不是其他国家？",
+    options: [
+      { text: "因为英国人比其他国家的人更聪明", correctIndex: 2,
+        wrongFeedback: "芙宁娜说：'不是智力问题，而是制度环境。英国的政治和经济条件为创新提供了土壤。'" },
+      { text: "因为英国有更多的煤炭和铁矿", correctIndex: 2,
+        wrongFeedback: "资源丰富是条件之一，但不是根本原因。胡桃说：'有矿的地方多了去了，为什么只有英国爆发了工业革命？'" },
+      { text: "因为英国同时具备了市场、资本、劳动力和制度保障", correctIndex: 2,
+        correctFeedback: "✅ 正确！工业革命的发生需要多重条件同时具备：海外市场提供需求，资本积累提供资金，圈地运动提供劳动力，专利制度提供创新激励。",
+        effects: { justice: 5, responsibility: 5 } }
+    ]
+  },
+
+  // PC-IR-1：珍妮机的诞生——手工纺纱工冲击工坊
+  {
+    type: "pressure_choice",
+    timeout: 6,
+    defaultChoice: 2,
+    urgentText: "愤怒的手工纺纱工冲进了工坊，有人举起了铁棍！哈格里夫斯惊恐地看向你——",
+    timeoutText: "你还没来得及反应，纺纱工们已经砸碎了珍妮机的模型。哈格里夫斯瘫坐在地上，眼中满是绝望。",
+    choices: [
+      { text: "挡在哈格里夫斯面前，劝纺纱工们冷静", effects: { justice: 10, responsibility: 5 } },
+      { text: "帮哈格里夫斯带着珍妮机从后门撤离", effects: { labor: 10 } },
+      { text: "保持沉默——这是工人和发明家之间的矛盾", effects: { responsibility: 5 } },
+      { text: "告诉纺纱工们，机器也会创造新的工作机会", effects: { justice: 10, life: 5 } }
+    ]
+  },
+
+  { type: "npc_fate_event", npcId: "mary", newState: "exhausted",
+    eventText: "玛丽每天工作 14 个小时，手指被纺纱机磨出了血泡。但她不敢停下来——因为停下来就意味着挨饿。" },
+
+  { type: "hook", text: "珍妮机的纺锤在转动，但有人欢呼，有人愤怒。机器究竟是解放了人类，还是奴役了人类？" },
+
+  // ===== 第二幕 · 蒸汽机的怒吼 =====
+  {
+    type: "act_transition",
+    actTitle: "第二程",
+    actSubtitle: "蒸汽机的怒吼",
+    bg: "images/bg/steam_workshop.jpg"
+  },
+
+  {
+    scene: "第二幕 · 蒸汽机的怒吼",
+    speaker: "旁白",
+    text: "瓦特改良的蒸汽机投入使用后，工厂如雨后春笋般在英国各地涌现。蒸汽机的轰鸣声成为了新时代的号角，但也带来了前所未有的社会变革。",
+    bg: "images/bg/steam_workshop.jpg"
+  },
+
+  {
+    scene: "第二幕 · 蒸汽机的怒吼",
+    speaker: "瓦特",
+    text: "我的蒸汽机比纽科门机效率提高了三倍以上！现在工厂可以建在任何地方，不再依赖河流的水力了。这就是工业的力量！",
+    bg: "images/bg/steam_workshop.jpg",
+    charLeft: 'watt'
+  },
+
+  {
+    scene: "第二幕 · 蒸汽机的怒吼",
+    speaker: "工厂主布莱克",
+    text: "太好了！有了蒸汽机，我的工厂可以日夜不停地运转。雇佣更多工人，生产更多布匹，赚更多的钱！",
+    bg: "images/bg/steam_workshop.jpg",
+    charLeft: 'watt'
+  },
+
+  {
+    scene: "第二幕 · 蒸汽机的怒吼",
+    speaker: "胡桃",
+    text: "（扮演莉莉）布莱克先生，工厂里的工人每天要工作14到16个小时，连孩子都要干活……这样真的好吗？",
+    bg: "images/bg/steam_workshop.jpg",
+    charRight: 'solemn'
+  },
+
+  {
+    scene: "第二幕 · 蒸汽机的怒吼",
+    speaker: "工厂主布莱克",
+    text: "这是自由市场！我提供工作机会，他们自愿来干活。再说了，机器需要人来看管，我是在帮助他们！",
+    bg: "images/bg/steam_workshop.jpg",
+    charLeft: 'watt'
+  },
+
+  {
+    speaker: "工厂主布莱克",
+    text: "（整理领结）我给了他们工作，给了他们面包。在这个时代，有工作就是最大的恩赐。他们应该感恩才对。",
+    scene: "第二幕 · 蒸汽机的怒吼",
+    bg: "images/bg/steam_workshop.jpg",
+    charRight: 'normal'
+  },
+  {
+    speaker: "工厂主布莱克",
+    text: "（不耐烦）安全措施？那要花钱的。机器不会因为加装了护栏就多产一码布。我是个商人，不是慈善家。",
+    scene: "第二幕 · 蒸汽机的怒吼",
+    bg: "images/bg/steam_workshop.jpg",
+    charRight: 'normal'
+  },
+
+  {
+    scene: "第二幕 · 蒸汽机的怒吼",
+    speaker: "瓦特",
+    text: "布莱克先生，机器确实需要人来操作。但人不是机器的附属品，他们有家庭、有梦想、有尊严。如果我们只把工人当作劳动力来使用，那和把人当奴隶有什么区别？",
+    bg: "images/bg/steam_workshop.jpg",
+    charLeft: 'watt'
+  },
+
+  {
+    speaker: "瓦特",
+    text: "（看着蒸汽机运转）这台机器的原理其实很简单——利用蒸汽的压力推动活塞运动。但把它变成现实，我花了整整二十年。",
+    scene: "第二幕 · 蒸汽机的怒吼",
+    bg: "images/bg/steam_workshop.jpg",
+    charLeft: 'normal'
+  },
+  {
+    speaker: "瓦特",
+    text: "（沉思）蒸汽机可以驱动纺纱机、织布机、火车……它的力量是无限的。但我有时候会想，这种力量如果被滥用，会带来什么后果？",
+    scene: "第二幕 · 蒸汽机的怒吼",
+    bg: "images/bg/steam_workshop.jpg",
+    charLeft: 'thinking'
+  },
+  {
+    speaker: "瓦特",
+    text: "（对莉莉说）技术本身是中性的。一把刀可以切面包，也可以伤人。关键在于使用技术的人，心中有没有正义。",
+    scene: "第二幕 · 蒸汽机的怒吼",
+    bg: "images/bg/steam_workshop.jpg",
+    charLeft: 'serious'
+  },
+
+  {
+    type: "knowledge",
+    category: "劳动的意义",
+    "name": "劳动创造价值",
+    "desc": "劳动是财富的源泉，也是人类生存和发展的基础。工业革命中，工人的劳动创造了巨大的社会财富，但他们却未能公平地分享这些成果。马克思主义认为，劳动价值论揭示了资本家通过剥削工人剩余价值来获取利润的本质。尊重劳动、保护劳动者权益，是现代社会的基本准则。",
+    },
+
+  {
+    type: "choice",
+    scene: "第二幕 · 蒸汽机的怒吼",
+    "prompt": "工厂主布莱克认为他提供工作机会就是在帮助工人。你如何看待这种观点？",
+    "choices": [
+      {
+        text: "A. 完全同意，提供工作就是最大的帮助",
+        effects: { labor: -5, justice: -10, responsibility: -5, life: 0 }
+      },
+      {
+        text: "B. 部分同意，但工人也需要合理的报酬和休息",
+        effects: { labor: 5, justice: 5, responsibility: 5, life: 5 }
+      },
+      {
+        text: "C. 不同意，资本家只是在剥削工人",
+        effects: { labor: 5, justice: 10, responsibility: 0, life: 5 }
+      }
+    ]
+  },
+
+  {
+    type: "collectible",
+    name: "莉莉的工厂日记",
+    desc: "'今天工作了16个小时。手指被纱线割破了，但不敢停。停下来就没有饭吃。'",
+  },
+
+  { type: "npc_fate_event", npcId: "tom", newState: "injured",
+    eventText: "汤姆在操作蒸汽机时被烫伤了手臂。工厂主布莱克没有给他任何赔偿，只说了一句：'下次小心点。'" },
+
+  { type: "hook", text: "蒸汽机的轰鸣声越来越大，但在这声音之下，你隐约听到了另一种声音——孩子的哭声。" },
+
+  // ===== 第三幕 · 工厂的阴影 =====
+  {
+    type: "act_transition",
+    actTitle: "第三程",
+    actSubtitle: "工厂的阴影",
+    bg: "images/bg/dark_factory.jpg"
+  },
+
+  {
+    scene: "第三幕 · 工厂的阴影",
+    speaker: "旁白",
+    text: "工业革命带来了巨大的财富，但这些财富的分配却极不均衡。在工厂辉煌的表象之下，是无数工人的血泪。童工、女工、超长工时、恶劣环境……工厂的阴影正在蔓延。",
+    bg: "images/bg/dark_factory.jpg"
+  },
+
+  {
+    scene: "第三幕 · 工厂的阴影",
+    speaker: "纺织女工玛丽",
+    text: "我从12岁就在工厂里干活了。每天14个小时，站在机器前面，一刻也不能停。上周我的头发被卷进了机器……差点丢了命。",
+    bg: "images/bg/dark_factory.jpg",
+    charLeft: 'watt'
+  },
+
+  {
+    speaker: "纺织女工玛丽",
+    text: "（揉着红肿的手指）每天从凌晨五点干到晚上八点，中间只有半小时吃饭。我的手指被纱线割破了无数次，但不敢停下来。",
+    scene: "第三幕 · 工厂的阴影",
+    bg: "images/bg/dark_factory.jpg",
+    charLeft: 'normal'
+  },
+  {
+    speaker: "纺织女工玛丽",
+    text: "（小声）上周，隔壁车间的小莉被机器卷住了头发……她才十三岁。布莱克先生只说了一句'换个人来'。",
+    scene: "第三幕 · 工厂的阴影",
+    bg: "images/bg/dark_factory.jpg",
+    charLeft: 'sad'
+  },
+  {
+    speaker: "纺织女工玛丽",
+    text: "（握紧拳头）我们不是机器！我们有孩子要养，有家要回。可布莱克先生只把我们当作会说话的工具。",
+    scene: "第三幕 · 工厂的阴影",
+    bg: "images/bg/dark_factory.jpg",
+    charLeft: 'angry'
+  },
+
+  {
+    scene: "第三幕 · 工厂的阴影",
+    speaker: "童工汤姆",
+    text: "我才8岁……我负责在机器下面捡掉落的棉絮。机器很大、很响，我好害怕。可是妈妈说，如果我不干活，全家就要挨饿。",
+    bg: "images/bg/dark_factory.jpg",
+    charLeft: 'watt'
+  },
+
+  {
+    speaker: "童工汤姆",
+    text: "（怯怯地）我今年十岁……在工厂已经工作了三年。我的工作是爬到机器下面捡掉落的纱线，因为只有小孩才能钻进去。",
+    scene: "第三幕 · 工厂的阴影",
+    bg: "images/bg/dark_factory.jpg",
+    charLeft: 'normal'
+  },
+  {
+    speaker: "童工汤姆",
+    text: "（低下头）我没有上过学。每天天不亮就要到工厂，天黑了才能回家。有时候累得站着就睡着了。",
+    scene: "第三幕 · 工厂的阴影",
+    bg: "images/bg/dark_factory.jpg",
+    charLeft: 'sad'
+  },
+
+  {
+    scene: "第三幕 · 工厂的阴影",
+    speaker: "芙宁娜",
+    text: "（扮演伊莎贝拉）一个8岁的孩子……这太残忍了！儿童应该在学校里读书，而不是在危险的机器下面爬来爬去！",
+    bg: "images/bg/dark_factory.jpg",
+    charLeft: 'serious'
+  },
+
+  {
+    speaker: '胡桃',
+    text: '（握紧拳头）在往生堂，我送别过很多孩子。但那些孩子是病死的、老死的。这里的孩子……是被活活累死的。',
+    scene: '第三幕 · 工厂的阴影',
+    bg: 'images/bg/dark_factory.jpg',
+    charRight: 'solemn'
+  },
+
+  {
+    type: "knowledge",
+    category: "生命尊严",
+    "name": "生命的尊严与价值",
+    "desc": "每个生命都具有不可侵犯的尊严。工业革命时期，大量使用童工、工人在危险环境中劳作，严重侵犯了人的基本权利。联合国《儿童权利公约》规定，儿童有权受到保护，免受经济剥削和从事可能妨碍其发展的工作。尊重生命、保护弱势群体，是文明社会的底线。",
+    },
+
+  {
+    type: "collectible",
+    name: "汤米的童工日记",
+    desc: "'我想上学。但妈妈说，如果我不去工厂，弟弟们就要挨饿。'",
+  },
+
+  {
+    type: "card_choice",
+    scene: "第三幕 · 工厂的阴影",
+    "prompt": "面对工厂中童工和女工的悲惨处境，你选择用哪种力量来改变现状？",
+    "cards": [
+      {
+        id: "fairness",
+        "name": "公平卡 — 呼吁社会关注，推动公平分配",
+        "effect": { labor: 5, justice: 15, responsibility: 5, life: 5 },
+        img: "images/cards/card_fairness.jpg",
+        recommend: false,
+        hint: "影响fairness相关数值"
+      },
+      {
+        id: "labor",
+        "name": "劳动卡 — 组织工人团结起来争取权益",
+        "effect": { labor: 15, justice: 5, responsibility: 5, life: 5 },
+        img: "images/cards/card_labor.jpg",
+        recommend: false,
+        hint: "影响labor相关数值"
+      },
+      {
+        id: "responsibility",
+        "name": "责任卡 — 推动立法，从制度上保护工人",
+        "effect": { labor: 5, justice: 5, responsibility: 15, life: 5 },
+        img: "images/cards/card_responsibility.jpg",
+        recommend: false,
+        hint: "影响responsibility相关数值"
+      }
+    ]
+  },
+
+  {
+    scene: "第三幕 · 工厂的阴影",
+    speaker: "胡桃",
+    text: "（扮演莉莉）我听说有些工人开始秘密组织起来，想要联合起来对抗工厂主的不公待遇……",
+    bg: "images/bg/dark_factory.jpg",
+    charRight: 'solemn'
+  },
+
+  {
+    scene: "第三幕 · 工厂的阴影",
+    speaker: "工厂主布莱克",
+    text: "什么？工人要组织起来？这是在煽动叛乱！我要把带头的人全部开除！",
+    bg: "images/bg/dark_factory.jpg",
+    charLeft: 'watt'
+  },
+
+  {
+    speaker: "工厂主布莱克",
+    text: "（冷笑）组织工会？他们以为这样就能威胁到我？我随时可以找到替代的人。英国最不缺的就是穷人。",
+    scene: "第三幕 · 工厂的阴影",
+    bg: "images/bg/dark_factory.jpg",
+    charRight: 'angry'
+  },
+  {
+    speaker: "工厂主布莱克",
+    text: "（沉默片刻）……也许我确实有些过分了。但你要理解，如果我不压低成本，我的工厂就会倒闭，所有人都得失业。",
+    scene: "第三幕 · 工厂的阴影",
+    bg: "images/bg/dark_factory.jpg",
+    charRight: 'thinking'
+  },
+  {
+    speaker: "工厂主布莱克",
+    text: "（叹气）我父亲也是从工人做起的。他说过一句话我一直记得：'赚再多的钱，也买不回良心。'也许我该听听他的话。",
+    scene: "第三幕 · 工厂的阴影",
+    bg: "images/bg/dark_factory.jpg",
+    charRight: 'sad'
+  },
+
+  {
+    type: "knowledge",
+    category: "公平分配",
+    "name": "公平与社会正义",
+    "desc": "公平正义是社会主义核心价值观的重要内容。工业革命时期，社会财富高度集中在少数资本家手中，广大工人阶级生活在贫困之中。这种不公平的分配制度引发了严重的社会矛盾。实现公平分配，需要建立合理的收入分配制度，保障每个人的基本生活权利，让发展成果惠及全体人民。",
+    },
+
+  // EV-IR-2：工厂制度对工人的影响
+  {
+    type: "evidence",
+    items: [
+      { type: "📋 报告", title: "英国工厂调查委员会报告（1832年）",
+        content: "童工每天工作 14-16 小时，工资仅为成年人的 1/6。许多童工因机器事故失去手指或手臂。工厂内通风极差，棉尘弥漫，工人平均寿命仅 35 岁。" },
+      { type: "✉️ 信件", title: "一位纺织女工给议员的信",
+        content: "尊敬的议员先生：我每天从凌晨5点工作到晚上8点。我的两个孩子留在家中无人照看。上周我的同事因疲劳操作被机器卷入，失去了左手。我们不是机器，我们是人。" },
+      { type: "📊 数据", title: "工业革命时期英国贫富差距统计",
+        content: "工厂主年均收入约 10,000 英镑，而普通工人年收入仅 30-50 英镑。前 5% 的人口拥有全国 80% 的财富。工人阶级居住在拥挤肮脏的贫民窟中。" }
+    ],
+    question: "工业革命最大的受益者是谁？最大的受害者又是谁？",
+    options: [
+      { text: "最大受益者是工人，因为他们有了工作机会", correctIndex: 2,
+        wrongFeedback: "胡桃说：'有工作不等于有好生活。看看汤姆的手，看看玛丽的脸——他们确实在工作，但他们活得像人吗？'" },
+      { text: "最大受益者和受害者都是工人", correctIndex: 2,
+        wrongFeedback: "这个说法看似辩证，但回避了核心问题。芙宁娜说：'不能因为'也有好处'就忽视不公正。'" },
+      { text: "资本家是最大受益者，工人阶级是最大受害者", correctIndex: 2,
+        correctFeedback: "✅ 你看到了工业革命的另一面。技术进步确实推动了生产力，但利益分配极度不均。公平是个人生存和发展的重要保障。",
+        effects: { justice: 10, life: 5 } }
+    ]
+  },
+
+  // PC-IR-2：童工汤姆受伤
+  {
+    type: "pressure_choice",
+    timeout: 6,
+    defaultChoice: 3,
+    urgentText: "汤姆的手被卷进了机器！他只有十岁！布莱克站在远处冷冷地看着——",
+    timeoutText: "你犹豫了太久。等工友们把汤姆拉出来时，他的右手已经严重受伤。布莱克只说了一句：'换个人来操作。'",
+    choices: [
+      { text: "冲上去关掉机器，把汤姆救出来", effects: { justice: 15 } },
+      { text: "大声质问布莱克：'他还是个孩子！'", effects: { justice: 10, life: 5 } },
+      { text: "记住这一幕，等有了力量再来改变", effects: { responsibility: 5 } },
+      { text: "去找工厂监工要求改善安全措施", effects: { responsibility: 10, justice: 5 } }
+    ]
+  },
+
+  { type: "npc_fate_event", npcId: "black", newState: "stubborn",
+    eventText: "布莱克面对工人的抗议毫不动摇。他说：'我给他们提供了工作，他们应该感恩。'" },
+  { type: "npc_fate_event", npcId: "mary", newState: "organized",
+    eventText: "玛丽开始秘密组织工友们讨论待遇问题。她说：'一个人的声音太小，但一百个人的声音，他们不能假装听不见。'" },
+
+  { type: "hook", text: "工厂的烟囱日夜不停地冒着黑烟。布莱克说这是'进步的代价'。但代价，总是由最弱的人来承受。" },
+
+  // ===== 第四幕 · 火车的轰鸣 =====
+  {
+    type: "act_transition",
+    actTitle: "第四程",
+    actSubtitle: "火车的轰鸣",
+    bg: "images/bg/steam_train_railway.jpg"
+  },
+
+  {
+    scene: "第四幕 · 火车的轰鸣",
+    speaker: "旁白",
+    text: "1825年9月27日，世界上第一条公共铁路在英国开通。史蒂芬孙的蒸汽机车「旅行号」拉着38节车厢，载着600多名乘客，以每小时24公里的速度驶向远方。一个全新的交通时代来临了。",
+    bg: "images/bg/steam_train_railway.jpg"
+  },
+
+  {
+    scene: "第四幕 · 火车的轰鸣",
+    speaker: "史蒂芬孙",
+    text: "成功了！我的蒸汽机车证明了铁路的可行性！从今以后，人和货物可以在几小时内到达过去需要几天才能到达的地方！",
+    bg: "images/bg/steam_train_railway.jpg",
+    charLeft: 'watt'
+  },
+
+  {
+    scene: "第四幕 · 火车的轰鸣",
+    speaker: "芙宁娜",
+    text: "（扮演伊莎贝拉）史蒂芬孙先生，火车的发明确实伟大！它不仅改变了交通，还促进了城市的发展和贸易的繁荣。",
+    bg: "images/bg/steam_train_railway.jpg",
+    charLeft: 'excited'
+  },
+
+  {
+    scene: "第四幕 · 火车的轰鸣",
+    speaker: "胡桃",
+    text: "（扮演莉莉）可是……修铁路需要大量土地，很多农民被迫离开了家园。而且铁路沿线的工厂排放的浓烟，让天空都变了颜色。",
+    bg: "images/bg/steam_train_railway.jpg",
+    charRight: 'solemn'
+  },
+
+  {
+    type: "knowledge",
+    category: "社会责任",
+    "name": "科技发展与社会责任",
+    "desc": "科技发展是一把双刃剑。蒸汽机、火车等发明极大地推动了生产力发展，但也带来了环境污染、资源消耗等问题。科学家和企业家在追求技术创新的同时，应当承担相应的社会责任。我国坚持创新驱动发展战略，同时强调绿色发展理念，努力实现经济效益与社会效益的统一。",
+    },
+
+  {
+    type: "collectible",
+    name: "瓦特的晚年反思",
+    desc: "'我改良了蒸汽机，让人类进入了新时代。但新时代里的人，真的比以前更幸福吗？'",
+  },
+
+  {
+    type: "choice",
+    scene: "第四幕 · 火车的轰鸣",
+    "prompt": "科技发展带来了便利，但也产生了环境污染等问题。你认为应该如何平衡？",
+    "choices": [
+      {
+        text: "A. 科技发展优先，环境问题以后再说",
+        effects: { labor: 0, justice: -5, responsibility: -10, life: -5 }
+      },
+      {
+        text: "B. 科技发展与环境保护并重，走可持续发展道路",
+        effects: { labor: 5, justice: 5, responsibility: 10, life: 10 }
+      },
+      {
+        text: "C. 停止工业发展，保护环境最重要",
+        effects: { labor: -5, justice: 5, responsibility: 5, life: 10 }
+      }
+    ]
+  },
+
+  {
+    scene: "第四幕 · 火车的轰鸣",
+    speaker: "史蒂芬孙",
+    text: "莉莉说得对，工业发展确实带来了很多问题。但解决问题的方式不是停止前进，而是找到更好的方法。也许未来的机器可以更清洁、更安全？",
+    bg: "images/bg/steam_train_railway.jpg",
+    charLeft: 'watt'
+  },
+
+  {
+    speaker: "史蒂芬孙",
+    text: "（指着铁路线）这条铁路从利物浦到曼彻斯特，全长约50公里。以前走运河需要好几天，现在只需要两个小时。",
+    scene: "第四幕 · 火车的轰鸣",
+    bg: "images/bg/steam_train_railway.jpg",
+    charLeft: 'normal'
+  },
+  {
+    speaker: "史蒂芬孙",
+    text: "（苦涩地笑）为了修这条路，我们确实拆了一些村庄。每次经过那些废墟，我心里都不好受。但铁路确实让整个国家受益了……对吗？",
+    scene: "第四幕 · 火车的轰鸣",
+    bg: "images/bg/steam_train_railway.jpg",
+    charLeft: 'sad'
+  },
+  {
+    speaker: "史蒂芬孙",
+    text: "（坚定地）我相信，未来的火车会更快、更安全、更清洁。技术的问题，最终要靠更好的技术来解决。我们不能因为害怕就停止前进。",
+    scene: "第四幕 · 火车的轰鸣",
+    bg: "images/bg/steam_train_railway.jpg",
+    charLeft: 'normal'
+  },
+
+  {
+    scene: "第四幕 · 火车的轰鸣",
+    speaker: "芙宁娜",
+    text: "（扮演伊莎贝拉）史蒂芬孙先生说得对。科技本身没有善恶，关键在于使用科技的人。如果我们每个人都能承担起社会责任，科技就能真正造福人类。",
+    bg: "images/bg/steam_train_railway.jpg",
+    charLeft: 'normal'
+  },
+
+  // PC-IR-3：铁路征地
+  {
+    type: "pressure_choice",
+    timeout: 8,
+    defaultChoice: 2,
+    urgentText: "村民们堵在铁轨上不肯离开。史蒂芬孙说铁路不能改道。你只有几秒——",
+    timeoutText: "你没有说话。最终士兵们强行驱散了村民。铁路按时通车了，但你看到一位老妇人坐在废墟上哭泣。",
+    choices: [
+      { text: "支持村民——铁路可以改道，人的家园不能被毁", effects: { justice: 15, life: 5 } },
+      { text: "说服村民接受合理补偿，让铁路通过", effects: { responsibility: 10, life: 10 } },
+      { text: "支持铁路——技术进步需要牺牲，但应给予充分补偿", effects: { labor: 5, responsibility: 10 } },
+      { text: "沉默不语，让双方自己解决", effects: {} }
+    ]
+  },
+
+  { type: "npc_fate_event", npcId: "tom", newState: "rescued",
+    eventText: "一位善良的医生免费为汤姆治疗了手臂。汤姆第一次知道，原来这个世界上还有不收钱的善意。" },
+
+  { type: "collectible_conditional", name: "被拆迁村民的请愿书",
+    condition: () => lastChoiceIndex === 0 },
+
+  { type: "hook", text: "火车把世界变小了，但铁轨碾过的地方，有些东西永远消失了。" },
+
+  // ===== 第五幕 · 工业革命的代价 =====
+  {
+    type: "act_transition",
+    actTitle: "第五程",
+    actSubtitle: "工业革命的代价",
+    bg: "images/bg/dark_factory.jpg"
+  },
+
+  {
+    scene: "第五幕 · 工业革命的代价",
+    speaker: "旁白",
+    text: "工业革命创造了前所未有的财富，但这些财富的分配极不均衡。在英国曼彻斯特，一边是工厂主奢华的宅邸，另一边是工人拥挤不堪的贫民窟。烟尘遮蔽了天空，污水横流在街道。",
+    bg: "images/bg/dark_factory.jpg"
+  },
+
+  {
+    scene: "第五幕 · 工业革命的代价",
+    speaker: "贫民窟居民",
+    text: "我们六个人挤在一间小屋里，窗户连玻璃都没有。工厂的废水直接排到河里，我们喝的水都是浑浊的。孩子们一个接一个地生病……",
+    bg: "images/bg/slum.jpg",
+    charLeft: 'watt'
+  },
+
+  {
+    scene: "第五幕 · 工业革命的代价",
+    speaker: "纺织女工玛丽",
+    text: "我工作了二十年，现在身体垮了。肺里全是棉尘，医生说是「棉肺病」。工厂主不会管我的死活——总有更年轻的女工来替代我。",
+    bg: "images/bg/slum.jpg",
+    charLeft: 'watt'
+  },
+
+  {
+    speaker: "纺织女工玛丽",
+    text: "（站出来）我不再害怕了。一个人的声音太小，但一百个人的声音，他们不能假装听不见！",
+    scene: "第五幕 · 工业革命的代价",
+    bg: "images/bg/slum.jpg",
+    charLeft: 'determined'
+  },
+  {
+    speaker: "纺织女工玛丽",
+    text: "（翻看夜校课本）我以前不识字，连自己的名字都不会写。现在我学会了签名——第一个签的就是请愿书。",
+    scene: "第五幕 · 工业革命的代价",
+    bg: "images/bg/slum.jpg",
+    charLeft: 'hopeful'
+  },
+  {
+    speaker: "纺织女工玛丽",
+    text: "（微笑）也许有一天，我的女儿不用再进工厂。她可以坐在教室里，读书、写字，做一个有选择的人。",
+    scene: "第五幕 · 工业革命的代价",
+    bg: "images/bg/slum.jpg",
+    charLeft: 'normal'
+  },
+
+  {
+    scene: "第五幕 · 工业革命的代价",
+    speaker: "胡桃",
+    text: "（扮演莉莉）这就是工业革命的另一面……光鲜亮丽的背后，是无数普通人的苦难。我们不能再沉默了！",
+    bg: "images/bg/slum.jpg",
+    charRight: 'solemn'
+  },
+
+  {
+    type: "knowledge",
+    category: "环境保护",
+    "name": "环境保护与可持续发展",
+    "desc": "工业革命带来了严重的环境问题：空气污染、水污染、土壤退化。恩格斯在《英国工人阶级状况》中详细描述了当时的环境恶化。这警示我们，经济发展不能以牺牲环境为代价。我国提出「绿水青山就是金山银山」的理念，坚持走生产发展、生活富裕、生态良好的文明发展道路。",
+    },
+
+  {
+    scene: "第五幕 · 工业革命的代价",
+    speaker: "芙宁娜",
+    text: "（扮演伊莎贝拉）工人们开始觉醒了。他们组织工会、发起罢工、向议会请愿。虽然过程艰难，但改变正在发生。",
+    bg: "images/bg/slum.jpg",
+    charLeft: 'normal'
+  },
+
+  {
+    speaker: '芙宁娜',
+    text: '（低声）在枫丹，水神也曾面对类似的抉择——进步的代价，应该由谁来承担？如果答案是"最弱的人"，那这种进步本身就是一种不正义。',
+    scene: '第五幕 · 工业革命的代价',
+    bg: 'images/bg/slum.jpg',
+    charLeft: 'serious'
+  },
+
+  {
+    scene: "第五幕 · 工业革命的代价",
+    speaker: "旁白",
+    text: "1832年，英国议会通过了《工厂法》，限制童工的使用。1833年，又进一步规定9岁以下的儿童不得在纺织厂工作。虽然这些法律还不够完善，但它们标志着社会开始正视工人的权益。",
+    bg: "images/bg/slum.jpg"
+  },
+
+  {
+    type: "knowledge",
+    category: "法治保障",
+    "name": "法律保护弱者",
+    "desc": "法治是维护社会公平正义的重要保障。工业革命时期，工人阶级通过不懈斗争，最终推动了《工厂法》《工会法》等一系列法律的出台。这些法律虽然存在局限，但为后来的劳动立法奠定了基础。我国《宪法》规定公民有劳动的权利和义务，《劳动法》详细规定了工作时间、最低工资、安全保护等劳动者权益。",
+    },
+
+  {
+    type: "choice",
+    scene: "第五幕 · 工业革命的代价",
+    "prompt": "工人阶级通过斗争推动了《工厂法》的出台。这说明了什么道理？",
+    "choices": [
+      {
+        text: "A. 法律是统治阶级的工具，对工人没有意义",
+        effects: { labor: 5, justice: -5, responsibility: -10, life: 0 }
+      },
+      {
+        text: "B. 依法维权是保障公民权益的有效途径",
+        effects: { labor: 5, justice: 10, responsibility: 10, life: 5 }
+      },
+      {
+        text: "C. 只有暴力革命才能真正改变工人的命运",
+        effects: { labor: 5, justice: 5, responsibility: -5, life: -5 }
+      }
+    ]
+  },
+
+  {
+    scene: "第五幕 · 工业革命的代价",
+    speaker: "瓦特",
+    text: "我一生致力于改良蒸汽机，让机器为人类服务。但我从未想过，机器也会带来如此多的苦难。也许……发明家也应该思考技术的社会影响。",
+    bg: "images/bg/slum.jpg",
+    charLeft: 'watt'
+  },
+
+  {
+    scene: "第五幕 · 工业革命的代价",
+    speaker: "史蒂芬孙",
+    text: "火车缩短了人与人之间的距离，但人与人之间的鸿沟似乎更深了。富者愈富，贫者愈贫——这不是我们想要的世界。",
+    bg: "images/bg/slum.jpg",
+    charLeft: 'watt'
+  },
+
+  {
+    scene: "第五幕 · 工业革命的代价",
+    speaker: "童工汤姆",
+    text: "我已经长大了。虽然童年是在机器声中度过的，但我学会了读书写字。我要为像我一样的孩子们争取更好的未来！",
+    bg: "images/bg/slum.jpg",
+    charLeft: 'watt'
+  },
+
+  {
+    speaker: "童工汤姆",
+    text: "（看着自己的手）我的手好了。那位医生说，'孩子，你以后不要去工厂了，去上学吧。'那是我第一次听到有人关心我的未来。",
+    scene: "第五幕 · 工业革命的代价",
+    bg: "images/bg/slum.jpg",
+    charLeft: 'hopeful'
+  },
+  {
+    speaker: "童工汤姆",
+    text: "（认真地）我现在在夜校当助教。我教其他孩子识字——因为我不想让更多的孩子像我一样，连自己的名字都不会写。",
+    scene: "第五幕 · 工业革命的代价",
+    bg: "images/bg/slum.jpg",
+    charLeft: 'normal'
+  },
+
+  {
+    scene: "第五幕 · 工业革命的代价",
+    speaker: "贫民窟居民",
+    text: "汤姆说得对！我们不能再沉默了。昨天晚上，工人们秘密集会，决定向议会递交请愿书，要求缩短工时、提高工资、禁止使用童工！",
+    bg: "images/bg/slum.jpg",
+    charLeft: 'watt'
+  },
+
+  {
+    type: "choice",
+    scene: "第五幕 · 工业革命的代价",
+    "prompt": "回顾整个工业革命历程，你认为最重要的教训是什么？",
+    "choices": [
+      {
+        text: "A. 技术进步是最重要的，其他问题可以忽略",
+        effects: { labor: -5, justice: -10, responsibility: -5, life: -5 }
+      },
+      {
+        text: "B. 发展必须以人为本，兼顾效率与公平",
+        effects: { labor: 10, justice: 10, responsibility: 10, life: 10 }
+      },
+      {
+        text: "C. 工业革命完全是坏事，应该被否定",
+        effects: { labor: -5, justice: 5, responsibility: 0, life: 5 }
+      }
+    ]
+  },
+
+  {
+    type: "choice",
+    scene: "第五幕 · 工业革命的代价",
+    "prompt": "作为新时代的青少年，面对科技发展与社会公平的关系，你应该怎么做？",
+    "choices": [
+      {
+        text: "A. 只关注个人发展，不关心社会问题",
+        effects: { labor: -5, justice: -10, responsibility: -10, life: -5 }
+      },
+      {
+        text: "B. 树立社会责任感，关注弱势群体，依法维护公平正义",
+        effects: { labor: 10, justice: 10, responsibility: 10, life: 10 }
+      },
+      {
+        text: "C. 等待别人来解决社会问题",
+        effects: { labor: 0, justice: -5, responsibility: -10, life: 0 }
+      }
+    ]
+  },
+
+  {
+    scene: "第五幕 · 工业革命的代价",
+    speaker: "芙宁娜",
+    text: "（扮演伊莎贝拉）工业革命是一面镜子，映照出人类在追求进步过程中的光明与黑暗。让我们铭记这段历史，在未来的道路上走得更加坚定。",
+    bg: "images/bg/slum.jpg",
+    charLeft: 'serious'
+  },
+
+  {
+    scene: "第五幕 · 工业革命的代价",
+    speaker: "胡桃",
+    text: "（扮演莉莉）虽然莉莉的故事结束了，但现实中还有很多人在为公平正义而奋斗。希望我们的演出能让更多人思考这个问题。",
+    bg: "images/bg/slum.jpg",
+    charRight: 'normal'
+  },
+
+  // EV-IR-3：如何解决工业革命带来的社会问题
+  {
+    type: "evidence",
+    items: [
+      { type: "📜 法案", title: "《工厂法》（1833年）",
+        content: "英国议会通过《工厂法》，规定：禁止雇佣 9 岁以下童工；9-13 岁童工每天工作不超过 9 小时；13-18 岁青少年每天工作不超过 12 小时。这是世界上第一部限制工时的法律。" },
+      { type: "📰 报道", title: "宪章运动请愿书（1838年）",
+        content: "工人阶级发起宪章运动，提出六点要求：年满 21 岁男子享有选举权、秘密投票、废除财产资格限制、议员支薪、平等选区、年度议会。" },
+      { type: "📋 记录", title: "工会运动发展记录",
+        content: "1824年英国议会废除《结社法》，允许工人组建工会。到 1850 年，英国已有超过 100 万工人加入工会，通过集体谈判争取权益。" }
+    ],
+    question: "工业革命带来的社会问题，最终是如何被逐步解决的？",
+    options: [
+      { text: "靠资本家自觉改善工人待遇", correctIndex: 2,
+        wrongFeedback: "芙宁娜说：'如果只靠自觉，工厂主永远不会主动让利。改变需要制度的力量。'" },
+      { text: "靠工人暴力推翻工厂制度", correctIndex: 2,
+        wrongFeedback: "暴力不是唯一的途径。胡桃说：'法律、工会、选举权——这些'安静'的力量，有时候比暴力更持久。'" },
+      { text: "靠立法保障、工人运动和社会改革多管齐下", correctIndex: 2,
+        correctFeedback: "✅ 正确！《工厂法》提供法律保障，工会运动争取集体权益，宪章运动推动政治改革。正义需要制度来维护，也需要人民来争取。",
+        effects: { responsibility: 10, justice: 10 } }
+    ]
+  },
+
+  // PC-IR-4：工人罢工
+  {
+    type: "pressure_choice",
+    timeout: 8,
+    defaultChoice: 3,
+    urgentText: "军警举起了警棍，罢工的工人们手挽手站成一排。玛丽站在最前面——",
+    timeoutText: "你没有做出选择。军警冲入人群，多名工人受伤。玛丽被推倒在地，但她爬起来继续喊口号。你什么都做不了。",
+    choices: [
+      { text: "加入工人队伍，和玛丽站在一起", effects: { justice: 15, life: 10 } },
+      { text: "站出来调停，要求政府和工人双方对话", effects: { responsibility: 15, justice: 5 } },
+      { text: "记录这一切，让更多人知道工人的处境", effects: { labor: 10 } },
+      { text: "后退——你不想卷入暴力冲突", effects: { responsibility: 5 } }
+    ]
+  },
+
+  { type: "npc_fate_event", npcId: "black", newState: "reformed",
+    eventText: "在工人运动和社会改革的压力下，布莱克最终同意缩短工时并改善安全措施。他说：'也许我一直以来都错了。'" },
+  { type: "npc_fate_event", npcId: "mary", newState: "educated",
+    eventText: "玛丽利用夜校学会了识字和算术。后来她成为了工会的一名文书，为工友们写请愿书。" },
+  { type: "npc_fate_event", npcId: "tom", newState: "educated",
+    eventText: "汤姆长大后成为了一名教师。他在夜校里教工人识字，他说：'我不想让更多的孩子像我一样。'" },
+
+  { type: "if_card_used", cardId: "fairness",
+    speaker: "hutao", text: "（认真地）公平……在往生堂，不管你生前是国王还是乞丐，走的时候都一样轻。可活着的时候，为什么就不能一样呢？" },
+  { type: "if_card_used", cardId: "labor",
+    speaker: "fulina", text: "（轻声）劳动创造了这个世界……但劳动者却没有得到应有的回报。这就是为什么需要有人站出来，为他们说话。" },
+
+  { type: "hook", text: "工业革命改变了世界，但真正的问题才刚刚开始：进步的果实，应该由谁来分享？" },
+
+  {
+    type: "ending_check",
+  }
+];
+</script>
+
+<!-- Game Engine -->
+<script src="engine.js?v=20260526e"></script>
+
+</body>
+</html>

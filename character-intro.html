@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>时空剧场 - 角色介绍</title>
+    <link rel="stylesheet" href="dist/output.css?v=5"/>
+<script src="audio-manager.js?v=20260525c"></script>
+<script src="data-store.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Manrope:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.98); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(-40px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(40px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes slideInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+        body {
+            font-family: 'Manrope', sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow-y: auto;
+        }
+        .intro-container {
+            animation: fadeIn 0.8s ease-out;
+        }
+        .portrait-float {
+            animation: float 4s ease-in-out infinite;
+        }
+        .char-left-anim {
+            animation: slideInLeft 0.8s ease-out 0.3s both;
+        }
+        .char-right-anim {
+            animation: slideInRight 0.8s ease-out 0.6s both;
+        }
+        .skip-btn-anim {
+            animation: slideInUp 0.6s ease-out 1s both;
+        }
+        .glass-panel {
+            background: rgba(40, 51, 86, 0.4);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+        .intro-stage {
+            position: relative;
+            isolation: isolate;
+        }
+        .intro-stage::before {
+            content: '';
+            position: absolute;
+            inset: 5% 8%;
+            background:
+                radial-gradient(circle at 25% 30%, rgba(182, 196, 255, 0.18), transparent 28%),
+                radial-gradient(circle at 75% 70%, rgba(255, 178, 184, 0.16), transparent 30%),
+                linear-gradient(135deg, rgba(9, 17, 48, 0.92), rgba(14, 21, 57, 0.78));
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 32px;
+            box-shadow: 0 30px 120px rgba(0, 0, 0, 0.35);
+            z-index: -1;
+        }
+        .character-column {
+            min-height: 100%;
+        }
+        .character-card {
+            width: min(100%, 420px);
+        }
+        .portrait-shell {
+            width: min(100%, 380px);
+        }
+        button:active { transform: scale(0.9); }
+    </style>
+</head>
+<body class="bg-[#0a0e27] min-h-screen flex items-center justify-center">
+    <div class="intro-container flex flex-col items-center justify-center min-h-screen w-full px-4 md:px-8 py-8">
+        <!-- Character Intros -->
+        <div class="intro-stage w-full max-w-7xl px-5 py-8 md:px-8 md:py-10">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-8 md:gap-6">
+
+                <!-- 芙宁娜 Section -->
+                <div class="character-column char-left-anim w-full md:w-1/2 flex flex-col items-center justify-between gap-6 md:gap-8">
+                    <!-- Portrait -->
+                    <div class="portrait-shell portrait-float flex items-center justify-center flex-1">
+                        <img
+                            src="images/characters/fulina/portrait.png?v=5"
+                            alt="芙宁娜"
+                            class="max-h-[38vh] md:max-h-[62vh] object-contain"
+                        />
+                    </div>
+                    <!-- Info -->
+                    <div class="character-card glass-panel rounded-[28px] p-6 md:p-8 border border-[#b6c4ff]/10">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-1 h-8 rounded-full bg-[#b6c4ff]/40"></div>
+                            <h2 class="text-2xl md:text-3xl text-[#b6c4ff] tracking-wider" style="font-family: 'Noto Serif SC', serif;">
+                                芙宁娜
+                            </h2>
+                        </div>
+                        <p class="text-sm md:text-base text-[#c5c5d3] leading-relaxed">
+                            来自枫丹的水神，热爱戏剧与表演。她将带你见证历史的戏剧性转折，感受自由与正义的力量。
+                        </p>
+                        <div class="mt-4 flex items-center gap-2">
+                            <span class="text-[10px] text-[#b6c4ff]/50 tracking-widest" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+                                水神
+                            </span>
+                            <span class="text-[#b6c4ff]/30">|</span>
+                            <span class="text-[10px] text-[#8f909d] tracking-wide">历史扮演者</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 胡桃 Section -->
+                <div class="character-column char-right-anim w-full md:w-1/2 flex flex-col items-center justify-between gap-6 md:gap-8">
+                    <!-- Portrait -->
+                    <div class="portrait-shell portrait-float flex items-center justify-center flex-1" style="animation-delay: -2s;">
+                        <img
+                            src="images/characters/hutao/portrait.png?v=5"
+                            alt="胡桃"
+                            class="max-h-[38vh] md:max-h-[62vh] object-contain"
+                        />
+                    </div>
+                    <!-- Info -->
+                    <div class="character-card glass-panel rounded-[28px] p-6 md:p-8 border border-[#ffb2b8]/10">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-1 h-8 rounded-full bg-[#ffb2b8]/40"></div>
+                            <h2 class="text-2xl md:text-3xl text-[#ffb2b8] tracking-wider" style="font-family: 'Noto Serif SC', serif;">
+                                胡桃
+                            </h2>
+                        </div>
+                        <p class="text-sm md:text-base text-[#c5c5d3] leading-relaxed">
+                            往生堂第七十七代堂主，活泼开朗。她将带你了解生命与历史的意义，在时空交错中寻找真相。
+                        </p>
+                        <div class="mt-4 flex items-center gap-2">
+                            <span class="text-[10px] text-[#ffb2b8]/50 tracking-widest" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+                                往生堂第七十七代堂主
+                            </span>
+                            <span class="text-[#ffb2b8]/30">|</span>
+                            <span class="text-[10px] text-[#8f909d] tracking-wide">历史见证者</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Skip Button -->
+        <div class="skip-btn-anim mt-8 md:mt-10">
+            <button
+                onclick="window.location.href='how-to-play.html?id=' + (new URLSearchParams(location.search).get('id') || 'french_revolution')"
+                class="text-sm text-[#8f909d] hover:text-[#dbe1ff] transition-colors duration-300 tracking-wider cursor-pointer bg-transparent border-none"
+                style="font-family: 'Plus Jakarta Sans', sans-serif;"
+            >
+                跳过 <span class="text-xs ml-1 opacity-50">SKIP</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const params = new URLSearchParams(location.search);
+        const scriptId = params.get('id') || 'french_revolution';
+
+        setTimeout(function() {
+            window.location.href = 'how-to-play.html?id=' + scriptId;
+        }, 5000);
+    </script>
+</body>
+</html>

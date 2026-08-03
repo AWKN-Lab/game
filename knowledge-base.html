@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>时空剧场 - 知识点库</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg"/>
+<link rel="stylesheet" href="dist/output.css?v=5"/>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="audio-manager.js?v=20260525c"></script>
+<script src="data-store.js"></script>
+<script>window.__basePath = window.location.pathname.includes('/game/') ? '/game/' : '/';</script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js",
+    "three/": "https://cdn.jsdelivr.net/npm/three@0.128.0/"
+  }
+}
+</script>
+<script type="module">
+  // 使用动态import + 时间戳彻底绕过浏览器模块缓存
+  (async () => {
+    try {
+      const t = Date.now();
+      const basePath = window.location.pathname.includes('/game/') ? '/game/' : '/';
+      const modGalaxy = await import(`${basePath}knowledge-graph-galaxy.js?t=${t}`);
+      window.KnowledgeGraphGalaxy = modGalaxy.KnowledgeGraphGalaxy;
+      console.log('知识星系组件加载完成', t);
+    } catch (e) {
+      console.error('知识星系组件加载失败:', e);
+    }
+  })();
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Manrope:wght@400;600&family=Plus+Jakarta+Sans:wght@500;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+
+<style>
+body {
+  background-color: #0a0e27;
+  color: #dbe1ff;
+  font-family: 'Manrope', sans-serif;
+}
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  vertical-align: middle;
+}
+.glass-panel {
+  background: rgba(40, 51, 86, 0.5);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(68, 70, 81, 0.3);
+}
+.kp-card {
+  transition: all 0.3s ease;
+}
+.kp-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(239, 189, 138, 0.1);
+}
+.kp-detail {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.3s ease;
+}
+.kp-detail.expanded {
+  max-height: 1400px;
+  padding-top: 12px;
+}
+button:active { transform: scale(0.9); }
+
+/* Star Map Styles */
+.starmap-link {
+  stroke: #5f8fbf;
+  stroke-width: 1.5;
+  transition: stroke-opacity 0.2s;
+}
+.starmap-node-group {
+  cursor: grab;
+  transition: filter 0.2s;
+}
+.starmap-node-group:hover {
+  filter: brightness(1.3);
+}
+.starmap-node-group:active { cursor: grabbing; }
+.starmap-node-label {
+  font-size: 11px;
+  font-weight: 500;
+  fill: #eef5ff;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  pointer-events: none;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.8);
+  user-select: none;
+}
+.starmap-star {
+  fill: #ffffff;
+  pointer-events: none;
+}
+#starmap-container,
+#starmap-svg-container,
+#starmap-svg,
+#starmap-force3d-container,
+#starmap-points-container,
+#starmap-galaxy-container,
+#starmap-chord-container {
+  background: #000000;
+}
+</style>
+</head>
+<body>
+
+<!-- Sidebar (Unified with index.html) -->
+<aside id="sidebar" class="fixed left-0 top-0 h-full w-16 lg:w-20 z-40 bg-slate-900/40 backdrop-blur-md flex-col items-center py-4 lg:py-6 space-y-2 lg:space-y-4 shadow-2xl shadow-indigo-950/50 pt-14 lg:pt-20 transition-transform duration-300 -translate-x-full lg:translate-x-0">
+<div class="flex flex-col items-center gap-1 mb-2">
+<div class="w-9 h-9 lg:w-11 lg:h-11 rounded-full border-2 border-primary overflow-hidden">
+<img alt="profile portrait" class="w-full h-full object-cover" src="images/ui/scholar_avatar.png" loading="lazy"/>
+</div>
+</div>
+<div class="flex flex-col items-center gap-1 lg:gap-2 w-full">
+<button onclick="navigateTo('index.html')" class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
+<span class="material-symbols-outlined text-sm lg:text-base">map</span>
+<span class="text-[8px] lg:text-[9px] font-label tracking-tighter">主页</span>
+</button>
+<button onclick="navigateTo('script-select.html')" class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
+<span class="material-symbols-outlined text-sm lg:text-base">auto_stories</span>
+<span class="text-[8px] lg:text-[9px] font-label tracking-tighter">剧本选择</span>
+</button>
+<button onclick="navigateTo('my-learning.html')" class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
+<span class="material-symbols-outlined text-sm lg:text-base">history_edu</span>
+<span class="text-[8px] lg:text-[9px] font-label tracking-tighter">我的学习</span>
+</button>
+<button class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
+<span class="material-symbols-outlined text-sm lg:text-base">edit_note</span>
+<span class="text-[8px] lg:text-[9px] font-label tracking-tighter">错题本</span>
+</button>
+<button class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 bg-amber-400/20 text-amber-400 border-l-4 border-amber-400 group">
+<span class="material-symbols-outlined text-sm lg:text-base" style="font-variation-settings: 'FILL' 1;">database</span>
+<span class="text-[8px] lg:text-[9px] font-label tracking-tighter">知识点库</span>
+</button>
+<button onclick="navigateTo('achievements.html')" class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
+<span class="material-symbols-outlined text-sm lg:text-base">stars</span>
+<span class="text-[8px] lg:text-[9px] font-label tracking-tighter">成就勋章</span>
+</button>
+</div>
+</aside>
+<!-- Mobile menu toggle -->
+<button id="menu-toggle" class="fixed top-4 left-4 z-50 p-2 rounded-lg bg-slate-900/60 backdrop-blur-md text-white hover:bg-slate-800/80 transition-colors lg:hidden">
+<span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">menu</span>
+</button>
+
+<!-- Main Content -->
+<main class="ml-0 lg:ml-[80px] pt-16 lg:pt-4 pb-12 px-4 md:px-12 min-h-screen relative overflow-hidden">
+
+  <!-- Title -->
+  <h1 class="text-2xl font-headline text-[#dbe1ff] mb-4">知识点库</h1>
+
+  <!-- Star Map -->
+  <section class="mb-8">
+    <h2 class="text-2xl font-bold mb-4 flex items-center">
+      <span class="inline-block w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white mr-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+        </svg>
+      </span>
+      知识星图
+    </h2>
+    <div id="starmap-container" class="glass-panel rounded-xl overflow-hidden" style="height: 400px;">
+      <div id="starmap-svg-container" class="w-full h-full relative">
+        <svg id="starmap-svg" class="w-full h-full hidden"></svg>
+        <div id="starmap-force3d-container" class="w-full h-full absolute top-0 left-0 hidden"></div>
+        <div id="starmap-points-container" class="w-full h-full absolute top-0 left-0 hidden"></div>
+        <div id="starmap-galaxy-container" class="w-full h-full absolute top-0 left-0"></div>
+        <div id="starmap-chord-container" class="w-full h-full absolute top-0 left-0 hidden"></div>
+        <div class="absolute bottom-3 left-3 text-xs text-[#8da4d0] bg-[#0a0f1e]/60 px-3 py-1.5 rounded-full border-l-2 border-[#55ccff]">
+          ✨ 拖拽环绕 · Shift平移 · 指向缩放
+        </div>
+        <div class="absolute bottom-3 right-3 flex gap-2">
+          <button id="toggleModeBtn" class="bg-[#14233c]/80 hover:bg-[#2a4a7a] text-[#e0edff] px-4 py-1.5 rounded-full text-xs font-medium border border-[#3a5a8c] transition-all">
+            🪐 星系分级
+          </button>
+          <button id="resetStarmapBtn" class="bg-[#14233c]/80 hover:bg-[#2a4a7a] text-[#e0edff] px-4 py-1.5 rounded-full text-xs font-medium border border-[#3a5a8c] transition-all">
+            ⟲ 重置视图
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Filter Buttons -->
+  <section class="mt-6 mb-6 flex flex-wrap gap-2 md:gap-3" id="filterSection">
+    <button class="filter-btn cursor-pointer px-4 md:px-6 py-2.5 md:py-2 rounded-full font-label text-xs md:text-sm tracking-wide transition-all bg-[#efbd8a] text-[#472a03] shadow-lg shadow-[#efbd8a]/20" data-filter="all">全部</button>
+    <button class="filter-btn cursor-pointer px-4 md:px-6 py-2.5 md:py-2 rounded-full font-label text-xs md:text-sm tracking-wide transition-all glass-panel text-[#c5c5d3] hover:text-[#dbe1ff] hover:bg-[#283356]/80 border border-[#444651]/20" data-filter="history">历史</button>
+    <button class="filter-btn cursor-pointer px-4 md:px-6 py-2.5 md:py-2 rounded-full font-label text-xs md:text-sm tracking-wide transition-all glass-panel text-[#c5c5d3] hover:text-[#dbe1ff] hover:bg-[#283356]/80 border border-[#444651]/20" data-filter="daofa">道法</button>
+  </section>
+
+  <!-- Search -->
+  <div class="mb-6 relative">
+    <input type="text" id="searchInput" placeholder="搜索知识点..." class="w-full glass-panel rounded-xl px-5 py-3 pl-12 text-sm text-[#dbe1ff] placeholder-[#5a5d7a] focus:outline-none focus:ring-2 focus:ring-[#efbd8a]/50">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#5a5d7a] absolute left-4 top-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+    </svg>
+  </div>
+
+  <!-- Answer Templates -->
+  <section id="answerTemplatesSection" class="mb-6 hidden">
+    <div class="glass-panel rounded-xl p-5">
+      <div class="flex items-center justify-between gap-3">
+        <h3 class="font-headline text-base text-[#dbe1ff] font-bold">通用答题模板</h3>
+        <button id="toggleAnswerTemplatesBtn" class="text-xs font-label text-[#efbd8a] hover:text-[#ffdcbc] transition-colors cursor-pointer">
+          展开模板 &#9660;
+        </button>
+      </div>
+      <div id="answerTemplatesList" class="mt-4 hidden"></div>
+    </div>
+  </section>
+
+  <!-- Knowledge Grid (flat view for filtered/search results) -->
+  <div id="knowledgeGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4 hidden"></div>
+
+  <!-- Grouped by Script (default view) -->
+  <div id="knowledgeByScript"></div>
+
+  <!-- Empty State -->
+  <div id="emptyState" class="hidden text-center py-16">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-[#3a3d5c] mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+    </svg>
+    <p class="text-[#5a5d7a] text-sm">没有找到相关知识点</p>
+  </div>
+
+</main>
+
+<script>
+  const SCRIPT_NAMES = {
+    'french_revolution': '法国大革命',
+    'industrial_revolution': '工业革命',
+    'american_revolution': '美国独立战争',
+    'wuxu_reform': '戊戌变法',
+    'xinhai_revolution': '辛亥革命'
+  };
+
+  const HIGH_FREQUENCY_IDS = ['fr_h4', 'fr_h12', 'ir_h2', 'ir_h8', 'k_declaration', 'k_constitution', 'k_wuxu_08', 'k_sanminzhuyi', 'k_wuchang'];
+
+  let allKnowledgePoints = [];
+  let currentFilter = 'all';
+  let currentSearch = '';
+  let starmapInitialized = false;
+  let starmapForce3DInitialized = false;
+  let starmapPointsInitialized = false;
+
+  let starmapGalaxyInitialized = false;
+  let starmapChordInitialized = false;
+  let starmapSimulation = null;
+  let knowledgeGraphForce3D = null;
+  let knowledgeGraphPoints = null;
+
+  let knowledgeGraphGalaxy = null;
+  let knowledgeGraphChord = null;
+  let currentMode = 'galaxy'; // '2d', 'galaxy'
+  let answerTemplates = null;
+
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
+  }
+
+  function renderAnswerTemplates() {
+    const section = document.getElementById('answerTemplatesSection');
+    const list = document.getElementById('answerTemplatesList');
+    const toggle = document.getElementById('toggleAnswerTemplatesBtn');
+    if (!section || !list || !toggle) return;
+
+    if (!answerTemplates || typeof answerTemplates !== 'object') {
+      section.classList.add('hidden');
+      return;
+    }
+
+    const entries = Object.entries(answerTemplates);
+    if (entries.length === 0) {
+      section.classList.add('hidden');
+      return;
+    }
+
+    section.classList.remove('hidden');
+    list.innerHTML = entries.map(([title, body]) => `
+      <div class="mb-3 last:mb-0 border border-[#444651]/25 rounded-xl p-4 bg-[#0d1a3c]/40">
+        <div class="text-sm font-label text-[#dbe1ff] mb-1">${escapeHtml(title)}</div>
+        <div class="text-xs text-[#c5c5d3] leading-relaxed whitespace-pre-wrap">${escapeHtml(body)}</div>
+      </div>
+    `).join('');
+
+    toggle.onclick = () => {
+      const expanded = !list.classList.contains('hidden');
+      if (expanded) {
+        list.classList.add('hidden');
+        toggle.innerHTML = '展开模板 &#9660;';
+      } else {
+        list.classList.remove('hidden');
+        toggle.innerHTML = '收起模板 &#9650;';
+      }
+    };
+  }
+
+  function loadData() {
+    fetch((window.__basePath || '/') + 'data/knowledge_points.json')
+      .then(r => r.json())
+      .then(data => {
+        answerTemplates = data && typeof data === 'object' ? (data._answerTemplates || null) : null;
+        allKnowledgePoints = [];
+        for (const [scriptId, categories] of Object.entries(data)) {
+          if (scriptId.startsWith('_')) continue;
+          if (!categories || typeof categories !== 'object') continue;
+          for (const [subject, points] of Object.entries(categories)) {
+            if (!Array.isArray(points)) continue;
+            points.forEach(p => {
+              allKnowledgePoints.push({
+                id: p.id,
+                name: p.name,
+                content: p.content,
+                answerTips: p.answerTips || '',
+                subject: subject,
+                scriptId: scriptId,
+                act: p.act || 1,
+                exam: typeof p.exam === 'boolean' ? p.exam : null
+              });
+            });
+          }
+        }
+        renderAnswerTemplates();
+        renderKnowledgePoints();
+        refreshStarmapData();
+      })
+      .catch(err => {
+        console.error('加载知识点数据失败:', err);
+        document.getElementById('knowledgeByScript').innerHTML = '<p class="text-center text-[#5a5d7a] py-8">数据加载失败</p>';
+      });
+  }
+
+  function renderKnowledgePoints() {
+    const byScriptContainer = document.getElementById('knowledgeByScript');
+    const grid = document.getElementById('knowledgeGrid');
+    const emptyState = document.getElementById('emptyState');
+
+    byScriptContainer.innerHTML = '';
+    grid.innerHTML = '';
+
+    let filtered = allKnowledgePoints;
+    if (currentFilter !== 'all') {
+      filtered = filtered.filter(kp => kp.subject === currentFilter);
+    }
+    if (currentSearch) {
+      const q = currentSearch.toLowerCase();
+      filtered = filtered.filter(kp => kp.name.toLowerCase().includes(q) || kp.content.toLowerCase().includes(q));
+    }
+
+    if (currentFilter !== 'all' || currentSearch) {
+      byScriptContainer.classList.add('hidden');
+      grid.classList.remove('hidden');
+    } else {
+      byScriptContainer.classList.remove('hidden');
+      grid.classList.add('hidden');
+    }
+
+    if (filtered.length === 0) {
+      emptyState.classList.remove('hidden');
+      return;
+    }
+    emptyState.classList.add('hidden');
+
+    // 获取已通关剧本列表
+    var completedScripts = [];
+    try {
+      for (const sid in SCRIPT_NAMES) {
+        if (DataStore.isScriptCompleted && DataStore.isScriptCompleted(sid)) {
+          completedScripts.push(sid);
+        }
+      }
+    } catch(e) {}
+
+    // 分组视图
+    if (currentFilter === 'all' && !currentSearch) {
+      const grouped = {};
+      filtered.forEach(kp => {
+        if (!grouped[kp.scriptId]) grouped[kp.scriptId] = [];
+        grouped[kp.scriptId].push(kp);
+      });
+
+      for (const [scriptId, kps] of Object.entries(grouped)) {
+        const section = document.createElement('section');
+        section.className = 'mb-8';
+        section.innerHTML = `
+          <h2 class="text-xl font-headline text-[#dbe1ff] mb-4 flex items-center gap-2">
+            <span class="w-1.5 h-6 bg-[#efbd8a] rounded-full"></span>
+            ${SCRIPT_NAMES[scriptId] || scriptId}
+            <span class="text-xs text-[#5a5d7a] font-normal">(${kps.length} 个知识点)</span>
+          </h2>
+        `;
+
+        const grid = document.createElement('div');
+        grid.className = 'grid grid-cols-1 md:grid-cols-2 gap-4';
+
+        kps.forEach(kp => {
+          const isHighFreq = HIGH_FREQUENCY_IDS.indexOf(kp.id) !== -1;
+          const isHistory = kp.subject === 'history';
+          // 已掌握 = 所属剧本已通关
+          const isMastered = completedScripts.indexOf(kp.scriptId) !== -1;
+          const hasTips = !!(kp.answerTips && kp.answerTips.trim());
+
+          const card = document.createElement('div');
+          card.className = 'kp-card glass-panel rounded-xl p-5 cursor-pointer' + (isMastered ? ' border-green-500/40' : '');
+          card.dataset.kpId = kp.id;
+          card.innerHTML = `
+            <div class="flex items-start justify-between mb-2">
+              <h3 class="font-headline text-base text-[#dbe1ff] font-bold">${kp.name}</h3>
+              <div class="flex items-center gap-2 ml-2">
+                <span class="text-[10px] font-label ${isMastered ? 'text-green-400' : 'text-[#8f909d]'}">${isMastered ? '已掌握' : '未掌握'}</span>
+                <span class="text-[10px] font-label px-2 py-0.5 rounded-full border whitespace-nowrap ${isHistory ? 'bg-blue-500/15 text-blue-400 border-blue-500/30' : 'bg-green-500/15 text-green-400 border-green-500/30'}">${isHistory ? '历史' : '道法'}</span>
+              </div>
+            </div>
+            ${isHighFreq ? '<span class="inline-block text-[10px] font-label px-2 py-0.5 rounded-full bg-[#efbd8a]/15 text-[#efbd8a] border border-[#efbd8a]/30 mb-2">&#9733; 中考高频考点</span>' : ''}
+            <p class="kp-summary text-sm text-[#c5c5d3] line-clamp-2">${kp.content}</p>
+            <div class="kp-detail" id="detail-${kp.id}">
+              <div class="pt-3 border-t border-[#444651]/30">
+                <p class="text-sm text-[#c5c5d3] leading-relaxed">${kp.content}</p>
+                ${hasTips ? `
+                  <div class="mt-3 border border-[#efbd8a]/20 rounded-xl p-3 bg-[#121e40]/40">
+                    <div class="text-xs font-label text-[#efbd8a] mb-1">答题技巧</div>
+                    <div class="text-xs text-[#c5c5d3] leading-relaxed whitespace-pre-wrap">${kp.answerTips}</div>
+                  </div>
+                ` : ''}
+                <p class="text-xs text-[#8f909d] mt-2">第${kp.act || '?'}幕</p>
+              </div>
+            </div>
+            <button class="expand-btn cursor-pointer mt-3 text-xs text-[#efbd8a] hover:text-[#ffdcbc] transition-colors" data-id="${kp.id}">展开详情 &#9660;</button>
+          `;
+          grid.appendChild(card);
+        });
+
+        section.appendChild(grid);
+        byScriptContainer.appendChild(section);
+      }
+    }
+
+    // 扁平网格视图（筛选/搜索时）
+      filtered.forEach(kp => {
+        const isHighFreq = HIGH_FREQUENCY_IDS.indexOf(kp.id) !== -1;
+        const isHistory = kp.subject === 'history';
+        const isMastered = completedScripts.indexOf(kp.scriptId) !== -1;
+        const hasTips = !!(kp.answerTips && kp.answerTips.trim());
+
+        const card = document.createElement('div');
+        card.className = 'kp-card glass-panel rounded-xl p-5 cursor-pointer' + (isMastered ? ' border-green-500/40' : '');
+        card.dataset.kpId = kp.id;
+        card.innerHTML = `
+        <div class="flex items-start justify-between mb-2">
+          <h3 class="font-headline text-base text-[#dbe1ff] font-bold">${kp.name}</h3>
+          <div class="flex items-center gap-2 ml-2">
+            <span class="text-[10px] font-label ${isMastered ? 'text-green-400' : 'text-[#8f909d]'}">${isMastered ? '已掌握' : '未掌握'}</span>
+            <span class="text-[10px] font-label px-2 py-0.5 rounded-full border whitespace-nowrap ${isHistory ? 'bg-blue-500/15 text-blue-400 border-blue-500/30' : 'bg-green-500/15 text-green-400 border-green-500/30'}">${isHistory ? '历史' : '道法'}</span>
+          </div>
+        </div>
+        ${isHighFreq ? '<span class="inline-block text-[10px] font-label px-2 py-0.5 rounded-full bg-[#efbd8a]/15 text-[#efbd8a] border border-[#efbd8a]/30 mb-2">&#9733; 中考高频考点</span>' : ''}
+        <p class="kp-summary text-sm text-[#c5c5d3] line-clamp-2">${kp.content}</p>
+        <div class="kp-detail" id="flat-detail-${kp.id}">
+          <div class="pt-3 border-t border-[#444651]/30">
+            <p class="text-sm text-[#c5c5d3] leading-relaxed">${kp.content}</p>
+            ${hasTips ? `
+              <div class="mt-3 border border-[#efbd8a]/20 rounded-xl p-3 bg-[#121e40]/40">
+                <div class="text-xs font-label text-[#efbd8a] mb-1">答题技巧</div>
+                <div class="text-xs text-[#c5c5d3] leading-relaxed whitespace-pre-wrap">${kp.answerTips}</div>
+              </div>
+            ` : ''}
+            <p class="text-xs text-[#8f909d] mt-2">所属剧本：${SCRIPT_NAMES[kp.scriptId] || kp.scriptId} · 第${kp.act || '?'}幕</p>
+          </div>
+        </div>
+        <button class="expand-btn cursor-pointer mt-3 text-xs text-[#efbd8a] hover:text-[#ffdcbc] transition-colors" data-id="flat-${kp.id}">展开详情 &#9660;</button>
+      `;
+      grid.appendChild(card);
+    });
+
+    bindCardEvents();
+  }
+
+  function syncKnowledgeDetailState(card, detail, btn, expanded) {
+    if (!detail) return;
+    detail.classList.toggle('expanded', expanded);
+    if (card) {
+      const summary = card.querySelector('.kp-summary');
+      if (summary) summary.classList.toggle('hidden', expanded);
+    }
+    if (btn) {
+      btn.innerHTML = expanded ? '收起详情 &#9650;' : '展开详情 &#9660;';
+    }
+  }
+
+  function bindCardEvents() {
+    // 点击卡片展开/收起详情
+    document.querySelectorAll('.kp-card').forEach(card => {
+      card.addEventListener('click', function(e) {
+        // 如果点击的是展开按钮，让按钮事件处理
+        if (e.target.closest('.expand-btn')) return;
+
+        const kpId = this.dataset.kpId;
+        const detail = document.getElementById('detail-' + kpId) || document.getElementById('flat-detail-' + kpId);
+        const btn = this.querySelector('.expand-btn');
+        if (detail) {
+          syncKnowledgeDetailState(this, detail, btn, !detail.classList.contains('expanded'));
+        }
+      });
+    });
+
+    // 展开按钮点击
+    document.querySelectorAll('.expand-btn').forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const id = this.getAttribute('data-id');
+        const detail = document.getElementById('detail-' + id) || document.getElementById('flat-detail-' + id);
+        if (detail) {
+          const card = this.closest('.kp-card');
+          syncKnowledgeDetailState(card, detail, this, !detail.classList.contains('expanded'));
+        }
+      });
+    });
+  }
+
+  function focusKnowledgePoint(node) {
+    if (!node || !node.id || node.kind === 'hub') return;
+
+    const card = document.querySelector(`.kp-card[data-kp-id="${node.id}"]`);
+    if (!card) return;
+
+    const detail = document.getElementById('detail-' + node.id) || document.getElementById('flat-detail-' + node.id);
+    const btn = card.querySelector('.expand-btn');
+
+    if (detail && !detail.classList.contains('expanded')) {
+      syncKnowledgeDetailState(card, detail, btn, true);
+    }
+
+    const previousBoxShadow = card.style.boxShadow;
+    const previousTransform = card.style.transform;
+    card.style.boxShadow = '0 0 0 2px rgba(239, 189, 138, 0.6), 0 12px 30px rgba(239, 189, 138, 0.18)';
+    card.style.transform = 'translateY(-2px)';
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    setTimeout(() => {
+      card.style.boxShadow = previousBoxShadow;
+      card.style.transform = previousTransform;
+    }, 1600);
+  }
+
+  // Filter buttons
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.filter-btn').forEach(b => {
+        b.classList.remove('bg-[#efbd8a]', 'text-[#472a03]', 'shadow-lg', 'shadow-[#efbd8a]/20');
+        b.classList.add('glass-panel', 'text-[#c5c5d3]');
+      });
+      this.classList.remove('glass-panel', 'text-[#c5c5d3]');
+      this.classList.add('bg-[#efbd8a]', 'text-[#472a03]', 'shadow-lg', 'shadow-[#efbd8a]/20');
+      currentFilter = this.getAttribute('data-filter');
+      renderKnowledgePoints();
+    });
+  });
+
+  // Search input
+  document.getElementById('searchInput').addEventListener('input', function() {
+    currentSearch = this.value.trim();
+    renderKnowledgePoints();
+  });
+
+  // Load data on init
+  loadData();
+
+
+
+  // ---------- 嵌入式知识星图 ----------
+  function initStarmap() {
+    const container = document.getElementById('starmap-svg-container');
+    const svgEl = document.getElementById('starmap-svg');
+    if (!container || !svgEl) return;
+
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+    const svg = d3.select('#starmap-svg');
+    svg.selectAll('*').remove();
+
+    // 配置
+    const subjectColor = { history: '#55ccff', daofa: '#22ff88', default: '#a0c0e0' };
+    const radiusMap = { core: 14, major: 6, minor: 4 };
+    const opacityMap = { core: 1.0, major: 0.7, minor: 0.4 };
+    const CORE_NODES = ['fr_h4','ir_h2','k_declaration','k_wuxu_08','k_sanminzhuyi'];
+    const MAJOR_NODES = ['fr_h3','fr_h12','ir_h5','ir_h8','k_lexington','k_constitution','k_wuxu_01','k_wuxu_05','k_wuchang','k_zhonghua_minguo'];
+
+
+
+    // 剧本中心（围绕容器中心分布）
+    const scriptCenters = {
+      'french_revolution':     { x: width * 0.30, y: height * 0.35 },
+      'industrial_revolution': { x: width * 0.70, y: height * 0.35 },
+      'american_revolution':   { x: width * 0.20, y: height * 0.70 },
+      'wuxu_reform':           { x: width * 0.50, y: height * 0.70 },
+      'xinhai_revolution':     { x: width * 0.80, y: height * 0.70 }
+    };
+
+    function getSizeType(id) {
+      if (CORE_NODES.includes(id)) return 'core';
+      if (MAJOR_NODES.includes(id)) return 'major';
+      return 'minor';
+    }
+
+    // 构建节点和连线（道法融入历史剧本）
+    let nodes = [];
+    let links = [];
+
+    allKnowledgePoints.forEach(kp => {
+      const center = scriptCenters[kp.scriptId] || { x: width/2, y: height/2 };
+      const sizeType = getSizeType(kp.id);
+      nodes.push({
+        id: kp.id,
+        name: kp.name,
+        subject: kp.subject,
+        scriptId: kp.scriptId,
+        sizeType: sizeType,
+        depth: sizeType === 'core' ? 0 : sizeType === 'major' ? 1 : 2,
+        r: radiusMap[sizeType],
+        opacity: opacityMap[sizeType],
+        cx: center.x,
+        cy: center.y
+      });
+    });
+
+    // 连线：同剧本内，非core节点连接到同剧本的core节点（不分科目）
+    nodes.forEach(node => {
+      if (node.sizeType !== 'core') {
+        const parent = nodes.find(n => n.scriptId === node.scriptId && n.sizeType === 'core');
+        if (parent) {
+          links.push({ source: parent.id, target: node.id, strength: 0.3 });
+        }
+      }
+    });
+
+    // SVG defs (发光滤镜 - 仅core节点使用)
+    const defs = svg.append('defs');
+    const filter = defs.append('filter')
+      .attr('id', 'starmap-glow')
+      .attr('x', '-50%').attr('y', '-50%')
+      .attr('width', '200%').attr('height', '200%');
+    filter.append('feGaussianBlur').attr('stdDeviation', '3').attr('result', 'coloredBlur');
+    const feMerge = filter.append('feMerge');
+    feMerge.append('feMergeNode').attr('in', 'coloredBlur');
+    feMerge.append('feMergeNode').attr('in', 'SourceGraphic');
+
+    const g = svg.append('g');
+
+    // 背景星空粒子 - 更丰富的星空效果
+    const starGroup = g.append('g').attr('class', 'starfield');
+    const starCount = 150;
+    for (let i = 0; i < starCount; i++) {
+      const size = Math.random() * 1.5 + 0.3;
+      const opacity = Math.random() * 0.4 + 0.1;
+      starGroup.append('circle')
+        .attr('class', 'starmap-star')
+        .attr('cx', Math.random() * width)
+        .attr('cy', Math.random() * height)
+        .attr('r', size)
+        .attr('fill', '#ffffff')
+        .attr('opacity', opacity)
+        .attr('data-twinkle', Math.random() * Math.PI * 2);
+    }
+
+    // 星空闪烁动画
+    function animateStars() {
+      const now = Date.now() / 1000;
+      starGroup.selectAll('.starmap-star')
+        .attr('opacity', function() {
+          const base = parseFloat(d3.select(this).attr('data-twinkle') || 0);
+          const twinkle = Math.sin(now * 2 + base) * 0.15 + 0.25;
+          return Math.max(0.05, Math.min(0.5, twinkle));
+        });
+      requestAnimationFrame(animateStars);
+    }
+    animateStars();
+
+    // 缩放
+    const zoom = d3.zoom()
+      .scaleExtent([0.3, 4])
+      .on('zoom', (event) => g.attr('transform', event.transform));
+    svg.call(zoom);
+    const defaultTransform = d3.zoomIdentity.translate(width*0.02, height*0.02).scale(0.88);
+    svg.call(zoom.transform, defaultTransform);
+    window._starmapZoomBehavior = zoom;
+    window._starmapSvg = svg;
+    window._starmapDefaultTransform = defaultTransform;
+
+    // 力导向模拟
+    const simulation = d3.forceSimulation(nodes)
+      .force('charge', d3.forceManyBody().strength(d => -200 - d.r * 2).distanceMax(250))
+      .force('link', d3.forceLink(links)
+        .id(d => d.id)
+        .distance(d => {
+          const sourceNode = nodes.find(n => n.id === d.source.id || n.id === d.source);
+          const targetNode = nodes.find(n => n.id === d.target.id || n.id === d.target);
+          if (!sourceNode || !targetNode) return 60;
+          return sourceNode.r + targetNode.r + 50;
+        })
+        .strength(0.4)
+      )
+      .force('center', d3.forceCenter(width / 2, height / 2).strength(0.15))
+      .force('collision', d3.forceCollide().radius(d => d.r + 20).strength(0.6))
+      .force('x', d3.forceX(d => d.cx).strength(0.15))
+      .force('y', d3.forceY(d => d.cy).strength(0.15));
+
+    // 运行力模拟后停止
+    for (let i = 0; i < 300; i++) simulation.tick();
+    simulation.stop();
+
+    // 渲染连线（根据深度设置透明度）
+    const linkSel = g.selectAll('.starmap-link').data(links, d => `${d.source.id||d.source}-${d.target.id||d.target}`);
+    linkSel.join(
+      enter => enter.append('path')
+        .attr('class', 'starmap-link')
+        .attr('fill', 'none')
+        .attr('stroke', d => {
+          const src = nodes.find(n => n.id === (d.source.id||d.source));
+          return subjectColor[src?.subject] || '#7f9fbf';
+        })
+        .attr('stroke-opacity', d => {
+          const src = nodes.find(n => n.id === (d.source.id||d.source));
+          const tgt = nodes.find(n => n.id === (d.target.id||d.target));
+          const avgDepth = ((src?.depth || 0) + (tgt?.depth || 0)) / 2;
+          return avgDepth === 0 ? 0.4 : avgDepth === 0.5 ? 0.3 : 0.15;
+        })
+        .attr('stroke-width', 1.2),
+      update => update,
+      exit => exit.remove()
+    );
+
+    // 渲染节点（根据深度设置明暗）
+    const sorted = [...nodes].sort((a,b) => b.r - a.r);
+    const nodeSel = g.selectAll('.starmap-node-group').data(sorted, d => d.id);
+
+    const enter = nodeSel.enter().append('g').attr('class', 'starmap-node-group');
+
+    enter.append('circle')
+      .attr('r', d => d.r)
+      .attr('fill', d => subjectColor[d.subject] || subjectColor.default)
+      .attr('opacity', d => d.opacity)
+      .attr('filter', d => d.depth === 0 ? 'url(#starmap-glow)' : null)
+      .attr('stroke', '#ffffff20')
+      .attr('stroke-width', 1.2);
+
+    enter.append('text')
+      .attr('class', 'starmap-node-label')
+      .text(d => d.name)
+      .attr('dy', d => d.r + 10)
+      .attr('font-size', d => Math.min(d.r * 0.5, 12))
+      .attr('opacity', d => d.opacity);
+
+    nodeSel.select('circle')
+      .attr('r', d => d.r)
+      .attr('fill', d => subjectColor[d.subject] || subjectColor.default)
+      .attr('opacity', d => d.opacity);
+    nodeSel.select('text')
+      .text(d => d.name)
+      .attr('dy', d => d.r + 10)
+      .attr('font-size', d => Math.min(d.r * 0.5, 12))
+      .attr('opacity', d => d.opacity);
+    nodeSel.exit().remove();
+
+    // 分配轨道参数
+    nodes.forEach(d => {
+      if (d.sizeType === 'core') {
+        d.orbitCenterX = d.x;
+        d.orbitCenterY = d.y;
+      } else {
+        const coreNode = nodes.find(n => n.sizeType === 'core' && n.scriptId === d.scriptId);
+        d.orbitCenterX = coreNode ? coreNode.x : d.x;
+        d.orbitCenterY = coreNode ? coreNode.y : d.y;
+        if (d.sizeType === 'major') {
+          d.orbitRadius = 40 + Math.random() * 20;
+          d.orbitSpeed = 0.008 + Math.random() * 0.004;
+        } else {
+          d.orbitRadius = 70 + Math.random() * 30;
+          d.orbitSpeed = 0.003 + Math.random() * 0.003;
+        }
+        d.orbitAngle = Math.random() * Math.PI * 2;
+        d.orbitInclination = (Math.random() - 0.5) * 30 * (Math.PI / 180);
+      }
+    });
+
+    // 伪3D参数
+    const fl = 500;
+
+    // 拖拽行为（仅core节点）
+    const drag = d3.drag()
+      .on('start', (event, d) => {
+        if (d.sizeType !== 'core') return;
+        d.fx = d.x; d.fy = d.y;
+      })
+      .on('drag', (event, d) => {
+        if (d.sizeType !== 'core') return;
+        d.orbitCenterX = event.x;
+        d.orbitCenterY = event.y;
+        d.fx = event.x; d.fy = event.y;
+        nodes.forEach(child => {
+          if (child.scriptId === d.scriptId && child.sizeType !== 'core') {
+            child.orbitCenterX = event.x;
+            child.orbitCenterY = event.y;
+          }
+        });
+      })
+      .on('end', (event, d) => {
+        if (d.sizeType !== 'core') return;
+        d.fx = null; d.fy = null;
+      });
+    g.selectAll('.starmap-node-group').filter(d => d.sizeType === 'core').call(drag);
+
+    // 悬停高亮
+    g.selectAll('.starmap-node-group').on('mouseover', function(event, d) {
+      g.selectAll('.starmap-link').transition().duration(200)
+        .attr('stroke-opacity', l => {
+          const lid = `${l.source.id||l.source}-${l.target.id||l.target}`;
+          const did = d.id;
+          const srcId = l.source.id || l.source;
+          const tgtId = l.target.id || l.target;
+          return (srcId === did || tgtId === did) ? 0.8 : 0.05;
+        });
+      g.selectAll('.starmap-node-group').transition().duration(200)
+        .attr('opacity', n => {
+          if (n.id === d.id) return 1;
+          const connected = links.some(l => {
+            const src = l.source.id || l.source;
+            const tgt = l.target.id || l.target;
+            return (src === d.id && tgt === n.id) || (src === n.id && tgt === d.id);
+          });
+          return connected ? n.opacity : n.opacity * 0.3;
+        });
+    }).on('mouseout', function() {
+      g.selectAll('.starmap-link').transition().duration(200)
+        .attr('stroke-opacity', l => {
+          const src = nodes.find(n => n.id === (l.source.id||l.source));
+          const tgt = nodes.find(n => n.id === (l.target.id||l.target));
+          const avgDepth = ((src?.depth || 0) + (tgt?.depth || 0)) / 2;
+          return avgDepth === 0 ? 0.4 : avgDepth === 0.5 ? 0.3 : 0.15;
+        });
+      g.selectAll('.starmap-node-group').transition().duration(200)
+        .attr('opacity', n => n.opacity);
+    });
+
+    // 轨道动画循环
+    let animationId = null;
+    let time = 0;
+
+    function animateOrbit() {
+      time += 1;
+
+      nodes.forEach(d => {
+        if (d.sizeType !== 'core') {
+          d.orbitAngle += d.orbitSpeed;
+          const rawX = d.orbitRadius * Math.cos(d.orbitAngle);
+          const rawY = d.orbitRadius * Math.sin(d.orbitAngle) * Math.cos(d.orbitInclination);
+          d.z = d.orbitRadius * Math.sin(d.orbitAngle) * Math.sin(d.orbitInclination);
+          d.x = d.orbitCenterX + rawX;
+          d.y = d.orbitCenterY + rawY;
+        }
+      });
+
+      const margin = 60;
+      nodes.forEach(d => {
+        d.x = Math.max(margin, Math.min(width - margin, d.x));
+        d.y = Math.max(margin, Math.min(height - margin, d.y));
+      });
+
+      // 更新连线（贝塞尔曲线）
+      g.selectAll('.starmap-link').attr('d', d => {
+        const sx = d.source.x;
+        const sy = d.source.y;
+        const tx = d.target.x;
+        const ty = d.target.y;
+        const midX = (sx + tx) / 2;
+        const midY = (sy + ty) / 2;
+        const coreNode = nodes.find(n => n.sizeType === 'core' && (n.id === d.source.id || n.id === d.source || n.id === d.target.id || n.id === d.target));
+        if (coreNode) {
+          const ctrlX = midX + (coreNode.x - midX) * 0.3;
+          const ctrlY = midY + (coreNode.y - midY) * 0.3;
+          return `M${sx},${sy} Q${ctrlX},${ctrlY} ${tx},${ty}`;
+        }
+        return `M${sx},${sy} L${tx},${ty}`;
+      });
+
+      // 更新节点位置（伪3D）
+      g.selectAll('.starmap-node-group').attr('transform', d => {
+        if (d.sizeType === 'core') {
+          const pulse = 1 + 0.05 * Math.sin(time * 0.03);
+          return `translate(${d.x},${d.y}) scale(${pulse})`;
+        }
+        const zOffset = d.z || 0;
+        const scaleFactor = 1 + zOffset / fl;
+        return `translate(${d.x},${d.y + zOffset}) scale(${scaleFactor})`;
+      });
+
+      // 更新节点透明度（Z深度）
+      g.selectAll('.starmap-node-group circle').attr('opacity', d => {
+        if (d.sizeType === 'core') return d.opacity;
+        const zFactor = Math.max(0.2, Math.min(1.0, 1 + (d.z || 0) / (fl * 2)));
+        return d.opacity * zFactor;
+      });
+
+      // 更新标签
+      g.selectAll('.starmap-node-group text').attr('opacity', d => {
+        if (d.sizeType === 'core') return d.opacity;
+        const zFactor = Math.max(0.2, Math.min(1.0, 1 + (d.z || 0) / (fl * 2)));
+        return d.opacity * zFactor;
+      });
+
+      window._starmapAnimationId = requestAnimationFrame(animateOrbit);
+    }
+
+    animateOrbit();
+
+    // 保存引用
+    starmapSimulation = simulation;
+  }
+
+  // 移动端侧边栏切换
+  document.getElementById('menu-toggle')?.addEventListener('click', function() {
+    document.getElementById('sidebar').classList.toggle('-translate-x-full');
+  });
+
+  function navigateTo(url) {
+    document.body.style.opacity = '0';
+    document.body.style.transition = 'opacity 0.3s ease';
+    setTimeout(() => { window.location.href = url; }, 300);
+  }
+
+  // 模式切换
+  // 模式配置 - 基于参考项目实现
+  const MODES = [
+    { key: 'galaxy', label: '🪐 星系分级', btnClass: 'bg-orange-500/30 hover:bg-orange-500/40' },
+    { key: '2d', label: '🧭 D3环绕', btnClass: 'bg-[#14233c]/80 hover:bg-[#2a4a7a]' }
+  ];
+
+  function getModeIndex() {
+    return MODES.findIndex(m => m.key === currentMode);
+  }
+
+  function hideAllContainers() {
+    document.getElementById('starmap-svg').classList.add('hidden');
+    document.getElementById('starmap-force3d-container').classList.add('hidden');
+    document.getElementById('starmap-points-container').classList.add('hidden');
+    document.getElementById('starmap-galaxy-container').classList.add('hidden');
+    document.getElementById('starmap-chord-container').classList.add('hidden');
+  }
+
+  function updateModeButton() {
+    const btn = document.getElementById('toggleModeBtn');
+    const current = MODES.find(mode => mode.key === currentMode) || MODES[0];
+    btn.innerHTML = current.label;
+    btn.className = `text-[#e0edff] px-4 py-1.5 rounded-full text-xs font-medium border border-[#3a5a8c] transition-all ${current.btnClass}`;
+  }
+
+  function showModeContainer(mode) {
+    if (mode === '2d') {
+      document.getElementById('starmap-svg').classList.remove('hidden');
+    } else {
+      document.getElementById('starmap-' + mode + '-container').classList.remove('hidden');
+    }
+  }
+
+  function initCurrentMode(mode) {
+    if (mode === '2d') {
+      initStarmap();
+      starmapInitialized = true;
+    } else if (mode === 'force3d' && !starmapForce3DInitialized) {
+      initStarmapForce3D();
+      starmapForce3DInitialized = true;
+    } else if (mode === 'points' && !starmapPointsInitialized) {
+      initStarmapPoints();
+      starmapPointsInitialized = true;
+    } else if (mode === 'galaxy' && !starmapGalaxyInitialized) {
+      initStarmapGalaxy();
+      starmapGalaxyInitialized = true;
+    } else if (mode === 'chord' && !starmapChordInitialized) {
+      initStarmapChord();
+      starmapChordInitialized = true;
+    }
+  }
+
+  function activateMode(mode) {
+    if (currentMode === '2d' && mode !== '2d' && window._starmapAnimationId) {
+      cancelAnimationFrame(window._starmapAnimationId);
+      window._starmapAnimationId = null;
+    }
+
+    currentMode = mode;
+    hideAllContainers();
+    showModeContainer(mode);
+    updateModeButton();
+    initCurrentMode(mode);
+  }
+
+  document.getElementById('toggleModeBtn').addEventListener('click', function() {
+    const nextIdx = (getModeIndex() + 1) % MODES.length;
+    activateMode(MODES[nextIdx].key);
+  });
+
+  function waitForModule(name, callback, maxWait = 5000) {
+    if (window[name]) {
+      callback();
+      return;
+    }
+    let waited = 0;
+    const interval = setInterval(() => {
+      waited += 100;
+      if (window[name]) {
+        clearInterval(interval);
+        callback();
+      } else if (waited >= maxWait) {
+        clearInterval(interval);
+        console.error(name + ' is not available after waiting');
+        alert('组件加载失败，请刷新页面重试');
+      }
+    }, 100);
+  }
+
+  function buildGraphData() {
+    const graphData = {};
+    allKnowledgePoints.forEach(kp => {
+      if (!graphData[kp.subject]) {
+        graphData[kp.subject] = [];
+      }
+      graphData[kp.subject].push({
+        id: kp.id,
+        name: kp.name,
+        content: kp.content,
+        act: kp.act
+      });
+    });
+    return graphData;
+  }
+
+  function refreshStarmapData() {
+    const graphData = buildGraphData();
+
+    if (knowledgeGraphGalaxy) knowledgeGraphGalaxy.loadData(graphData);
+    if (knowledgeGraphForce3D) knowledgeGraphForce3D.loadData(graphData);
+    if (knowledgeGraphPoints) knowledgeGraphPoints.loadData(graphData);
+    if (knowledgeGraphChord) knowledgeGraphChord.loadData(graphData);
+
+    if (currentMode === '2d' && starmapInitialized) {
+      initStarmap();
+    }
+  }
+
+  function resetGraphInstance(instance) {
+    if (!instance) return false;
+    if (typeof instance.resetView === 'function') {
+      instance.resetView();
+      return true;
+    }
+    if (instance.controls && typeof instance.controls.reset === 'function') {
+      instance.controls.reset();
+      return true;
+    }
+    return false;
+  }
+
+  document.getElementById('resetStarmapBtn').addEventListener('click', function() {
+    if (currentMode === 'galaxy' && resetGraphInstance(knowledgeGraphGalaxy)) return;
+    if (currentMode === 'force3d' && resetGraphInstance(knowledgeGraphForce3D)) return;
+    if (currentMode === 'points' && resetGraphInstance(knowledgeGraphPoints)) return;
+    if (currentMode === 'chord' && resetGraphInstance(knowledgeGraphChord)) return;
+
+    if (currentMode === '2d' && window._starmapSvg && window._starmapZoomBehavior && window._starmapDefaultTransform) {
+      window._starmapSvg.transition().duration(500)
+        .call(window._starmapZoomBehavior.transform, window._starmapDefaultTransform);
+      return;
+    }
+
+    activateMode(currentMode);
+  });
+
+  function initStarmapForce3D() {
+    const container = document.getElementById('starmap-force3d-container');
+    if (!container) return;
+    waitForModule('KnowledgeGraphForce3D', function() {
+      knowledgeGraphForce3D = new window.KnowledgeGraphForce3D('starmap-force3d-container', {
+        onNodeClick: function(node) { focusKnowledgePoint(node); }
+      });
+      knowledgeGraphForce3D.loadData(buildGraphData());
+      console.log('3D力导向知识图谱初始化完成');
+    });
+  }
+
+  function initStarmapPoints() {
+    const container = document.getElementById('starmap-points-container');
+    if (!container) return;
+    waitForModule('KnowledgeGraphPoints', function() {
+      knowledgeGraphPoints = new window.KnowledgeGraphPoints('starmap-points-container', {
+        onNodeClick: function(node) { focusKnowledgePoint(node); }
+      });
+      knowledgeGraphPoints.loadData(buildGraphData());
+      console.log('点云星系知识图谱初始化完成');
+    });
+  }
+
+  function initStarmapGalaxy() {
+    const container = document.getElementById('starmap-galaxy-container');
+    if (!container) return;
+    waitForModule('KnowledgeGraphGalaxy', function() {
+      knowledgeGraphGalaxy = new window.KnowledgeGraphGalaxy('starmap-galaxy-container', {
+        onNodeClick: function(node) { focusKnowledgePoint(node); }
+      });
+      knowledgeGraphGalaxy.loadData(buildGraphData());
+      console.log('星系模式知识图谱初始化完成');
+    });
+  }
+
+  function initStarmapChord() {
+    const container = document.getElementById('starmap-chord-container');
+    if (!container) return;
+    if (window.KnowledgeGraphChord) {
+      knowledgeGraphChord = new window.KnowledgeGraphChord('starmap-chord-container', {
+        onNodeClick: function(node) { focusKnowledgePoint(node); }
+      });
+      knowledgeGraphChord.loadData(buildGraphData());
+      console.log('知识弦图初始化完成');
+    } else {
+      console.error('KnowledgeGraphChord is not available');
+    }
+  }
+
+  // 页面加载完成后初始化
+  window.addEventListener('load', function() {
+    setTimeout(() => {
+      activateMode(currentMode);
+    }, 300);
+  });
+</script>
+
+</body>
+</html>

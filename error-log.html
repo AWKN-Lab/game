@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>时空剧场 - 错题本</title>
+<link rel="stylesheet" href="dist/output.css?v=5"/>
+<script src="audio-manager.js?v=20260525c"></script>
+<style>
+body {
+  background-color: #0a0e27;
+  color: #dbe1ff;
+  font-family: 'Manrope', sans-serif;
+}
+.glass-panel {
+  background: rgba(40, 51, 86, 0.5);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(68, 70, 81, 0.3);
+}
+.error-card {
+  transition: all 0.3s ease;
+}
+.error-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(239, 68, 68, 0.1);
+}
+button:active { transform: scale(0.9); }
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- Main Content -->
+<main class="pt-4 pb-20 px-4 md:px-8 max-w-5xl mx-auto">
+
+  <!-- Title -->
+  <h1 class="text-2xl font-headline text-[#dbe1ff] mb-6">错题本</h1>
+
+  <!-- Filter Buttons -->
+  <section class="mb-6 flex flex-wrap gap-2 md:gap-3" id="filterSection">
+    <button class="filter-btn px-4 md:px-6 py-2.5 md:py-2 rounded-full font-label text-xs md:text-sm tracking-wide transition-all bg-[#efbd8a] text-[#472a03] shadow-lg shadow-[#efbd8a]/20" data-filter="all">全部</button>
+    <button class="filter-btn px-4 md:px-6 py-2.5 md:py-2 rounded-full font-label text-xs md:text-sm tracking-wide transition-all glass-panel text-[#c5c5d3] hover:text-[#dbe1ff] hover:bg-[#283356]/80 border border-[#444651]/20" data-filter="历史">历史</button>
+    <button class="filter-btn px-4 md:px-6 py-2.5 md:py-2 rounded-full font-label text-xs md:text-sm tracking-wide transition-all glass-panel text-[#c5c5d3] hover:text-[#dbe1ff] hover:bg-[#283356]/80 border border-[#444651]/20" data-filter="道法">道法</button>
+  </section>
+
+  <!-- Stats Bar -->
+  <section class="glass-panel rounded-xl p-4 mb-6 flex items-center gap-3">
+    <span class="text-[#efbd8a] text-lg">&#128203;</span>
+    <span class="font-label text-sm text-[#c5c5d3]">共 <strong id="totalCount" class="text-[#dbe1ff]">0</strong> 道错题</span>
+  </section>
+
+  <!-- Error List -->
+  <div id="errorList" class="space-y-4 mb-8">
+    <!-- Dynamically populated -->
+  </div>
+
+  <!-- Empty State -->
+  <div id="emptyState" class="text-center py-16 hidden">
+    <p class="text-4xl mb-4">&#127941;</p>
+    <p class="text-[#8f909d] font-label text-sm">暂无错题，继续保持！</p>
+  </div>
+
+  <!-- Clear Button -->
+  <div id="clearSection" class="text-center mt-8 hidden">
+    <button id="clearBtn" class="px-6 py-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 font-label text-sm hover:bg-red-500/20 transition-colors">
+      清空错题本
+    </button>
+  </div>
+
+</main>
+
+<script src="data-store.js"></script>
+<script src="script-registry.js"></script>
+<script>
+(function() {
+  let currentFilter = 'all';
+
+  function getSubjectLabel(subject) {
+    if (subject.includes('历史') || subject.includes('history')) return '历史';
+    if (subject.includes('道法') || subject.includes('daofa')) return '道法';
+    return subject || '综合';
+  }
+
+  function getSubjectColor(label) {
+    if (label === '历史') return 'bg-blue-500/15 text-blue-400 border-blue-500/30';
+    if (label === '道法') return 'bg-green-500/15 text-green-400 border-green-500/30';
+    return 'bg-[#444651]/30 text-[#8f909d] border-[#444651]/30';
+  }
+
+  function formatTime(timestamp) {
+    if (!timestamp) return '';
+    const d = new Date(timestamp);
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const hour = String(d.getHours()).padStart(2, '0');
+    const min = String(d.getMinutes()).padStart(2, '0');
+    return `${month}-${day} ${hour}:${min}`;
+  }
+
+  function renderErrors() {
+    const allErrors = DataStore.getWrongAnswers();
+    const listEl = document.getElementById('errorList');
+    const emptyEl = document.getElementById('emptyState');
+    const clearEl = document.getElementById('clearSection');
+    const totalEl = document.getElementById('totalCount');
+
+    // Apply filter
+    let filtered = allErrors;
+    if (currentFilter !== 'all') {
+      filtered = allErrors.filter(err => getSubjectLabel(err.subject) === currentFilter);
+    }
+
+    totalEl.textContent = filtered.length;
+    listEl.innerHTML = '';
+
+    if (filtered.length === 0) {
+      emptyEl.classList.remove('hidden');
+      clearEl.classList.add('hidden');
+      return;
+    }
+
+    emptyEl.classList.add('hidden');
+    clearEl.classList.remove('hidden');
+
+    // Render in reverse chronological order
+    [...filtered].reverse().forEach((err, idx) => {
+      const subjectLabel = getSubjectLabel(err.subject);
+      const subjectColor = getSubjectColor(subjectLabel);
+      const card = document.createElement('div');
+      card.className = 'error-card glass-panel rounded-xl p-5';
+      card.innerHTML = `
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-[10px] font-label px-2 py-0.5 rounded-full border ${subjectColor}">${subjectLabel}</span>
+          <span class="text-xs text-[#8f909d]">${formatTime(err.timestamp)}</span>
+        </div>
+        <p class="font-headline text-base text-[#dbe1ff] mb-3 leading-relaxed">${err.question}</p>
+        <div class="space-y-2 mb-3">
+          <div class="flex items-start gap-2">
+            <span class="text-xs text-red-400 mt-0.5 whitespace-nowrap">&#10007; 你的答案</span>
+            <span class="text-sm text-red-400">${err.userAnswer}</span>
+          </div>
+          <div class="flex items-start gap-2">
+            <span class="text-xs text-green-400 mt-0.5 whitespace-nowrap">&#10003; 正确答案</span>
+            <span class="text-sm text-green-400">${err.correctAnswer}</span>
+          </div>
+        </div>
+        ${err.explanation ? `<div class="p-3 rounded-lg bg-[#121e40]/60 border border-[#444651]/20 mb-3"><p class="text-xs text-[#c5c5d3] leading-relaxed">${err.explanation}</p></div>` : ''}
+        <button class="redo-btn px-4 py-2 rounded-lg bg-[#264191]/30 border border-[#264191]/50 text-[#b6c4ff] text-xs font-label hover:bg-[#264191]/50 transition-colors">重做</button>
+      `;
+      listEl.appendChild(card);
+    });
+
+    // Bind redo buttons - 跳转到对应剧本游戏页面
+    var SUBJECT_SCRIPT_MAP = {
+      '法国': 'french_revolution', '大革命': 'french_revolution', '路易': 'french_revolution', '拿破仑': 'french_revolution', '巴士底': 'french_revolution',
+      '美国': 'american_revolution', '独立': 'american_revolution', '波士顿': 'american_revolution', '华盛顿': 'american_revolution',
+      '工业': 'industrial_revolution', '蒸汽': 'industrial_revolution', '纺织': 'industrial_revolution', '工厂': 'industrial_revolution',
+      '戊戌': 'wuxu_reform', '变法': 'wuxu_reform', '谭嗣同': 'wuxu_reform', '光绪': 'wuxu_reform',
+      '辛亥': 'xinhai_revolution', '革命': 'xinhai_revolution', '孙中山': 'xinhai_revolution', '武昌': 'xinhai_revolution', '民国': 'xinhai_revolution'
+    };
+    document.querySelectorAll('.redo-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        var card = this.closest('.error-card');
+        var subjectText = card ? card.querySelector('.text-\\[10px\\]') : null;
+        var subjectStr = subjectText ? subjectText.textContent : '';
+        // 从错题的 question 文本中匹配剧本
+        var questionEl = card ? card.querySelector('.font-headline') : null;
+        var questionStr = questionEl ? questionEl.textContent : '';
+        var matchText = subjectStr + ' ' + questionStr;
+        var targetScript = null;
+        for (var key in SUBJECT_SCRIPT_MAP) {
+          if (matchText.indexOf(key) !== -1) {
+            targetScript = SUBJECT_SCRIPT_MAP[key];
+            break;
+          }
+        }
+        if (targetScript && window.SCRIPT_REGISTRY && window.SCRIPT_REGISTRY[targetScript]) {
+          window.location.href = window.SCRIPT_REGISTRY[targetScript].file + '?id=' + targetScript;
+        } else {
+          window.location.href = 'script-select.html';
+        }
+      });
+    });
+  }
+
+  // Filter buttons
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.filter-btn').forEach(b => {
+        b.classList.remove('bg-[#efbd8a]', 'text-[#472a03]', 'shadow-lg', 'shadow-[#efbd8a]/20');
+        b.classList.add('glass-panel', 'text-[#c5c5d3]');
+      });
+      this.classList.remove('glass-panel', 'text-[#c5c5d3]');
+      this.classList.add('bg-[#efbd8a]', 'text-[#472a03]', 'shadow-lg', 'shadow-[#efbd8a]/20');
+      currentFilter = this.getAttribute('data-filter');
+      renderErrors();
+    });
+  });
+
+  // Clear button
+  document.getElementById('clearBtn').addEventListener('click', function() {
+    if (confirm('确定要清空所有错题记录吗？此操作不可撤销。')) {
+      DataStore.clearWrongAnswers();
+      renderErrors();
+    }
+  });
+
+  // Init
+  renderErrors();
+})();
+</script>
+</body>
+</html>

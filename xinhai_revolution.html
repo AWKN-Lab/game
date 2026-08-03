@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>时空剧场 - 辛亥革命</title>
+  <link rel="stylesheet" href="engine.css?v=20260525c">
+</head>
+<body>
+
+<!-- 游戏场景 -->
+<div class="game-scene" id="gameScene">
+  <div class="scene-bg-text">1901</div>
+  <div class="scene-label" id="sceneLabel">第一幕 · 山河破碎，革命酝酿</div>
+
+  <!-- 游戏控制按钮 -->
+  <div class="game-controls">
+    <button class="game-ctrl-btn" onclick="openCardModal()" title="道法卡牌图鉴">🃏 卡牌</button>
+    <button class="game-ctrl-btn" onclick="confirmMenu()" title="返回菜单">☰ 菜单</button>
+  </div>
+
+  <!-- 四维数值HUD -->
+  <div class="value-hud" id="valueHud"></div>
+
+  <!-- 选择面板 -->
+  <div class="choice-panel" id="choicePanel" style="display:none"></div>
+
+  <!-- 角色立绘显示区域 -->
+  <div id="character-display" style="position:absolute;bottom:176px;left:0;right:0;display:flex;justify-content:center;gap:56px;align-items:flex-end;pointer-events:none;z-index:2">
+    <div id="char-left-wrap" style="position:relative;height:min(54vh,520px);max-height:54vh;max-width:min(32vw,420px);display:none;overflow:visible">
+      <img id="char-left" src="" style="position:relative;z-index:1;width:auto;height:100%;max-width:100%;object-fit:contain;object-position:center bottom;display:block">
+    </div>
+    <div id="char-right-wrap" style="position:relative;height:min(54vh,520px);max-height:54vh;max-width:min(32vw,420px);display:none;overflow:visible">
+      <img id="char-right" src="" style="position:relative;z-index:1;width:auto;height:100%;max-width:100%;object-fit:contain;object-position:center bottom;display:block">
+    </div>
+  </div>
+
+  <!-- 对话框 -->
+  <div class="dialog-box" id="dialogBox" onclick="advanceDialog()">
+    <!-- 语音按钮已移除：espeak-ng 机械音暂不可用，等 GPT-SoVITS 配音就绪后恢复 -->
+    <div class="dialog-speaker" id="dialogSpeaker">
+      <span class="speaker-dot" id="speakerDot"></span>
+      <span id="speakerName"></span>
+    </div>
+    <div class="dialog-text" id="dialogText"></div>
+    <div class="dialog-continue" id="dialogContinue" style="display:none">点击继续 ▼</div>
+  </div>
+</div>
+
+<!-- 卡牌弹窗 -->
+<div class="modal-overlay" id="cardModal">
+  <div class="modal-box">
+    <div class="modal-title">道法卡牌图鉴</div>
+    <div class="modal-desc">（已获取的卡牌可点击查看详情）</div>
+    <div class="card-grid" id="cardGrid"></div>
+    <div class="modal-footer">
+      <button class="modal-close-btn" onclick="closeCardModal()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 卡牌详情弹窗 -->
+<div id="cardDetailOverlay" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;z-index:2000"></div>
+
+<!-- 收集品通知 -->
+<div class="collectible-toast" id="collectibleToast">
+  <div class="toast-title">✨ 获得收集品！</div>
+  <div class="toast-item" id="toastItem"></div>
+</div>
+
+
+<!-- External JS dependencies -->
+<script src="data-store.js"></script>
+<script src="points-system.js"></script>
+<script src="audio-manager.js?v=20260525c"></script>
+<script src="voice-manager.js?v=20260525d"></script>
+<script src="fireworks.js"></script>
+<script src="data/essay-challenges.js"></script>
+
+<!-- Script data: GAME_CONFIG override + DIALOG_SCRIPT -->
+<script>
+    // ========== 辛亥革命 - 剧本配置 ==========
+    window.GAME_CONFIG = {
+      scriptId: 'xinhai_revolution',
+      title: '时空剧场 - 辛亥革命',
+      values: { democracy: 50, responsibility: 50, patriotism: 50, rule: 50 },
+      valueLabels: { democracy: '民主', responsibility: '责任', patriotism: '爱国', rule: '法治' },
+      valueColors: { democracy: '#4fc3f7', responsibility: '#ffb74d', patriotism: '#ef5350', rule: '#66bb6a' },
+      charConfig: {
+        fulina: { name: '芙宁娜', color: '#ff69b4', dir: 'fulina', defaultExpr: 'normal' },
+        hutao: { name: '胡桃', color: '#ff4500', dir: 'hutao', defaultExpr: 'normal' },
+        sun_yat_sen: { name: '孙中山', color: '#ff0000', dir: 'npc', defaultExpr: 'sun_yat_sen' },
+        yuan_shikai: { name: '袁世凯', color: '#808080', dir: 'npc', defaultExpr: 'yuan_shikai' },
+        soldier: { name: '起义士兵', color: '#4169e1', dir: 'npc', defaultExpr: 'soldier' },
+        student: { name: '进步学生', color: '#32cd32', dir: 'npc', defaultExpr: 'student' },
+        martyr_ghost: { name: '革命先烈', color: '#9370db', dir: 'ghost', defaultExpr: 'martyr_ghost' }
+      },
+      speakerNameToKey: {
+        '芙宁娜': 'fulina', '胡桃': 'hutao',
+        '孙中山': 'sun_yat_sen', '袁世凯': 'yuan_shikai',
+        '起义士兵': 'soldier', '进步学生': 'student', '革命先烈': 'martyr_ghost'
+      },
+      sceneBGM: {
+        'opera_house': AudioManager.BGM.XINHAI_THEATER,
+        'beijing_1900': AudioManager.BGM.XINHAI_BEIJING_SOMBER,
+        'honolulu': AudioManager.BGM.XINHAI_HONOLULU_HOPE,
+        'tokyo': AudioManager.BGM.XINHAI_TOKYO_RISING,
+        'wuchang_1911': AudioManager.BGM.XINHAI_WUCHANG_BATTLE,
+        'nanjing_1912': AudioManager.BGM.XINHAI_NANJING_TRIUMPH,
+        'forbidden_city': AudioManager.BGM.XINHAI_FORBIDDEN_FALL,
+        'provisional_government': AudioManager.BGM.XINHAI_PROVISIONAL_HOPE,
+        'beijing': AudioManager.BGM.XINHAI_BEIJING_DARK,
+        'nanjing': AudioManager.BGM.XINHAI_NANJING_BRIGHT,
+        'lingtai': AudioManager.BGM.XINHAI_LINGTAI_ELEGY,
+      },
+      CARDS: {
+        democracy: {
+          name: "民主卡", knowledge: "民主的内涵与价值",
+          description: "触发「民主觉醒」状态，所有角色获得民主权利意识",
+          effect: {"democracy": 20}, color: "#4fc3f7"
+        },
+        responsibility: {
+          name: "责任卡", knowledge: "承担社会责任",
+          description: "触发「责任担当」状态，所有角色必须履行自己的历史使命",
+          effect: {"responsibility": 20}, color: "#ffb74d"
+        },
+        patriotism: {
+          name: "爱国卡", knowledge: "爱国主义精神",
+          description: "触发「爱国热血」状态，所有角色获得强烈的爱国情怀",
+          effect: {"patriotism": 20}, color: "#ef5350"
+        },
+        rule: {
+          name: "法治卡", knowledge: "全面依法治国",
+          description: "触发「法治秩序」状态，建立新的法律体系，规范所有人的行为",
+          effect: {"rule": 20}, color: "#66bb6a"
+        }
+      },
+      NPC_FATE_CONFIG: {
+        sun_yat_sen: {
+          name: "孙中山", title: "革命先行者", avatar: "🌟",
+          stateLabels: { unknown: "未知", organizing: "组织革命", president: "临时大总统", disappointed: "壮志未酬", persevering: "坚持奋斗" }
+        },
+        yuan_shikai: {
+          name: "袁世凯", title: "北洋领袖", avatar: "🗡️",
+          stateLabels: { unknown: "未知", ambitious: "野心勃勃", betraying: "背叛革命", emperor: "称帝失败" }
+        },
+        soldier: {
+          name: "起义士兵", title: "新军战士", avatar: "🎖️",
+          stateLabels: { unknown: "未知", brave: "英勇", fallen: "阵亡", veteran: "老兵" }
+        },
+        student: {
+          name: "进步学生", title: "青年革命者", avatar: "📖",
+          stateLabels: { unknown: "未知", inspired: "受到启发", propagandizing: "宣传革命", disillusioned: "理想破灭" }
+        }
+      },
+      ESSAY_QUESTIONS: [
+        {
+          id: "e1",
+          question: "请简述辛亥革命的历史意义及其局限性。",
+          templateAnswer: "辛亥革命的历史意义：推翻了清王朝的反动统治，结束了中国两千多年的封建君主专制制度；使民主共和观念深入人心；推动了中国民族资本主义的发展。局限性：没有完成反帝反封建的革命任务，没有改变中国半殖民地半封建社会的性质。革命果实被袁世凯窃取，建立了北洋军阀的独裁统治。"
+        },
+        {
+          id: "e2",
+          question: "结合辛亥革命，谈谈你对「爱国主义是中华民族精神的核心」的理解。",
+          templateAnswer: "辛亥革命中，无数革命志士为了国家的独立和人民的幸福，抛头颅洒热血。孙中山先生从创立兴中会到领导辛亥革命，始终以「振兴中华」为己任。武昌起义的士兵们用生命诠释了什么是爱国主义。这些都说明，爱国主义是中华民族精神的核心，是推动中国社会进步的强大精神力量。"
+        },
+        {
+          id: "e3",
+          question: "《中华民国临时约法》体现了哪些民主法治原则？这些原则对今天有什么启示？",
+          templateAnswer: "《中华民国临时约法》体现了主权在民原则（规定中华民国的主权属于全体国民）、法律面前人人平等原则（规定国民一律平等）和保障公民基本权利原则（规定国民享有言论、出版、集会、结社等自由）。启示：宪法是国家的根本法，法治是民主的保障；国家的权力属于人民，人民当家作主是社会主义民主政治的本质特征。"
+        },
+        {
+          id: "e4",
+          question: "为什么说辛亥革命「没有完成反帝反封建的革命任务」？请结合史实分析。",
+          templateAnswer: "辛亥革命没有完成反帝反封建任务的原因：第一，革命果实被袁世凯窃取，袁世凯建立了北洋军阀的独裁统治，封建势力仍然存在；第二，革命没有触动帝国主义在华的特权，帝国主义仍然控制着中国的经济命脉；第三，中国仍然是一个半殖民地半封建社会，广大农民的土地问题没有得到解决。因此，辛亥革命虽然推翻了帝制，但中国社会的根本性质没有改变。"
+        },
+        {
+          id: "e5",
+          question: "作为新时代的青年，我们应该如何继承和发扬辛亥革命的精神？",
+          templateAnswer: "作为新时代的青年，我们应该：第一，学习革命先烈的爱国主义精神，树立为国家富强、民族复兴而奋斗的远大理想；第二，培养责任担当意识，将个人命运与国家命运紧密相连；第三，坚持民主法治理念，做遵纪守法的合格公民；第四，珍惜来之不易的和平生活，努力学习科学文化知识，为实现中华民族伟大复兴的中国梦贡献力量。"
+        }
+      ],
+      QUIZ_DATA: [
+        {
+          id: "q1",
+          question: "辛亥革命的指导思想是什么？",
+          options: ["自强求富", "三民主义", "民主科学"],
+          answer: 1,
+          explanation: "三民主义（民族、民权、民生）是孙中山领导辛亥革命的指导思想。自强求富是洋务运动的口号，民主科学是新文化运动的口号。",
+          category: "历史"
+        },
+        {
+          id: "q2",
+          question: "武昌起义爆发于哪一年？",
+          options: ["1905年", "1910年", "1911年"],
+          answer: 2,
+          explanation: "1911年10月10日武昌起义爆发，因为这一年是农历辛亥年，所以这次革命被称为辛亥革命。",
+          category: "历史"
+        },
+        {
+          id: "q3",
+          question: "《中华民国临时约法》最重要的历史地位是什么？",
+          options: ["中国第一部宪法", "中国历史上第一部具有资产阶级共和国宪法性质的文件", "中国第一部民法典"],
+          answer: 1,
+          explanation: "《中华民国临时约法》是中国历史上第一部具有资产阶级共和国宪法性质的文件，它规定中华民国的主权属于全体国民。",
+          category: "历史"
+        },
+        {
+          id: "q4",
+          question: "辛亥革命最深远的历史影响是什么？",
+          options: ["推翻了清王朝", "使民主共和观念深入人心", "促进了民族资本主义发展"],
+          answer: 1,
+          explanation: "辛亥革命使民主共和观念深入人心，从此以后，任何复辟帝制的企图都必然失败。这是它最深远的影响。",
+          category: "历史"
+        },
+        {
+          id: "q5",
+          question: "辛亥革命的局限性体现在哪些方面？",
+          options: ["没有推翻清朝统治", "没有完成反帝反封建的革命任务", "没有建立任何政府"],
+          answer: 1,
+          explanation: "辛亥革命没有完成反帝反封建的革命任务，没有改变中国半殖民地半封建社会的性质。革命果实被袁世凯窃取。",
+          category: "历史"
+        }
+      ],
+      endingConditions: {
+        afterlifeMinItems: 5,
+        afterlifeValueKey: 'patriotism',
+        afterlifeMinValue: 70,
+        dramaticMinHighCount: 2,
+        dramaticMinValue: 80
+      },
+      endingTitles: {
+        historical: "共和的黎明",
+        dramatic: "未竟的革命",
+        afterlife: "先烈不朽"
+      },
+      totalKnowledge: 10,
+      hasNpcFateSummary: true,
+      ESSAY_CHALLENGE: XINHAI_REVOLUTION_ESSAY,
+      afterlifeDialog: [
+        { speaker: "胡桃", text: "今天，我来为所有在辛亥革命中牺牲的革命先烈送行。", color: "#ff4500" },
+        { speaker: "革命先烈", text: "我们的理想实现了吗？共和真的建立起来了吗？", color: "#9370db" },
+        { speaker: "胡桃", text: "推翻了帝制，建立了民国。但后来的路，比你们想象的更曲折。", color: "#ff4500" },
+        { speaker: "芙宁娜", text: "你们播下的火种没有熄灭。虽然果实曾被窃取，但共和的观念已经深入人心。", color: "#ff69b4" },
+        { speaker: "孙中山", text: "革命尚未成功，同志仍须努力。这句话，我说了很多年。", color: "#4169e1" },
+        { speaker: "起义士兵", text: "我们当初起义的时候，只知道要推翻皇帝。至于推翻之后怎么办......没人想过。", color: "#daa520" },
+        { speaker: "胡桃", text: "每一个灵魂都值得被好好送别。不管历史如何评价这场革命，你们的勇气是真的。", color: "#ff4500" },
+        { speaker: "旁白", text: "武昌的枪声已经远去，但共和的火种，仍在每一个追求民主与法治的人心中燃烧。", color: "#888888" }
+      ],
+      dramaticDialog: [
+        { speaker: "芙宁娜", text: "我识破了袁世凯的阴谋，拒绝辞去临时大总统职务。", color: "#ff69b4" },
+        { speaker: "胡桃", text: "但袁世凯手握北洋军，如果他武力夺权呢？", color: "#ff4500" },
+        { speaker: "孙中山", text: "革命党人团结一心，加上人民的支持，正义终将战胜强权。", color: "#4169e1" },
+        { speaker: "袁世凯", text: "哼，你以为凭几个书生和士兵，就能挡住我的北洋铁骑？", color: "#8b0000" },
+        { speaker: "胡桃", text: "历史证明，铁骑挡不住民心。虽然这不是真实的历史，但它告诉我们——坚持民主和法治，比任何武力都更有力量。", color: "#ff4500" },
+        { speaker: "旁白", text: "在另一个时空里，民国稳固建立，民主制度初步运行。虽然这只是想象，但它点燃了每个人心中对更美好中国的向往。", color: "#888888" }
+      ],
+      historicalText: "辛亥革命虽然失败了，但它的历史意义是不可磨灭的。它推翻了清王朝的反动统治，结束了中国两千多年的封建君主专制制度；使民主共和的观念深入人心，从此以后，任何复辟帝制的企图都必然失败；推动了中国民族资本主义的发展，为中国的进步打开了闸门。然而，辛亥革命没有完成反帝反封建的革命任务，没有改变中国半殖民地半封建社会的性质。革命果实被袁世凯窃取，建立了北洋军阀的独裁统治。从道法的角度看，辛亥革命告诉我们：爱国是每个公民的责任，民主是人类的共同追求，法治是民主的保障。",
+      choiceReflectionMap: {
+        'honolulu': '📜 历史回响\n\n1894年，孙中山在檀香山创立兴中会，提出「振兴中华」的口号。这是中国第一个资产阶级革命团体。\n\n在此之前，洋务运动（自强求富）试图通过学习西方技术来挽救清朝统治，但甲午战争的失败证明了只学技术不学制度是不够的。\n\n兴中会的成立标志着中国资产阶级革命派的初步形成，从此中国有了专门的革命组织。\n\n💭 为什么说"革命团体"的成立比"近代化探索"更重要？\n💭 组织的力量和个人的力量，哪个更能推动历史变革？',
+        'tokyo': '📜 历史回响\n\n1905年，中国同盟会在日本东京成立，这是中国第一个全国性的资产阶级革命政党。\n\n革命纲领是：驱除鞑虏，恢复中华，创立民国，平均地权。\n\n后来孙中山将其阐发为三民主义——民族主义（驱除鞑虏，恢复中华）、民权主义（创立民国）、民生主义（平均地权）。\n\n三民主义是辛亥革命的指导思想，它体现了中国人民对民主共和的追求。\n\n💭 "民族""民权""民生"三者之间是什么关系？\n💭 如果只有"民族"没有"民权"，革命能成功吗？',
+        'wuchang_1911': '📜 历史回响\n\n1911年10月10日，武昌起义爆发。起义的士兵们并不知道，他们的行动将改变整个中国的命运。\n\n起义前，革命党人在武昌的秘密机关被破获，多名革命党人被捕杀。在千钧一发之际，起义士兵决定提前行动。\n\n一夜之间，武昌全城被起义军占领。随后，全国十几个省纷纷宣布独立，清政府的统治土崩瓦解。\n\n因为1911年是农历辛亥年，所以这次革命被称为辛亥革命。\n\n💭 如果起义被镇压了，中国历史会走向何方？\n💭 历史的转折点，往往是偶然的吗？',
+        'provisional_government': '📜 历史回响\n\n1912年3月颁布的《中华民国临时约法》是中国历史上第一部具有资产阶级共和国宪法性质的文件。\n\n它规定：主权属于全体国民；国民一律平等；国民享有言论、出版、集会、结社等自由。\n\n这些原则在今天看来理所当然，但在两千多年的帝制之后，它们是革命者用鲜血换来的。\n\n然而，这部约法很快就被袁世凯废弃了。纸面上的权利，如果没有力量来保障，就只是一纸空文。\n\n💭 法律能保护权利吗？还是说，权利需要力量来保护？\n💭 《临时约法》的失败，是法律本身的失败，还是执行者的失败？',
+        'beijing': '📜 历史回响\n\n袁世凯凭借手中掌握的北洋军权和帝国主义的支持，窃取了辛亥革命的胜利果实。\n\n孙中山为了避免内战、实现和平统一，同意辞去临时大总统职务。这个决定至今仍有争议。\n\n有人说这是孙中山的"天真"，也有人说这是他的"大局观"。\n\n辛亥革命的教训告诉我们：革命的胜利果实需要强大的力量来保卫。没有武装力量支撑的理想，很容易被现实击碎。\n\n💭 孙中山应该坚持不辞职吗？\n💭 "理想主义"和"现实主义"之间，如何找到平衡？',
+        'opera_house': '📜 历史回响\n\n辛亥革命的启示是多层面的：\n\n从历史角度看：它推翻了两千多年的帝制，使民主共和观念深入人心。\n\n从道法角度看：它告诉我们爱国是每个公民的责任，民主是人类的共同追求，法治是民主的保障。\n\n从现实角度看：它没有完成反帝反封建的任务，说明仅靠一次革命是不够的，建设一个新中国需要长期的努力。\n\n💭 辛亥革命的"成功"和"失败"，哪个对今天的中国影响更大？\n💭 历史上的"不完美"，是否也有它独特的价值？',
+        'nanjing_1912': '📜 历史回响\n\n1912年1月1日，中华民国临时政府在南京成立，孙中山就任临时大总统。\n\n这是中国历史上第一个资产阶级共和国政府。虽然它只存在了短短几个月，但它开创了一个新时代。\n\n从此以后，"皇帝"这个在中国存在了两千多年的称号，永远成为了历史。\n\n💭 一个只存在了几个月的政府，为什么如此重要？\n💭 "开创"和"维持"，哪个更难？'
+      }
+    };
+
+    // ========== 辛亥革命 - 剧本数据 ==========
+    window.DIALOG_SCRIPT = [
+
+      // ===== 开场：电影片头 =====
+      { speaker: "旁白", text: "1894-1912。十八年。" },
+      { speaker: "旁白", text: "一个人，一个理想，一场革命。" },
+      { speaker: "旁白", text: "推翻了两千年的帝制，却没能建立一个真正的共和国。" },
+      { speaker: "旁白", text: "这是中国近代史上最复杂的故事。它没有标准结局。" },
+      { speaker: "芙宁娜", text: "在这个故事里，你的每一个选择都会改变历史的走向。", charLeft: 'excited' },
+      { speaker: "胡桃", text: "但请记住——改变历史走向，不等于改变历史的结局。", charRight: 'solemn' },
+
+      // ===== 第一幕：山河破碎，革命酝酿 =====
+      { type: "act_transition", actTitle: "第一程", actSubtitle: "山河破碎，革命酝酿", bg: "images/bg/beijing_1900.jpg" },
+
+      { speaker: "芙宁娜", text: "1901年，《辛丑条约》签订，中国完全沦为半殖民地半封建社会。", scene: "beijing_1900", bg: "images/bg/beijing_1900.jpg", charLeft: 'serious' },
+      { speaker: "芙宁娜", text: "清政府已经成为洋人的朝廷，国家危在旦夕！", scene: "beijing_1900", bg: "images/bg/beijing_1900.jpg", charLeft: 'excited' },
+      { speaker: "胡桃", text: "无数仁人志士开始探索救国救民的道路。洋务运动失败了，戊戌变法也失败了。", scene: "beijing_1900", bg: "images/bg/beijing_1900.jpg", charRight: 'solemn' },
+      { speaker: "芙宁娜", text: "只有革命，才能救中国！", scene: "beijing_1900", bg: "images/bg/beijing_1900.jpg", charLeft: 'excited' },
+
+      // —— 檀香山：兴中会 ——
+      { speaker: "芙宁娜", text: "1894年，我在檀香山成立了兴中会，提出「振兴中华」的口号。", scene: "honolulu", bg: "images/bg/honolulu.jpg", charLeft: 'normal' },
+      { speaker: "芙宁娜", text: "这是中国第一个资产阶级革命团体。", scene: "honolulu", bg: "images/bg/honolulu.jpg", charLeft: 'normal' },
+
+      { type: "choice", scene: "honolulu", "prompt": "兴中会的成立标志着什么？", choices: [
+        { text: "A. 中国资产阶级革命派的初步形成", effects: { patriotism: 15 } },
+        { text: "B. 中国开始了近代化探索", effects: { patriotism: -5 } },
+        { text: "C. 辛亥革命正式爆发", effects: { patriotism: -5 } }
+      ]},
+
+      { speaker: "胡桃", text: "答对了！从此，中国有了专门的革命组织。", scene: "honolulu", bg: "images/bg/honolulu.jpg", charRight: 'normal' },
+
+      { type: "collectible", name: "兴中会火种" },
+
+      { type: "knowledge", id: "k_xingzhonghui", name: "🛡️ 兴中会", desc: "1894年孙中山在檀香山成立的中国第一个资产阶级革命团体，提出「振兴中华」口号。", category: "历史" },
+
+      // —— 东京：同盟会 ——
+      { speaker: "芙宁娜", text: "1905年，我在日本东京成立了中国同盟会。", scene: "tokyo", bg: "images/bg/tokyo.jpg", charLeft: 'normal' },
+      { speaker: "芙宁娜", text: "这是中国第一个全国性的资产阶级革命政党。", scene: "tokyo", bg: "images/bg/tokyo.jpg", charLeft: 'normal' },
+      { speaker: "芙宁娜", text: "我们的革命纲领是：驱除鞑虏，恢复中华，创立民国，平均地权。", scene: "tokyo", bg: "images/bg/tokyo.jpg", charLeft: 'serious' },
+      { speaker: "芙宁娜", text: "后来，我把它阐发为「民族、民权、民生」三大主义，合称三民主义。", scene: "tokyo", bg: "images/bg/tokyo.jpg", charLeft: 'normal' },
+
+      { speaker: "胡桃", text: "三民主义体现了你们对民主共和的追求，也体现了强烈的爱国主义精神。", scene: "tokyo", bg: "images/bg/tokyo.jpg", charRight: 'normal' },
+      { speaker: "芙宁娜", text: "没错。爱国，就是要为国家的独立和人民的幸福而奋斗。", scene: "tokyo", bg: "images/bg/tokyo.jpg", charLeft: 'excited' },
+
+      { type: "collectible", name: "同盟会火种" },
+
+      { type: "knowledge", id: "k_tongmenghui", name: "🛡️ 中国同盟会", desc: "1905年在日本东京成立的第一个全国性资产阶级革命政党，革命纲领为三民主义（民族、民权、民生）。", category: "历史" },
+    
+  // PC-XR-1：武昌起义前夜
+  {
+    type: "pressure_choice",
+    timeout: 8,
+    defaultChoice: 2,
+    urgentText: "起义计划泄露了！清军正在搜捕革命党人。要么今晚动手，要么等死——",
+    timeoutText: "你犹豫了太久。等天亮时，起义已经爆发了。你没有参与这场改变中国历史的革命。",
+    choices: [
+      { text: "今晚就动手！宁可战死，也不坐以待毙！", effects: { democracy: 15, justice: 5 } },
+      { text: "按原计划行动，但做好应急准备", effects: { rule: 10, justice: 5 } },
+      { text: "先撤离，保存革命力量", effects: { rule: 5 } },
+      { text: "这不是你该参与的事情", effects: {} }
+    ]
+  },
+
+  { type: "npc_fate_event", npcId: "soldier", newState: "brave",
+    eventText: "起义士兵在武昌打响了第一枪。他说：'今晚，我们不是为谁而战，我们为自己而战。'" },
+
+  { type: "hook", text: "武昌的枪声响了。两千年的封建帝制，在这一夜开始动摇。" },
+
+  { type: "knowledge", id: "k_sanminzhuyi", name: "🛡️ 三民主义", desc: "孙中山提出的革命指导思想，包括民族主义、民权主义、民生主义，是辛亥革命的指导思想。", category: "历史" },
+
+      // ===== 第二幕：武昌枪声，全国响应 =====
+      { type: "act_transition", actTitle: "第二程", actSubtitle: "武昌枪声，全国响应", bg: "images/bg/wuchang_1911.jpg" },
+
+      { speaker: "起义士兵", text: "各位同志！起义的时间到了！为了共和，冲啊！", scene: "wuchang_1911", bg: "images/bg/wuchang_1911.jpg", charLeft: 'soldier' },
+      { speaker: "芙宁娜", text: "1911年10月10日，武昌起义爆发！", scene: "wuchang_1911", bg: "images/bg/wuchang_1911.jpg", charLeft: 'excited' },
+      { speaker: "胡桃", text: "一夜之间，武昌全城被起义军占领。", scene: "wuchang_1911", bg: "images/bg/wuchang_1911.jpg", charRight: 'normal' },
+      { speaker: "芙宁娜", text: "随后，全国十几个省纷纷宣布独立，清政府的统治土崩瓦解。", scene: "wuchang_1911", bg: "images/bg/wuchang_1911.jpg", charLeft: 'excited' },
+      { speaker: "芙宁娜", text: "因为1911年是农历辛亥年，所以这次革命被称为辛亥革命。", scene: "wuchang_1911", bg: "images/bg/wuchang_1911.jpg", charLeft: 'normal' },
+
+      { type: "collectible", name: "武昌起义火种" },
+
+      { type: "knowledge", id: "k_wuchang", name: "🛡️ 武昌起义", desc: "1911年10月10日爆发的武昌起义，标志着辛亥革命的开始。起义后全国十几个省纷纷宣布独立。", category: "历史" },
+
+      // —— 道法卡牌选择 ——
+      { type: "npc_fate_event", npcId: "sun_yat_sen", newState: "president",
+    eventText: "孙中山在南京就任临时大总统。他说：'革命尚未成功，同志仍须努力。'" },
+
+  { type: "hook", text: "皇帝退位了，可真正的权力游戏才刚刚开始。" },
+
+  { type: "card_choice", "prompt": "你想使用哪张道法卡牌来评价武昌起义？", cards: [
+        { id: "patriotism", name: "爱国卡", desc: "爱国主义精神——用生命诠释对国家的热爱", img: "images/cards/card_patriotism.jpg", effect: { patriotism: 20 }, recommend: false, hint: "起义士兵们用生命诠释了什么是爱国主义" },
+        { id: "responsibility", name: "责任卡", desc: "时代责任与担当——承担救亡图存的历史使命", img: "images/cards/card_responsibility.jpg", effect: { responsibility: 20 }, recommend: false, hint: "他们承担起了救亡图存的历史责任" },
+        { id: "democracy", name: "民主卡", desc: "民主的内涵与价值——为了民主共和的理想而战", img: "images/cards/card_democracy.jpg", effect: { democracy: 20 }, recommend: false, hint: "他们为了民主共和的理想而战" }
+      ]},
+
+      // ===== 第三幕：民国诞生，共和初现 =====
+      { type: "act_transition", actTitle: "第三程", actSubtitle: "民国诞生，共和初现", bg: "images/bg/nanjing_1912.jpg" },
+
+      { speaker: "芙宁娜", text: "1912年1月1日，中华民国临时政府在南京成立！", scene: "nanjing_1912", bg: "images/bg/nanjing_1912.jpg", charLeft: 'excited' },
+      { speaker: "芙宁娜", text: "我宣誓就任中华民国临时大总统。", scene: "nanjing_1912", bg: "images/bg/nanjing_1912.jpg", charLeft: 'serious' },
+      { speaker: "芙宁娜", text: "中国历史上第一个资产阶级共和国诞生了！", scene: "nanjing_1912", bg: "images/bg/nanjing_1912.jpg", charLeft: 'excited' },
+      { speaker: "胡桃", text: "太好了！中国终于没有皇帝了！", scene: "nanjing_1912", bg: "images/bg/nanjing_1912.jpg", charRight: 'normal' },
+
+      { type: "knowledge", id: "k_zhonghua_minguo", name: "🛡️ 中华民国临时政府", desc: "1912年1月1日在南京成立，孙中山任临时大总统，是中国历史上第一个资产阶级共和国政府。", category: "历史" },
+
+      // —— 清帝退位 ——
+      { speaker: "芙宁娜", text: "1912年2月12日，清宣统帝下诏退位。", scene: "forbidden_city", bg: "images/bg/forbidden_city.jpg", charLeft: 'serious' },
+      { speaker: "芙宁娜", text: "至此，统治中国两千多年的封建君主专制制度结束了！", scene: "forbidden_city", bg: "images/bg/forbidden_city.jpg", charLeft: 'excited' },
+
+      { type: "collectible", name: "清帝退位火种" },
+
+      { type: "knowledge", id: "k_qingdi_tuiwei", name: "🛡️ 清帝退位", desc: "1912年2月12日清宣统帝下诏退位，结束了中国两千多年的封建君主专制制度。", category: "历史" },
+
+      // —— 临时约法 ——
+      { speaker: "芙宁娜", text: "1912年3月，我们颁布了《中华民国临时约法》。", scene: "provisional_government", bg: "images/bg/provisional_government.jpg", charLeft: 'normal' },
+      { speaker: "芙宁娜", text: "它规定：中华民国的主权属于全体国民；国民一律平等；国民享有言论、出版、集会、结社等自由。", scene: "provisional_government", bg: "images/bg/provisional_government.jpg", charLeft: 'serious' },
+
+      { type: "choice", scene: "provisional_government", "prompt": "《中华民国临时约法》体现了道法中的哪些原则？", choices: [
+        { text: "A. 主权在民", effects: { democracy: 15 } },
+        { text: "B. 法律面前人人平等", effects: { rule: 15 } },
+        { text: "C. 以上都是", effects: { democracy: 10, rule: 10 } }
+      ]},
+
+      { speaker: "芙宁娜", text: "答对了！《临时约法》是中国历史上第一部具有资产阶级共和国宪法性质的文件。", scene: "provisional_government", bg: "images/bg/provisional_government.jpg", charLeft: 'excited' },
+
+      { type: "collectible", name: "临时约法火种" },
+
+      { type: "knowledge", id: "k_linshi_yuefa", name: "🛡️ 《中华民国临时约法》", desc: "1912年3月颁布，中国历史上第一部具有资产阶级共和国宪法性质的文件，规定主权属于全体国民。", category: "历史" },
+    
+  // EV-XR-1：辛亥革命为什么能成功
+  {
+    type: "evidence",
+    items: [
+      { type: "📜 宣言", title: "同盟会宣言（1905年）",
+        content: "驱除鞑虏，恢复中华，创立民国，平均地权。——中国同盟会政治纲领" },
+      { type: "📊 数据", title: "革命团体发展统计（1905-1911）",
+        content: "同盟会成立后，在全国各地建立了多个分会，会员超过万人。同时，新军中的革命力量不断壮大，到1911年，全国新军约有26万人，其中同情革命的比例越来越高。" },
+      { type: "📰 报道", title: "保路运动报道（1911年）",
+        content: "清政府将民办铁路收归国有并卖给洋人，引发四川保路运动。清政府调湖北新军入川镇压，导致武昌空虚，为起义创造了绝佳时机。" }
+    ],
+    question: "辛亥革命为什么能在1911年成功爆发？",
+    options: [
+      { text: "因为孙中山个人的领导能力", correctIndex: 2,
+        wrongFeedback: "孙中山是重要领袖，但革命的成功不是一个人的功劳。胡桃说：'历史不是一个人创造的。'" },
+      { text: "完全是因为运气好", correctIndex: 2,
+        wrongFeedback: "保路运动确实提供了时机，但'运气'背后是长期的组织和准备。芙宁娜说：'机会只留给有准备的人。'" },
+      { text: "长期组织准备+民族危机加深+保路运动提供的时机", correctIndex: 2,
+        correctFeedback: "✅ 正确！辛亥革命的成功是多重因素共同作用的结果：同盟会的长期组织、新军中的革命力量、民族危机的加深、以及保路运动创造的时机。改革需要条件，革命也需要。",
+        effects: { rule: 5, justice: 5 } }
+    ]
+  },
+
+  // PC-XR-2：南北和谈——孙中山让位
+  {
+    type: "pressure_choice",
+    timeout: 8,
+    defaultChoice: 2,
+    urgentText: "袁世凯手握北洋军，列强支持他。孙中山说：'如果我不让位，中国会陷入内战。'——",
+    timeoutText: "你没有表态。孙中山独自做出了决定——让位给袁世凯。历史证明，这个决定带来了更大的灾难。",
+    choices: [
+      { text: "支持孙中山——革命果实不能拱手让人！", effects: { justice: 15, democracy: 5 } },
+      { text: "理解孙中山的苦衷——和平比权力更重要", effects: { rule: 10, justice: 5 } },
+      { text: "建议孙中山设置条件限制袁世凯的权力", effects: { rule: 15 } },
+      { text: "沉默——政治太复杂了", effects: {} }
+    ]
+  },
+
+  { type: "npc_fate_event", npcId: "yuan_shikai", newState: "ambitious",
+    eventText: "袁世凯接受了共和的名义，但他的眼中闪烁着另一种光芒。" },
+  { type: "npc_fate_event", npcId: "student", newState: "inspired",
+    eventText: "进步学生在革命中受到了启蒙。他们说：'辛亥革命告诉我们，只有彻底改变，才能真正改变。'" },
+
+  { type: "hook", text: "袁世凯摘下了共和的面具，露出了帝制的真面目。可更可怕的是，很多人并不反对。" },
+
+  { type: "knowledge", id: "k_minzhu_gonghe", name: "🛡️ 民主共和观念", desc: "辛亥革命使民主共和观念深入人心，从此任何复辟帝制的企图都必然失败。这是辛亥革命最深远的影响。", category: "历史" },
+
+      // ===== 第四幕：革命果实，被人窃取 =====
+      { type: "act_transition", actTitle: "第四程", actSubtitle: "革命果实，被人窃取", bg: "images/bg/beijing.jpg" },
+
+      { speaker: "袁世凯", text: "只要清帝退位，我就支持共和。", scene: "beijing", bg: "images/bg/beijing.jpg", charLeft: 'yuan_shikai' },
+      { speaker: "芙宁娜", text: "为了避免内战，实现和平统一，我同意辞去临时大总统职务。", scene: "beijing", bg: "images/bg/beijing.jpg", charLeft: 'serious' },
+      { speaker: "芙宁娜", text: "1912年3月，袁世凯在北京就任中华民国临时大总统。", scene: "beijing", bg: "images/bg/beijing.jpg", charLeft: 'normal' },
+      { speaker: "芙宁娜", text: "辛亥革命的胜利果实，被袁世凯窃取了。", scene: "beijing", bg: "images/bg/beijing.jpg", charLeft: 'serious' },
+      { speaker: "胡桃", text: "太可惜了！革命就这样失败了吗？", scene: "beijing", bg: "images/bg/beijing.jpg", charRight: 'solemn' },
+      { speaker: "芙宁娜", text: "从某种意义上说，是的。袁世凯建立了北洋军阀的独裁统治。", scene: "beijing", bg: "images/bg/beijing.jpg", charLeft: 'serious' },
+      { speaker: "芙宁娜", text: "辛亥革命没有完成反帝反封建的革命任务，没有改变中国半殖民地半封建社会的性质。", scene: "beijing", bg: "images/bg/beijing.jpg", charLeft: 'serious' },
+
+      { type: "collectible", name: "革命遗憾火种" },
+
+      { type: "knowledge", id: "k_yuan_shikai", name: "🛡️ 袁世凯窃取革命果实", desc: "袁世凯凭借手中掌握的军权和帝国主义的支持，窃取了辛亥革命的胜利果实，建立了北洋军阀的独裁统治。", category: "历史" },
+    
+  // EV-XR-2：辛亥革命的局限性
+  {
+    type: "evidence",
+    items: [
+      { type: "📜 文献", title: "《中华民国临时约法》",
+        content: "中华民国之主权属于国民全体。然而，这部约法在实际执行中几乎没有任何约束力——袁世凯很快就用武力撕毁了它。" },
+      { type: "📊 数据", title: "辛亥革命后农村土地分配",
+        content: "辛亥革命后，农村的土地所有制几乎没有变化。占人口少数的地主阶级仍然占有大部分土地，广大农民的生活没有得到改善。" },
+      { type: "✉️ 信件", title: "鲁迅对辛亥革命的反思",
+        content: "辛亥革命后，我回到故乡，发现什么都没有变。人们仍然在封建礼教中挣扎。革命只剪掉了人们头上的辫子，却没有剪掉心中的辫子。" }
+    ],
+    question: "辛亥革命为什么未能改变中国半殖民地半封建社会的性质？",
+    options: [
+      { text: "因为革命不够彻底，应该继续战斗", correctIndex: 2,
+        wrongFeedback: "不是不够彻底的问题。芙宁娜说：'革命者想改变一切，但有些东西不是一场革命就能改变的。'" },
+      { text: "因为袁世凯窃取了革命果实", correctIndex: 2,
+        wrongFeedback: "袁世凯是重要原因，但不是唯一原因。胡桃说：'即使没有袁世凯，革命的局限性也依然存在。'" },
+      { text: "因为资产阶级的软弱性和妥协性，未触动封建土地制度和帝国主义特权", correctIndex: 2,
+        correctFeedback: "✅ 正确！辛亥革命推翻了帝制，但没有触动封建土地所有制，没有驱逐帝国主义势力。它完成的是政治制度的变革，而非社会结构的根本变革。实现中华民族伟大复兴，必须找到符合中国国情的正确道路。",
+        effects: { justice: 10, rule: 5 } }
+    ]
+  },
+
+  // PC-XR-3：清帝退位——如何对待满清皇室
+  {
+    type: "pressure_choice",
+    timeout: 6,
+    defaultChoice: 2,
+    urgentText: "清帝即将退位。有人主张严惩满清皇室，有人主张优待——",
+    timeoutText: "你没有做出选择。最终清帝被允许留在紫禁城中，享受优待。这个决定在后来引发了巨大的争议。",
+    choices: [
+      { text: "严惩满清皇室——他们压迫了汉人268年", effects: { justice: 5, democracy: 10 } },
+      { text: "优待清帝——和平过渡比报复更重要", effects: { rule: 15, justice: 10 } },
+      { text: "不惩罚也不优待，让他们成为普通公民", effects: { democracy: 10, rule: 5 } },
+      { text: "这不是你能决定的事情", effects: {} }
+    ]
+  },
+
+  { type: "npc_fate_event", npcId: "sun_yat_sen", newState: "disappointed",
+    eventText: "孙中山被迫让位后，再次流亡。他说：'共和的旗帜还在，但共和的精神已经被玷污了。'" },
+  { type: "npc_fate_event", npcId: "yuan_shikai", newState: "emperor",
+    eventText: "袁世凯称帝83天后被迫取消。他在众叛亲离中病死，留下了一个四分五裂的中国。" },
+
+  { type: "collectible_conditional", name: "武昌起义的子弹壳",
+    condition: () => lastChoiceIndex === 0 },
+
+  { type: "if_card_used", cardId: "patriotism",
+    speaker: "hutao", text: "（认真地）辛亥革命的先烈们……他们不是为了自己而战，是为了一个他们可能看不到的未来。在往生堂，我们管这叫'最大的勇气'。" },
+  { type: "if_card_used", cardId: "rule",
+    speaker: "fulina", text: "（若有所思）《临时约法》……用法律来约束权力，这个想法是对的。可如果没有人来守护法律，法律就只是一张纸。" },
+
+  { type: "hook", text: "辛亥革命结束了，但革命者的梦想远未实现。下一个时代，需要新的力量。" },
+
+  { type: "knowledge", id: "k_juxianxing", name: "🛡️ 辛亥革命的局限性", desc: "辛亥革命没有完成反帝反封建的革命任务，没有改变中国半殖民地半封建社会的性质。", category: "历史" },
+
+      // ===== 结局一：历史结局（最符合史实） =====
+      { type: "act_transition", actTitle: "结局一", actSubtitle: "历史结局", bg: "images/bg/opera_house.jpg" },
+
+      { speaker: "芙宁娜", text: "这就是真实的历史。辛亥革命虽然失败了，但它的历史意义是不可磨灭的。", scene: "opera_house", bg: "images/bg/opera_house.jpg", charLeft: 'serious' },
+      { speaker: "胡桃", text: "它推翻了清王朝的反动统治，结束了中国两千多年的封建君主专制制度。", scene: "opera_house", bg: "images/bg/opera_house.jpg", charRight: 'solemn' },
+      { speaker: "芙宁娜", text: "它使民主共和的观念深入人心。从此以后，任何复辟帝制的企图，都必然会失败。", scene: "opera_house", bg: "images/bg/opera_house.jpg", charLeft: 'normal' },
+      { speaker: "胡桃", text: "它还推动了中国民族资本主义的发展，为中国的进步打开了闸门。", scene: "opera_house", bg: "images/bg/opera_house.jpg", charRight: 'normal' },
+      { speaker: "芙宁娜", text: "从道法的角度看，辛亥革命告诉我们：爱国是每个公民的责任，民主是人类的共同追求。", scene: "opera_house", bg: "images/bg/opera_house.jpg", charLeft: 'serious' },
+
+      // ===== 结局二：戏剧结局（芙宁娜改编） =====
+      { type: "act_transition", actTitle: "结局二", actSubtitle: "戏剧结局", bg: "images/bg/nanjing.jpg" },
+
+      { speaker: "芙宁娜", text: "我识破了袁世凯的阴谋，拒绝辞去临时大总统职务。", scene: "nanjing", bg: "images/bg/nanjing.jpg", charLeft: 'serious' },
+      { speaker: "芙宁娜", text: "革命党人团结一心，打败了北洋军阀的军队。", scene: "nanjing", bg: "images/bg/nanjing.jpg", charLeft: 'excited' },
+      { speaker: "芙宁娜", text: "我们真正实现了民主共和，建立了一个自由、平等、法治的新中国。", scene: "nanjing", bg: "images/bg/nanjing.jpg", charLeft: 'excited' },
+      { speaker: "胡桃", text: "人民终于当家作主了！", scene: "nanjing", bg: "images/bg/nanjing.jpg", charRight: 'normal' },
+      { speaker: "芙宁娜", text: "虽然这不是真实的历史，但它告诉我们：只要我们坚持民主和法治，就一定能实现国家的繁荣富强。", scene: "nanjing", bg: "images/bg/nanjing.jpg", charLeft: 'normal' },
+
+      // ===== 结局三：往生结局（胡桃主导） =====
+      { type: "act_transition", actTitle: "结局三", actSubtitle: "往生结局", bg: "images/bg/lingtai.jpg" },
+
+      { speaker: "胡桃", text: "我是往生堂的胡桃。今天，我来为所有在辛亥革命中牺牲的革命先烈送行。", scene: "lingtai", bg: "images/bg/lingtai.jpg", charRight: 'solemn' },
+      { speaker: "胡桃", text: "你们为了国家的独立，为了人民的幸福，献出了自己宝贵的生命。", scene: "lingtai", bg: "images/bg/lingtai.jpg", charRight: 'solemn' },
+      { speaker: "胡桃", text: "你们的血没有白流。你们播下的共和火种，已经在中华大地上生根发芽。", scene: "lingtai", bg: "images/bg/lingtai.jpg", charRight: 'normal' },
+      { speaker: "革命先烈", text: "我们的理想实现了吗？", scene: "lingtai", bg: "images/bg/lingtai.jpg", charLeft: 'martyr_ghost' },
+      { speaker: "胡桃", text: "实现了！现在的中国，已经是一个独立、民主、富强的国家。", scene: "lingtai", bg: "images/bg/lingtai.jpg", charRight: 'normal' },
+      { speaker: "胡桃", text: "人民过上了幸福的生活。你们的牺牲，换来了今天的和平与安宁。", scene: "lingtai", bg: "images/bg/lingtai.jpg", charRight: 'solemn' },
+      { speaker: "芙宁娜", text: "（旁白）胡桃为所有辛亥革命烈士举办了一场盛大的祭奠仪式。", scene: "lingtai", bg: "images/bg/lingtai.jpg", charLeft: 'serious' },
+      { speaker: "胡桃", text: "历史不会忘记你们，人民不会忘记你们。", scene: "lingtai", bg: "images/bg/lingtai.jpg", charRight: 'solemn' },
+      { speaker: "胡桃", text: "愿你们的灵魂安息。愿共和之光，永远照耀中华大地。", scene: "lingtai", bg: "images/bg/lingtai.jpg", charRight: 'solemn' },
+
+      // ===== 谢幕复盘与知识检测 =====
+      { type: "act_transition", actTitle: "谢幕", actSubtitle: "知识复盘", bg: "images/bg/opera_house.jpg" },
+
+      { speaker: "芙宁娜", text: "演出圆满结束！现在让我们复盘今天学到的所有知识点。", scene: "opera_house", bg: "images/bg/opera_house.jpg", charLeft: 'excited' },
+      { speaker: "芙宁娜", text: "历史知识点：", scene: "opera_house", bg: "images/bg/opera_house.jpg", charLeft: 'normal' },
+      { speaker: "芙宁娜", text: "1. 辛亥革命的指导思想：三民主义（民族、民权、民生）", scene: "opera_house", bg: "images/bg/opera_house.jpg" },
+      { speaker: "芙宁娜", text: "2. 爆发标志：1911年10月10日武昌起义", scene: "opera_house", bg: "images/bg/opera_house.jpg" },
+      { speaker: "芙宁娜", text: "3. 中华民国成立：1912年1月1日，南京", scene: "opera_house", bg: "images/bg/opera_house.jpg" },
+      { speaker: "芙宁娜", text: "4. 重要成果：结束了中国两千多年的封建君主专制制度", scene: "opera_house", bg: "images/bg/opera_house.jpg" },
+      { speaker: "芙宁娜", text: "5. 重要文献：《中华民国临时约法》", scene: "opera_house", bg: "images/bg/opera_house.jpg" },
+      { speaker: "芙宁娜", text: "6. 历史意义：使民主共和观念深入人心", scene: "opera_house", bg: "images/bg/opera_house.jpg" },
+      { speaker: "芙宁娜", text: "7. 局限性：没有完成反帝反封建的革命任务", scene: "opera_house", bg: "images/bg/opera_house.jpg" },
+
+      { speaker: "胡桃", text: "道法知识点：", scene: "opera_house", bg: "images/bg/opera_house.jpg", charRight: 'normal' },
+      { speaker: "胡桃", text: "1. 爱国主义是民族精神的核心，是我们每个人的责任", scene: "opera_house", bg: "images/bg/opera_house.jpg" },
+      { speaker: "胡桃", text: "2. 民主是人类的共同追求，国家的权力属于人民", scene: "opera_house", bg: "images/bg/opera_house.jpg" },
+      { speaker: "胡桃", text: "3. 法治是民主的保障，宪法是国家的根本法", scene: "opera_house", bg: "images/bg/opera_house.jpg" },
+      { speaker: "胡桃", text: "4. 生命的意义在于对社会的贡献，为理想献身的精神永垂不朽", scene: "opera_house", bg: "images/bg/opera_house.jpg" },
+
+      // —— 知识测试 ——
+      { speaker: "芙宁娜", text: "现在进行知识测试：", scene: "opera_house", bg: "images/bg/opera_house.jpg", charLeft: 'normal' },
+
+      { type: "choice", scene: "opera_house", "prompt": "第一题（历史）：辛亥革命的指导思想是什么？", choices: [
+        { text: "A. 自强求富", effects: { democracy: -5 } },
+        { text: "B. 三民主义", effects: { democracy: 10, patriotism: 10 } },
+        { text: "C. 民主科学", effects: { democracy: -5 } }
+      ]},
+      { speaker: "芙宁娜", text: "答对了！三民主义是孙中山领导辛亥革命的指导思想。", scene: "opera_house", bg: "images/bg/opera_house.jpg", charLeft: 'excited' },
+
+      { type: "choice", scene: "opera_house", "prompt": "第二题（历史）：辛亥革命最重要的历史功绩是什么？", choices: [
+        { text: "A. 推翻了清王朝的反动统治", effects: { patriotism: 5 } },
+        { text: "B. 结束了中国两千多年的封建君主专制制度", effects: { patriotism: 10, democracy: 10 } },
+        { text: "C. 使中国走上了资本主义道路", effects: { patriotism: -5 } }
+      ]},
+      { speaker: "胡桃", text: "答对了！这是辛亥革命最伟大的历史功绩。", scene: "opera_house", bg: "images/bg/opera_house.jpg", charRight: 'normal' },
+
+      { type: "choice", scene: "opera_house", "prompt": "第三题（道法）：下列关于爱国主义的说法，错误的是？", choices: [
+        { text: "A. 爱国主义是中华民族精神的核心", effects: { patriotism: -5 } },
+        { text: "B. 爱国主义就是要盲目排外", effects: { patriotism: 10, rule: 10 } },
+        { text: "C. 爱国主义是每个公民的基本义务", effects: { patriotism: -5 } }
+      ]},
+      { speaker: "芙宁娜", text: "答对了！爱国主义不是盲目排外，而是理性的爱国。", scene: "opera_house", bg: "images/bg/opera_house.jpg", charLeft: 'normal' },
+
+      { type: "choice", scene: "opera_house", "prompt": "第四题（道法）：《中华民国临时约法》规定「中华民国的主权属于全体国民」，这体现了什么原则？", choices: [
+        { text: "A. 主权在民原则", effects: { democracy: 10, rule: 10 } },
+        { text: "B. 三权分立原则", effects: { democracy: -5 } },
+        { text: "C. 法律面前人人平等原则", effects: { rule: -5 } }
+      ]},
+      { speaker: "胡桃", text: "答对了！这是民主制度的核心原则。", scene: "opera_house", bg: "images/bg/opera_house.jpg", charRight: 'normal' },
+
+      { type: "choice", scene: "opera_house", "prompt": "第五题（综合）：辛亥革命对我们今天的启示是什么？", choices: [
+        { text: "A. 只有革命才能救中国", effects: { democracy: -5 } },
+        { text: "B. 爱国、民主、法治是国家发展的基石", effects: { democracy: 10, rule: 10, patriotism: 10 } },
+        { text: "C. 辛亥革命完全失败了，没有任何意义", effects: { patriotism: -5 } }
+      ]},
+      { speaker: "芙宁娜", text: "答对了！这正是辛亥革命留给我们最宝贵的精神财富。", scene: "opera_house", bg: "images/bg/opera_house.jpg", charLeft: 'excited' },
+
+      // —— 结语 ——
+      { speaker: "胡桃", text: "太棒了！你已经完全掌握了辛亥革命的所有知识点！", scene: "opera_house", bg: "images/bg/opera_house.jpg", charRight: 'normal' },
+      { speaker: "芙宁娜", text: "希望大家能铭记历史，传承革命先烈的爱国精神和责任担当。", scene: "opera_house", bg: "images/bg/opera_house.jpg", charLeft: 'serious' },
+      { speaker: "芙宁娜", text: "我们下次时空剧场再见！", scene: "opera_house", bg: "images/bg/opera_house.jpg", charLeft: 'excited' },
+
+  // PC-XR-4：袁世凯称帝——是否反对
+  {
+    type: "pressure_choice",
+    timeout: 6,
+    defaultChoice: 2,
+    urgentText: "袁世凯宣布恢复帝制！孙中山发出讨袁檄文——",
+    timeoutText: "你没有做出选择。护国战争爆发了，无数人为了共和而战。你站在一旁，看着历史重演。",
+    choices: [
+      { text: "加入护国军，保卫共和！", effects: { democracy: 15, justice: 10 } },
+      { text: "发表文章声讨袁世凯，唤醒民众", effects: { democracy: 10, patriotism: 5 } },
+      { text: "呼吁和平解决，避免内战", effects: { rule: 10 } },
+      { text: "远离政治——你已经厌倦了", effects: {} }
+    ]
+  },
+
+  { type: "hook", text: "辛亥革命结束了，但革命者的梦想远未实现。下一个时代，需要新的力量。" },
+
+      // —— 结局分支检查 ——
+      { type: "ending_check" }
+    ];
+</script>
+
+<!-- Game Engine -->
+<script src="engine.js?v=20260526e"></script>
+
+</body>
+</html>

@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>时空剧场 - 戊戌变法</title>
+  <link rel="stylesheet" href="engine.css?v=20260525c">
+</head>
+<body>
+
+<!-- 游戏场景 -->
+<div class="game-scene" id="gameScene">
+  <div class="scene-bg-text">1895</div>
+  <div class="scene-label" id="sceneLabel">第一程 · 甲午战败，公车上书</div>
+
+  <!-- 游戏控制按钮 -->
+  <div class="game-controls">
+    <button class="game-ctrl-btn" onclick="openCardModal()" title="道法卡牌图鉴">🃏 卡牌</button>
+    <button class="game-ctrl-btn" onclick="confirmMenu()" title="返回菜单">☰ 菜单</button>
+  </div>
+
+  <!-- 四维数值HUD -->
+  <div class="value-hud" id="valueHud"></div>
+
+  <!-- 选择面板 -->
+  <div class="choice-panel" id="choicePanel" style="display:none"></div>
+
+  <!-- 角色立绘显示区域 -->
+  <div id="character-display" style="position:absolute;bottom:176px;left:0;right:0;display:flex;justify-content:center;gap:56px;align-items:flex-end;pointer-events:none;z-index:2">
+    <div id="char-left-wrap" style="position:relative;height:min(54vh,520px);max-height:54vh;max-width:min(32vw,420px);display:none;overflow:visible">
+      <img id="char-left" src="" style="position:relative;z-index:1;width:auto;height:100%;max-width:100%;object-fit:contain;object-position:center bottom;display:block">
+    </div>
+    <div id="char-right-wrap" style="position:relative;height:min(54vh,520px);max-height:54vh;max-width:min(32vw,420px);display:none;overflow:visible">
+      <img id="char-right" src="" style="position:relative;z-index:1;width:auto;height:100%;max-width:100%;object-fit:contain;object-position:center bottom;display:block">
+    </div>
+  </div>
+
+  <!-- 对话框 -->
+  <div class="dialog-box" id="dialogBox" onclick="advanceDialog()">
+    <!-- 语音按钮已移除：espeak-ng 机械音暂不可用，等 GPT-SoVITS 配音就绪后恢复 -->
+    <div class="dialog-speaker" id="dialogSpeaker">
+      <span class="speaker-dot" id="speakerDot"></span>
+      <span id="speakerName"></span>
+    </div>
+    <div class="dialog-text" id="dialogText"></div>
+    <div class="dialog-continue" id="dialogContinue" style="display:none">点击继续 ▼</div>
+  </div>
+</div>
+
+<!-- 卡牌弹窗 -->
+<div class="modal-overlay" id="cardModal">
+  <div class="modal-box">
+    <div class="modal-title">道法卡牌图鉴</div>
+    <div class="modal-desc">（已获取的卡牌可点击查看详情）</div>
+    <div class="card-grid" id="cardGrid"></div>
+    <div class="modal-footer">
+      <button class="modal-close-btn" onclick="closeCardModal()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 卡牌详情弹窗 -->
+<div id="cardDetailOverlay" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;z-index:2000"></div>
+
+<!-- 收集品通知 -->
+<div class="collectible-toast" id="collectibleToast">
+  <div class="toast-title">✨ 获得收集品！</div>
+  <div class="toast-item" id="toastItem"></div>
+</div>
+
+
+<!-- External JS dependencies -->
+<script src="data-store.js"></script>
+<script src="points-system.js"></script>
+<script src="audio-manager.js?v=20260525c"></script>
+<script src="voice-manager.js?v=20260525d"></script>
+<script src="fireworks.js"></script>
+<script src="data/essay-challenges.js"></script>
+
+<!-- Script data: GAME_CONFIG override + DIALOG_SCRIPT -->
+<script>
+    // ========== 戊戌变法 - 剧本配置 ==========
+    window.GAME_CONFIG = {
+      scriptId: 'wuxu_reform',
+      title: '时空剧场 - 戊戌变法',
+      values: { reform: 50, patriotism: 50, responsibility: 50, rule: 50 },
+      valueLabels: { reform: '变革', patriotism: '爱国', responsibility: '责任', rule: '法治' },
+      valueColors: { reform: '#FF8C00', patriotism: '#DC143C', responsibility: '#4169E1', rule: '#2E8B57' },
+      charConfig: {
+        fulina: { name: '芙宁娜', color: '#7B68EE', dir: 'fulina', defaultExpr: 'normal', file: 'fulina', ext: '.png' },
+        hutao: { name: '胡桃', color: '#FF6B6B', dir: 'hutao', defaultExpr: 'normal', file: 'hutao', ext: '.png' },
+        guangxu: { name: '光绪帝', color: '#FFD700', dir: 'npc', defaultExpr: 'guangxu', file: 'guangxu', ext: '.jpg' },
+        kangyouwei: { name: '康有为', color: '#4169E1', dir: 'npc', defaultExpr: 'kangyouwei', file: 'kangyouwei', ext: '.jpg' },
+        liangqichao: { name: '梁启超', color: '#32CD32', dir: 'npc', defaultExpr: 'liangqichao', file: 'liangqichao', ext: '.png' },
+        tansitong: { name: '谭嗣同', color: '#DC143C', dir: 'npc', defaultExpr: 'tansitong', file: 'tansitong', ext: '.jpg' },
+        cixi: { name: '慈禧太后', color: '#8B0000', dir: 'npc', defaultExpr: 'cixi', file: 'cixi', ext: '.jpg' }
+      },
+      speakerNameToKey: {
+        '芙宁娜': 'fulina', '胡桃': 'hutao',
+        '光绪帝': 'guangxu', '康有为': 'kangyouwei',
+        '梁启超': 'liangqichao', '谭嗣同': 'tansitong',
+        '慈禧太后': 'cixi'
+      },
+      sceneBGM: {
+        '时空剧场': AudioManager.BGM.WUXU_THEATER,
+        '第一幕 · 甲午战败，公车上书': AudioManager.BGM.WUXU_CRISIS,
+        '第二幕 · 百日维新': AudioManager.BGM.WUXU_REFORM,
+        '第三幕 · 戊戌政变': AudioManager.BGM.WUXU_COUP,
+        '第四幕 · 变法的失败与反思': AudioManager.BGM.WUXU_SORROW,
+        '第五幕 · 维新精神永存': AudioManager.BGM.WUXU_LEGACY,
+      },
+      CARDS: {
+        reform: {
+          name: "变革卡", knowledge: "改革创新精神",
+          description: "触发「变革觉醒」状态，推动社会变革与制度创新",
+          effect: {"reform": 20}, color: "#FF8C00"
+        },
+        patriotism: {
+          name: "爱国卡", knowledge: "爱国主义精神",
+          description: "触发「爱国热血」状态，心怀家国、为国为民",
+          effect: {"patriotism": 20}, color: "#DC143C"
+        },
+        responsibility: {
+          name: "责任卡", knowledge: "责任担当意识",
+          description: "触发「责任担当」状态，勇于担当、甘于奉献",
+          effect: {"responsibility": 20}, color: "#4169E1"
+        },
+        rule: {
+          name: "法治卡", knowledge: "法治信仰",
+          description: "触发「法治秩序」状态，崇尚法治、追求公平正义",
+          effect: {"rule": 20}, color: "#2E8B57"
+        }
+      },
+      NPC_FATE_CONFIG: {
+        kangyouwei: {
+          name: "康有为", title: "维新领袖", avatar: "🧓",
+          stateLabels: { unknown: "未知", leading: "领导变法", exiled: "流亡海外", disillusioned: "幻灭" }
+        },
+        tansitong: {
+          name: "谭嗣同", title: "维新志士", avatar: "⚔️",
+          stateLabels: { unknown: "未知", determined: "决心赴死", imprisoned: "身陷囹圄", martyred: "英勇就义" }
+        },
+        guangxu: {
+          name: "光绪帝", title: "清朝皇帝", avatar: "👑",
+          stateLabels: { unknown: "未知", hopeful: "寄予希望", powerless: "无力回天", imprisoned: "被囚瀛台" }
+        }
+      },
+      ESSAY_QUESTIONS: [
+        {
+          question: "结合戊戌变法的历史背景，分析甲午战败如何推动了维新变法运动的兴起。",
+          template: "甲午战败后，__________的签订使民族危机空前严重。康有为、梁启超等人认识到只有__________才能救亡图存，于是发起了__________运动，拉开了维新变法的序幕。"
+        },
+        {
+          question: "谭嗣同在戊戌政变中本可逃走，却选择留下赴死。请结合他的名言，分析他的选择体现了怎样的精神。",
+          template: "谭嗣同说：「各国变法无不从__________而成，今日中国未闻有因变法而__________者，此国之所以不昌也。」他选择留下赴死，体现了__________的崇高精神。"
+        },
+        {
+          question: "戊戌变法虽然失败了，但为什么说它在中国近代史上具有重大意义？",
+          template: "戊戌变法虽然失败，但它是中国近代第__________次思想解放运动，在社会上起了__________的作用，为后来的__________革命奠定了思想基础。"
+        },
+        {
+          question: "从道法的角度，谈谈戊戌变法中维新志士的选择如何体现「爱国主义」和「责任担当」。",
+          template: "维新志士在国家危亡之际挺身而出，体现了道法中「__________」的核心价值。谭嗣同以死明志，诠释了「__________」的深刻内涵——为国家和理想献身，生命便有了崇高意义。"
+        },
+        {
+          question: "比较洋务运动和戊戌变法的异同，说明为什么仅仅学习西方技术是不够的。",
+          template: "洋务运动主张「__________」，只学习西方的军事和技术；而戊戌变法进一步要求学习西方的__________制度。这说明仅靠技术变革是不够的，还需要__________层面的改革才能真正实现国家富强。"
+        }
+      ],
+      QUIZ_DATA: [
+        {
+          question: "戊戌变法的序幕事件是什么？",
+          options: ["A. 金田起义", "B. 公车上书", "C. 虎门销烟", "D. 辛亥革命"],
+          answer: 1,
+          explanation: "1895年康有为、梁启超联合举人上书光绪帝，史称「公车上书」，拉开了维新变法的序幕。"
+        },
+        {
+          question: "戊戌变法持续了多少天？",
+          options: ["A. 60天", "B. 80天", "C. 103天", "D. 120天"],
+          answer: 2,
+          explanation: "戊戌变法从1898年6月11日到9月21日，共持续103天，因此被称为「百日维新」。"
+        },
+        {
+          question: "戊戌政变后，被杀害的六位维新志士被称为？",
+          options: ["A. 革命六烈士", "B. 戊戌六君子", "C. 维新六元勋", "D. 百日六贤"],
+          answer: 1,
+          explanation: "谭嗣同、杨锐、刘光第、林旭、杨深秀、康广仁六人被杀害，史称「戊戌六君子」。"
+        },
+        {
+          question: "戊戌变法的性质是什么？",
+          options: [
+            "A. 农民阶级的反封建运动",
+            "B. 资产阶级改良运动",
+            "C. 无产阶级革命运动",
+            "D. 封建统治阶级的自救运动"
+          ],
+          answer: 1,
+          explanation: "戊戌变法是一场自上而下的资产阶级改良运动，也是中国近代第一次思想解放运动。"
+        },
+        {
+          question: "下列哪项不属于戊戌变法的内容？",
+          options: [
+            "A. 废除八股取士",
+            "B. 裁撤冗官冗员",
+            "C. 废除君主专制制度",
+            "D. 训练新式陆军"
+          ],
+          answer: 2,
+          explanation: "戊戌变法并未废除君主专制制度，其目标是建立君主立宪制。废除君主专制是后来辛亥革命的目标。"
+        }
+      ],
+      endingConditions: {
+        afterlifeMinItems: 4,
+        afterlifeValueKey: 'patriotism',
+        afterlifeMinValue: 70,
+        dramaticMinHighCount: 2,
+        dramaticMinValue: 80
+      },
+      endingTitles: {
+        historical: "维新的火种",
+        dramatic: "血与觉醒",
+        afterlife: "六君子的灵魂"
+      },
+      totalKnowledge: 8,
+      hasNpcFateSummary: true,
+      ESSAY_CHALLENGE: WUXU_REFORM_ESSAY,
+      afterlifeDialog: [
+        { speaker: "胡桃", text: "谭嗣同、杨锐、刘光第、林旭、杨深秀、康广仁——戊戌六君子，我来送你们。" },
+        { speaker: "胡桃", text: "你们的血没有白流，你们的精神，永远照亮中国。" },
+        { speaker: "谭嗣同", text: "我自横刀向天笑，去留肝胆两昆仑。死又有何惧？" },
+        { speaker: "胡桃", text: "你们用生命换来的觉醒之火，终将燃遍神州大地。" },
+        { speaker: "芙宁娜", text: "真正的爱国，不是空谈，是用生命守护家国。" },
+        { speaker: "胡桃", text: "请安息吧。后来的中国人，会替你们走完那条未竟之路。" },
+        { speaker: "芙宁娜", text: "维新虽败，精神永存。你们的名字，将永远镌刻在历史的丰碑上。" },
+        { speaker: "旁白", text: "秋风萧瑟中，六君子的英魂缓缓消散，化作满天星光，照耀着这片他们深爱的土地。" }
+      ],
+      dramaticDialog: [
+        { speaker: "芙宁娜", text: "我说服新军支持变法，阻止政变发生！" },
+        { speaker: "胡桃", text: "袁世凯倒戈支持皇帝，荣禄的军队被新军包围！" },
+        { speaker: "光绪帝", text: "朕的变法，终于可以推行了！大清有救了！" },
+        { speaker: "康有为", text: "制度局成立，新政全面铺开。中国终于走上了近代化的道路！" },
+        { speaker: "胡桃", text: "改革顺利推行，中国走上君主立宪的近代化道路。" },
+        { speaker: "芙宁娜", text: "以和平改革实现强国，这是最理想的走向。但历史没有如果，唯有铭记与前行。" }
+      ],
+      historicalText: "戊戌变法（1898年），又称百日维新，是以康有为、梁启超为代表的维新派推动的自上而下的资产阶级改良运动。甲午战败后民族危机空前严重，1895年「公车上书」拉开序幕，1898年6月光绪帝颁布「明定国是」诏书正式开始变法。变法涉及政治、经济、文化、军事四大领域，但仅持续103天便因慈禧太后发动戊戌政变而失败。谭嗣同等戊戌六君子慷慨就义。变法虽败，但作为中国近代第一次思想解放运动，它推动了维新思想的传播，促进了中国人民的觉醒，为后来的辛亥革命奠定了思想基础。维新志士的爱国精神与改革勇气，永远值得后人铭记。",
+      choiceReflectionMap: {
+        '第一幕 · 甲午战败，公车上书': '📜 历史回响\n\n1895年《马关条约》签订后，康有为、梁启超联合1300多名举人上书光绪帝，请求拒和、迁都、变法。这就是著名的「公车上书」。\n\n虽然上书最终被拒绝，但它标志着中国知识分子开始觉醒——他们不再只是埋头苦读的书生，而是开始思考国家的命运。\n\n💭 在民族危亡之际，知识分子应该扮演怎样的角色？是埋头读书，还是挺身而出？',
+        '第二幕 · 百日维新': '📜 历史回响\n\n1898年6月11日，光绪帝颁布「明定国是」诏书，戊戌变法正式开始。在短短103天里，变法涉及政治、经济、文化、军事四大领域。\n\n裁撤冗官、废除八股、兴办学堂、训练新军……每一项改革都触动了既得利益者的根本利益。\n\n💭 改革总是会触动某些人的利益。如果你是光绪帝，你会选择「渐进改革」还是「大刀阔斧」？',
+        '第三幕 · 戊戌政变': '📜 历史回响\n\n1898年9月21日，慈禧太后发动戊戌政变，囚禁光绪帝，搜捕维新志士。\n\n谭嗣同本可逃走，却选择留下赴死。他说：「各国变法无不从流血而成，今日中国未闻有因变法而流血者，此国之所以不昌也。有之，请自嗣同始！」\n\n💭 谭嗣同的选择——用死亡唤醒国人——你认为值得吗？\n\n💭 如果改革注定失败，参与者应该逃跑保存实力，还是留下以身殉道？',
+        '第四幕 · 变法的失败与反思': '📜 历史回响\n\n戊戌变法失败的原因是多方面的：维新派力量弱小、缺乏群众基础、寄希望于没有实权的皇帝、对顽固派妥协退让……\n\n但变法最大的遗产，是思想启蒙。它让更多中国人认识到：不变革，中国就没有出路。\n\n💭 失败的改革，是否也有其历史价值？\n\n💭 如果你是当时的维新派，你会如何避免失败的命运？',
+        '第五幕 · 维新精神永存': '📜 历史回响\n\n戊戌变法虽然只持续了103天，但它在中国近代史上留下了不可磨灭的印记。\n\n它推动了维新思想的传播，促进了中国人民的觉醒，为后来的辛亥革命奠定了思想基础。谭嗣同等人的爱国精神与改革勇气，至今仍激励着后人。\n\n💭 维新志士用鲜血换来的觉醒，对今天的我们有什么启示？\n\n💭 在你看来，「变法精神」在当代中国还有怎样的现实意义？'
+      }
+    };
+
+    // ========== 戊戌变法 - 剧本数据 ==========
+    window.DIALOG_SCRIPT = [
+
+      // ──────────────────────────────────────────────
+      // 开场 · 古籍翻开
+      // ──────────────────────────────────────────────
+      { speaker: "旁白", text: "1898年。大清帝国。", scene: "引渡·戊戌变法", bg: "images/bg/imperial_palace.jpg" },
+      { speaker: "旁白", text: "这是一个关于103天的故事。", scene: "引渡·戊戌变法" },
+      { speaker: "旁白", text: "103天里，有人试图改变一个帝国的命运。", scene: "引渡·戊戌变法" },
+      { speaker: "旁白", text: "103天后，一切都结束了。但有些东西，比帝国更长久。", scene: "引渡·戊戌变法" },
+      { speaker: "芙宁娜", text: "（轻声）这个故事...很短。但很重。", scene: "引渡·戊戌变法", charLeft: "normal", charRight: "normal" },
+      { speaker: "胡桃", text: "（安静地）嗯。有些故事不需要很长。", scene: "引渡·戊戌变法", charLeft: "normal", charRight: "normal" },
+
+      // ── 过渡到第一幕 ──
+      {
+        type: "act_transition",
+        scene: "第一幕 · 甲午战败，公车上书",
+        actTitle: "第一程",
+        subtitle: "甲午战败，公车上书",
+        bg: "images/bg/beijing_guild_hall.jpg"
+      },
+
+      // ──────────────────────────────────────────────
+      // 第一幕：甲午战败，公车上书
+      // ──────────────────────────────────────────────
+      {
+        speaker: "旁白",
+        text: "1895年春，甲午战争中国惨败。《马关条约》割地赔款的消息传回京城，举国震惊。",
+        scene: "第一幕 · 甲午战败，公车上书",
+        bg: "images/bg/beijing_guild_hall.jpg"
+      },
+      {
+        speaker: "胡桃",
+        text: "甲午战败，民族危亡！我们要上书皇帝，变法图强！",
+        scene: "第一幕 · 甲午战败，公车上书",
+        bg: "images/bg/beijing_guild_hall.jpg",
+        charRight: "normal"
+      },
+      {
+        speaker: "路人",
+        text: "不变法，中国就要亡了！",
+        scene: "第一幕 · 甲午战败，公车上书",
+        bg: "images/bg/beijing_guild_hall.jpg",
+        charLeft: "kangyouwei"
+      },
+      {
+        speaker: "芙宁娜",
+        text: "1895年，康有为、梁启超联合在京应试举人，联名上书光绪帝，史称「公车上书」。",
+        scene: "第一幕 · 甲午战败，公车上书",
+        bg: "images/bg/beijing_guild_hall.jpg",
+        charLeft: "normal"
+      },
+      {
+        type: "knowledge",
+        id: "k_wuxu_01",
+        name: "📚 公车上书",
+        desc: "1895年《马关条约》签订后，康有为、梁启超联合1300多名举人上书光绪帝，请求拒和、迁都、变法。虽未成功，但拉开了维新变法的序幕。",
+        category: "变革"
+      },
+      {
+        speaker: "胡桃",
+        text: "民族危机，是变法的根本原因。列强瓜分中国，已到了生死存亡的关头。",
+        scene: "第一幕 · 甲午战败，公车上书",
+        bg: "images/bg/beijing_guild_hall.jpg",
+        charRight: "solemn"
+      },
+      {
+        speaker: "芙宁娜",
+        text: "从道法的角度看，这就是「爱国主义」——心怀家国，在危难时刻挺身而出。",
+        scene: "第一幕 · 甲午战败，公车上书",
+        bg: "images/bg/beijing_guild_hall.jpg",
+        charLeft: "serious"
+      },
+      {
+        type: "collectible",
+        id: "wuxu_scroll_1",
+        name: "公车上书残卷",
+        desc: "公车上书联名折残页，上面密密麻麻写满了举人们的签名与变法诉求。",
+        scene: "第一幕 · 甲午战败，公车上书"
+      },
+      {
+        type: "choice",
+        scene: "第一幕 · 甲午战败，公车上书",
+        prompt: "公车上书的核心诉求是什么？",
+        choices: [
+          { text: "A. 拒和、迁都、变法", effects: { reform: 10, patriotism: 5 } },
+          { text: "B. 联俄制日、加强海防", effects: { patriotism: 3 } },
+          { text: "C. 推翻清朝、建立共和", effects: { reform: 3 } }
+        ]
+      },
+
+  // PC-WR-1：公车上书——是否签名
+  {
+    type: "pressure_choice",
+    timeout: 8,
+    defaultChoice: 2,
+    urgentText: "康有为正在征集签名，但你知道签了名就等于公开对抗朝廷——",
+    timeoutText: "你犹豫了太久。当康有为收齐签名时，你的名字不在上面。后来你听说，签名的举人都被朝廷盯上了。",
+    choices: [
+      { text: "毫不犹豫地签上自己的名字", effects: { justice: 15, patriotism: 5 } },
+      { text: "签上名字，但要求康有为措辞更温和", effects: { rule: 10, justice: 5 } },
+      { text: "支持但不签名——你还有家人要保护", effects: { rule: 5 } },
+      { text: "劝康有为放弃上书，太危险了", effects: {} }
+    ]
+  },
+
+  { type: "npc_fate_event", npcId: "kangyouwei", newState: "leading",
+    eventText: "康有为日夜奔走，为变法四处游说。他说：'中国不变法，必亡。'" },
+  { type: "npc_fate_event", npcId: "guangxu", newState: "hopeful",
+    eventText: "光绪帝第一次感受到了希望——也许他真的能做一个有作为的皇帝。" },
+
+  { type: "hook", text: "公车上书的签名还在传递，但朝廷的密探已经在暗处记录每一个名字。" },
+
+  {
+        type: "knowledge",
+        id: "k_wuxu_02",
+        name: "📚 马关条约与民族危机",
+        desc: "1895年《马关条约》签订，中国割让台湾及澎湖列岛、赔偿白银二亿两，民族危机空前严重，直接催生了维新变法运动。",
+        category: "爱国"
+      },
+
+      // ── 过渡到第二幕 ──
+      {
+        type: "act_transition",
+        scene: "第二幕 · 百日维新",
+        actTitle: "第二程",
+        subtitle: "百日维新",
+        bg: "images/bg/imperial_palace.jpg"
+      },
+
+      // ──────────────────────────────────────────────
+      // 第二幕：百日维新
+      // ──────────────────────────────────────────────
+      {
+        speaker: "旁白",
+        text: "公车上书之后，康有为、梁启超等人积极宣传维新思想，创办《时务报》《国闻报》，变法呼声日益高涨。",
+        scene: "第二幕 · 百日维新",
+        bg: "images/bg/imperial_palace.jpg"
+      },
+      {
+        speaker: "芙宁娜",
+        text: "《时务报》《国闻报》传播新思想，变法呼声越来越高！",
+        scene: "第二幕 · 百日维新",
+        bg: "images/bg/imperial_palace.jpg",
+        charLeft: "excited"
+      },
+      {
+        speaker: "胡桃",
+        text: "改革官制、发展实业、兴办新式学堂、训练新军……这是救亡之路！",
+        scene: "第二幕 · 百日维新",
+        bg: "images/bg/imperial_palace.jpg",
+        charRight: "normal"
+      },
+      {
+        type: "knowledge",
+        id: "k_wuxu_03",
+        name: "📚 维新思想传播",
+        desc: "公车上书后，康有为、梁启超创办《时务报》《国闻报》，组织强学会，广泛宣传维新变法思想，形成了中国近代第一次思想启蒙浪潮。",
+        category: "变革"
+      },
+      {
+        speaker: "芙宁娜",
+        text: "1898年6月，光绪帝颁布「明定国是」诏书，戊戌变法正式开始！",
+        scene: "第二幕 · 百日维新",
+        bg: "images/bg/imperial_palace.jpg",
+        charLeft: "excited"
+      },
+      {
+        speaker: "光绪帝",
+        text: "朕决心变法，以图富强。裁撤冗官、开放言路、改革科举、兴办新学……朕要为大清开一条新路！",
+        scene: "第二幕 · 百日维新",
+        bg: "images/bg/imperial_palace.jpg",
+        charLeft: "guangxu"
+      },
+      {
+        speaker: "光绪帝",
+        text: "（拍案）朕不是不知道变法会触怒太后！但不变法，大清就真的完了！朕宁可做亡国之君的改革者，也不做亡国之君的守成者！",
+        scene: "第二幕 · 百日维新",
+        bg: "images/bg/imperial_palace.jpg",
+        charLeft: "guangxu"
+      },
+      {
+        speaker: "康有为",
+        text: "陛下，臣以为变法当以政治改革为先，设制度局以总揽新政，裁撤冗衙以节省国帑。",
+        scene: "第二幕 · 百日维新",
+        bg: "images/bg/imperial_palace.jpg",
+        charLeft: "kangyouwei"
+      },
+      {
+        speaker: "康有为",
+        text: "（激动地上书）臣康有为叩请皇上——变法图强，已刻不容缓！日本以变法而强，土耳其以不变而亡。前车之鉴，不可不察！",
+        scene: "第二幕 · 百日维新",
+        bg: "images/bg/imperial_palace.jpg",
+        charLeft: "kangyouwei"
+      },
+      {
+        speaker: "梁启超",
+        text: "变法之本，在育人才；人才之本，在兴学校；学校之本，在变科举！臣请废八股，改试策论！",
+        scene: "第二幕 · 百日维新",
+        bg: "images/bg/imperial_palace.jpg",
+        charLeft: "liangqichao"
+      },
+      {
+        type: "knowledge",
+        id: "k_wuxu_04",
+        name: "📚 戊戌变法内容",
+        desc: "戊戌变法涉及政治（裁撤冗官、开放言路）、经济（发展实业、修筑铁路）、文化（废八股、兴学堂）、军事（训练新军）四大领域，是一次全面的社会改革尝试。",
+        category: "法治"
+      },
+      {
+        type: "choice",
+        scene: "第二幕 · 百日维新",
+        prompt: "戊戌变法中，哪项措施属于文化教育领域的改革？",
+        choices: [
+          { text: "A. 裁撤冗官冗员", effects: { rule: 3 } },
+          { text: "B. 废除八股取士，改试策论", effects: { reform: 10, rule: 5 } },
+          { text: "C. 训练新式陆军", effects: { responsibility: 3 } }
+        ]
+      },
+      {
+        type: "collectible",
+        id: "wuxu_scroll_2",
+        name: "光绪帝密诏（残）",
+        desc: "'朕唯时局艰难......'——后半截被撕去",
+        scene: "第二幕 · 百日维新"
+      },
+      {
+        type: "card_choice",
+        scene: "第二幕 · 百日维新",
+        prompt: "光绪帝向你征询变法方略，你建议优先推进哪个领域？",
+        cards: [
+          {
+            id: 'card_gongche',
+            name: '政治改革',
+            desc: '设制度局，裁冗官',
+            img: 'images/cards/card_gongche.jpg',
+            text: '政治改革：设制度局，裁冗官',
+            recommend: false,
+            hint: '从制度入手，方能治本',
+            effects: { reform: 8, rule: 5 }
+          },
+          {
+            id: 'card_bairi',
+            name: '教育改革',
+            desc: '废八股，兴学堂',
+            img: 'images/cards/card_bairi.jpg',
+            text: '教育改革：废八股，兴学堂',
+            recommend: false,
+            hint: '教育为立国之本',
+            effects: { reform: 5, responsibility: 8 }
+          },
+          {
+            id: 'card_tan',
+            name: '军事改革',
+            desc: '练新军，强国防',
+            img: 'images/cards/card_tan.jpg',
+            text: '军事改革：练新军，强国防',
+            recommend: false,
+            hint: '富国强兵，抵御外侮',
+            effects: { patriotism: 8, rule: 3 }
+          },
+          {
+            id: 'card_liang',
+            name: '经济改革',
+            desc: '办实业，修铁路',
+            img: 'images/cards/card_liang.jpg',
+            text: '经济改革：办实业，修铁路',
+            recommend: false,
+            hint: '实业兴邦，铁路通衢',
+            effects: { reform: 5, patriotism: 5 }
+          }
+        ]
+      },
+
+  // EV-WR-1：变法为什么失败
+  {
+    type: "evidence",
+    items: [
+      { type: "📜 诏书", title: "光绪帝变法诏令（1898年6月-9月）",
+        content: "103天内，光绪帝颁布了超过 100 道变法诏令，涉及政治、经济、军事、文化教育等领域。改革速度之快、范围之广，前所未有。" },
+      { type: "✉️ 密折", title: "荣禄给慈禧的密折",
+        content: "太后：皇上近日又颁布了裁撤冗官的诏令，六部官员人心惶惶。臣以为，皇上身边的小人蛊惑圣听，必须尽早处置，否则社稷堪忧。" },
+      { type: "📊 对比", title: "维新派与守旧派力量对比",
+        content: "维新派：仅有康有为、梁启超、谭嗣同等少数知识分子和光绪帝的支持。守旧派：掌握军权的荣禄、各省督抚、六部官员、慈禧太后。双方力量悬殊。" }
+    ],
+    question: "戊戌变法失败的根本原因是什么？",
+    options: [
+      { text: "变法的方案有问题", correctIndex: 2,
+        wrongFeedback: "方案本身有可取之处。胡桃说：'问题不在于变什么，而在于有没有力量去变。'" },
+      { text: "光绪帝不够果断", correctIndex: 2,
+        wrongFeedback: "光绪帝已经尽力了。芙宁娜说：'一个没有实权的皇帝，再果断也只是纸面上的果断。'" },
+      { text: "维新派力量过于薄弱，且脱离广大人民群众", correctIndex: 2,
+        correctFeedback: "✅ 正确！戊戌变法的根本弱点在于：维新派只依靠一个没有实权的皇帝，没有发动群众，也没有掌握军队。改革需要力量支撑，而这份力量，他们从未真正拥有过。",
+        effects: { justice: 5, rule: 5 } }
+    ]
+  },
+
+  // PC-WR-2：百日维新——变法方案争议
+  {
+    type: "pressure_choice",
+    timeout: 8,
+    defaultChoice: 2,
+    urgentText: "慈禧太后的亲信在朝堂上公开反对变法。光绪帝看向你，等你一句话——",
+    timeoutText: "你没有说话。慈禧的亲信们更加嚣张了，变法的阻力越来越大。",
+    choices: [
+      { text: "支持光绪帝，公开驳斥保守派", effects: { reform: 15, justice: 5 } },
+      { text: "建议光绪帝循序渐进，先从教育改革开始", effects: { rule: 15 } },
+      { text: "提醒光绪帝注意安全，慈禧不会坐视不管", effects: { justice: 10 } },
+      { text: "保持沉默，朝堂之争不是你能参与的", effects: {} }
+    ]
+  },
+
+  { type: "hook", text: "103天的变法，像一场短暂的梦。但梦醒之后，噩梦才刚刚开始。" },
+
+  {
+        type: "knowledge",
+        id: "k_wuxu_05",
+        name: "📚 百日维新的时间",
+        desc: "1898年6月11日至9月21日，戊戌变法共持续103天，因此被称为「百日维新」。",
+        category: "变革"
+      },
+
+      // ── 过渡到第三幕 ──
+      {
+        type: "act_transition",
+        scene: "第三幕 · 戊戌政变",
+        actTitle: "第三程",
+        subtitle: "戊戌政变",
+        bg: "images/bg/coup_night.jpg"
+      },
+
+      // ──────────────────────────────────────────────
+      // 第三幕：戊戌政变
+      // ──────────────────────────────────────────────
+      {
+        speaker: "旁白",
+        text: "变法触动了以慈禧太后为首的顽固派的根本利益。新旧势力激烈交锋，暗流涌动。",
+        scene: "第三幕 · 戊戌政变",
+        bg: "images/bg/coup_night.jpg"
+      },
+      {
+        speaker: "慈禧太后",
+        text: "皇帝年轻气盛，受了康有为那些人的蛊惑！这些新政，动摇的是大清的根基！",
+        scene: "第三幕 · 戊戌政变",
+        bg: "images/bg/coup_night.jpg",
+        charLeft: "cixi"
+      },
+      {
+        speaker: "慈禧太后",
+        text: "传我的懿旨——将皇帝囚禁于瀛台！捉拿维新党人，一律严办！",
+        scene: "第三幕 · 戊戌政变",
+        bg: "images/bg/coup_night.jpg",
+        charLeft: "cixi"
+      },
+      {
+        speaker: "慈禧太后",
+        text: "（冷笑）变法？变法就是要把大清的祖宗基业全毁了！这些书生，懂什么治国！",
+        scene: "第三幕 · 戊戌政变",
+        bg: "images/bg/imperial_palace.jpg",
+        charLeft: "cixi"
+      },
+      {
+        speaker: "芙宁娜",
+        text: "1898年9月21日，慈禧太后发动戊戌政变，囚禁光绪帝，搜捕维新志士！",
+        scene: "第三幕 · 戊戌政变",
+        bg: "images/bg/coup_night.jpg",
+        charLeft: "serious"
+      },
+      {
+        speaker: "康有为",
+        text: "事败矣！我必须立即出逃，否则变法的火种将彻底熄灭！",
+        scene: "第三幕 · 戊戌政变",
+        bg: "images/bg/coup_night.jpg",
+        charLeft: "kangyouwei"
+      },
+      {
+        speaker: "梁启超",
+        text: "先生快走！我来断后。只要有人活着，变法的理想就不会死！",
+        scene: "第三幕 · 戊戌政变",
+        bg: "images/bg/coup_night.jpg",
+        charLeft: "liangqichao"
+      },
+      {
+        speaker: "梁启超",
+        text: "（含泪）复生兄……你何必如此！留得青山在，不怕没柴烧啊！",
+        scene: "第三幕 · 戊戌政变",
+        bg: "images/bg/imperial_palace.jpg",
+        charLeft: "liangqichao"
+      },
+      {
+        speaker: "胡桃",
+        text: "各国变法无不从流血而成，今日中国未闻有因变法而流血者，此国之所以不昌也！",
+        scene: "第三幕 · 戊戌政变",
+        bg: "images/bg/coup_night.jpg",
+        charRight: "solemn"
+      },
+      {
+        speaker: "胡桃",
+        text: "有之，请自嗣同始！我愿以死明志，唤醒国人！",
+        scene: "第三幕 · 戊戌政变",
+        bg: "images/bg/coup_night.jpg",
+        charRight: "solemn"
+      },
+      {
+        speaker: "谭嗣同",
+        text: "（从容）各国变法，无不从流血而成。今日中国未闻有因变法而流血者，此国之所以不昌也。有之，请自嗣同始！",
+        scene: "第三幕 · 戊戌政变",
+        bg: "images/bg/imperial_palace.jpg",
+        charLeft: "tansitong"
+      },
+      {
+        type: "knowledge",
+        id: "k_wuxu_06",
+        name: "📚 戊戌六君子",
+        desc: "戊戌政变后，谭嗣同、杨锐、刘光第、林旭、杨深秀、康广仁六人被杀害于北京菜市口，史称「戊戌六君子」。谭嗣同本可逃走，却选择留下赴死以唤醒国人。",
+        category: "爱国"
+      },
+      {
+        type: "choice",
+        scene: "第三幕 · 戊戌政变",
+        prompt: "谭嗣同为何选择留下赴死？",
+        choices: [
+          { text: "A. 他认为变法需要流血牺牲才能成功", effects: { patriotism: 10, responsibility: 5 } },
+          { text: "B. 他来不及逃跑，被清军围困", effects: { patriotism: 2 } },
+          { text: "C. 他对变法彻底失望，不想再活下去", effects: { reform: -3 } }
+        ]
+      },
+      {
+        type: "collectible",
+        id: "wuxu_scroll_3",
+        name: "谭嗣同绝笔",
+        desc: "谭嗣同狱中绝笔「望门投止思张俭，忍死须臾待杜根。我自横刀向天笑，去留肝胆两昆仑。」墨迹遒劲，悲壮之气跃然纸上。",
+        scene: "第三幕 · 戊戌政变"
+      },
+
+  // PC-WR-3：戊戌政变——是否通知谭嗣同逃跑
+  {
+    type: "pressure_choice",
+    timeout: 6,
+    defaultChoice: 2,
+    urgentText: "消息传来：慈禧发动政变了！谭嗣同还在城里，你有机会给他送信——",
+    timeoutText: "你犹豫了太久。等你赶到谭嗣同住处时，他已经被捕了。他平静地对你说：'我知道会有这一天。'",
+    choices: [
+      { text: "冒死给谭嗣同送信，让他赶紧逃跑", effects: { justice: 15 } },
+      { text: "安排人秘密护送谭嗣同出城", effects: { reform: 10, justice: 10 } },
+      { text: "谭嗣同有自己的选择，尊重他的决定", effects: { rule: 5, justice: 5 } },
+      { text: "先保护自己——你已经帮不了他了", effects: {} }
+    ]
+  },
+
+  // PC-WR-4：谭嗣同的抉择
+  {
+    type: "pressure_choice",
+    timeout: 8,
+    defaultChoice: 2,
+    urgentText: "谭嗣同拒绝了逃跑的机会。他说：'各国变法，无不从流血而成。'他看向你——",
+    timeoutText: "你没有回应。谭嗣同独自走向了刑场。后来你才知道，他在狱中写下了那首绝命诗。",
+    choices: [
+      { text: "陪他到最后——有些事情值得用生命去守护", effects: { justice: 15, patriotism: 10 } },
+      { text: "尊重他的选择，但请他留下遗言", effects: { justice: 10, rule: 5 } },
+      { text: "再次劝他逃跑——活着才能继续变法的事业", effects: { reform: 10 } },
+      { text: "沉默——你已经说不出话了", effects: {} }
+    ]
+  },
+
+  // EV-WR-2：谭嗣同为什么选择留下
+  {
+    type: "evidence",
+    items: [
+      { type: "📜 诗文", title: "谭嗣同《狱中题壁》",
+        content: "望门投止思张俭，忍死须臾待杜根。我自横刀向天笑，去留肝胆两昆仑。" },
+      { type: "✉️ 信件", title: "谭嗣同致梁启超的诀别信",
+        content: "变法虽未成功，但已唤醒了天下人心。我愿以一死酬圣主，以血唤醒四万万同胞。请君东渡日本，继续未竟之业。" },
+      { type: "📝 评价", title: "后世对谭嗣同的评价",
+        content: "梁启超评价谭嗣同：'中国流血之烈士，当以谭嗣同为第一人。'他的牺牲极大地唤醒了国人的民族意识，为后来的辛亥革命奠定了思想基础。" }
+    ],
+    question: "谭嗣同为什么不逃跑？他的牺牲有价值吗？",
+    options: [
+      { text: "他不怕死，所以选择留下", correctIndex: 2,
+        wrongFeedback: "不是不怕死，而是有比生命更重要的东西。胡桃说：'在往生堂，我送别过很多人。有些人死得毫无意义，但谭嗣同不是。'" },
+      { text: "他逃跑失败，只好留下", correctIndex: 2,
+        wrongFeedback: "他有多次逃跑的机会，都主动放弃了。芙宁娜说：'他选择留下，是因为他相信自己的死比活着更有力量。'" },
+      { text: "他以死明志，用鲜血唤醒国人，为后来的革命铺路", correctIndex: 2,
+        correctFeedback: "✅ 正确！谭嗣同说：'各国变法，无不从流血而成。'他用自己的生命证明了改革的决心，唤醒了无数后来者。承担责任有时需要付出代价，但这份代价不会白费。",
+        effects: { justice: 15, patriotism: 5 } }
+    ]
+  },
+
+  { type: "npc_fate_event", npcId: "tansitong", newState: "determined",
+    eventText: "谭嗣同拒绝了所有逃跑的安排。他说：'我愿以一死酬圣主。'" },
+  { type: "npc_fate_event", npcId: "guangxu", newState: "powerless",
+    eventText: "光绪帝被慈禧囚禁在瀛台。他透过窗户望着紫禁城，喃喃自语：'朕连自己的命运都无法掌控。'" },
+  { type: "npc_fate_event", npcId: "kangyouwei", newState: "exiled",
+    eventText: "康有为逃亡海外，继续宣传维新思想。他说：'变法虽然失败了，但变法的思想不会死。'" },
+
+  { type: "collectible_conditional", name: "谭嗣同的血衣",
+    condition: () => lastChoiceIndex >= 0 },
+
+  { type: "if_card_used", cardId: "responsibility",
+    speaker: "hutao", text: "（声音很轻）谭嗣同选择了承担……在往生堂，我们说每个人都要为自己的选择负责。可他的选择，不只是为自己负责——他是为四万万同胞负责。" },
+  { type: "if_card_used", cardId: "patriotism",
+    speaker: "fulina", text: "（轻声）以爱国主义为核心的民族精神……谭嗣同用生命诠释了这四个字。可爱国主义不应该只是口号，它应该是一种行动。" },
+
+  { type: "hook", text: "谭嗣同走向刑场的时候，北京城的天空是灰色的。但他的血，染红了中国近代史的一页。" },
+
+      {
+        speaker: "旁白",
+        text: "1898年9月28日，谭嗣同等六人在菜市口慷慨就义。戊戌变法仅持续103天，宣告失败。",
+        scene: "第三幕 · 戊戌政变",
+        bg: "images/bg/coup_night.jpg"
+      },
+      {
+        type: "knowledge",
+        id: "k_wuxu_07",
+        name: "📚 戊戌政变",
+        desc: "1898年9月21日，慈禧太后发动政变，囚禁光绪帝于中南海瀛台，废除大部分新政，搜捕维新派人士。变法仅持续103天后失败。",
+        category: "法治"
+      },
+
+      // ── 过渡到第四幕 ──
+      {
+        type: "act_transition",
+        scene: "第四幕 · 变法的失败与反思",
+        actTitle: "第四程",
+        subtitle: "变法的失败与反思",
+        bg: "images/bg/autumn_courtyard.jpg"
+      },
+
+      // ──────────────────────────────────────────────
+      // 第四幕：变法的失败与反思
+      // ──────────────────────────────────────────────
+      {
+        speaker: "旁白",
+        text: "戊戌变法失败了。但它在中国近代史上留下了不可磨灭的印记。",
+        scene: "第四幕 · 变法的失败与反思",
+        bg: "images/bg/autumn_courtyard.jpg"
+      },
+      {
+        speaker: "芙宁娜",
+        text: "光绪帝被囚禁于瀛台，维新志士或逃或死，变法仅持续103天，史称「百日维新」。",
+        scene: "第四幕 · 变法的失败与反思",
+        bg: "images/bg/autumn_courtyard.jpg",
+        charLeft: "serious"
+      },
+      {
+        speaker: "胡桃",
+        text: "戊戌变法失败了，但它是中国近代第一次思想解放运动。",
+        scene: "第四幕 · 变法的失败与反思",
+        bg: "images/bg/autumn_courtyard.jpg",
+        charRight: "solemn"
+      },
+  { type: "hook", text: "变法失败了，但变法的种子已经种下。它在等待下一个春天。" },
+
+      {
+        type: "choice",
+        scene: "第四幕 · 变法的失败与反思",
+        prompt: "戊戌变法失败的主要原因是什么？",
+        choices: [
+          { text: "A. 维新派力量弱小，顽固派势力强大", effects: { reform: 8, rule: 5 } },
+          { text: "B. 光绪帝不支持变法", effects: { rule: -3 } },
+          { text: "C. 变法内容过于激进，不符合国情", effects: { reform: 3 } }
+        ]
+      },
+      {
+        type: "knowledge",
+        id: "k_wuxu_08",
+        name: "📚 戊戌变法的性质",
+        desc: "戊戌变法是一场自上而下的资产阶级改良运动，也是中国近代第一次思想解放运动。它推动了维新思想的传播，为后来的辛亥革命奠定了思想基础。",
+        category: "变革"
+      },
+      {
+        speaker: "芙宁娜",
+        text: "变法虽然失败，但维新志士用鲜血唤醒了沉睡的中国。谭嗣同用生命诠释了「生命的价值」——为理想、为国家献身。",
+        scene: "第四幕 · 变法的失败与反思",
+        bg: "images/bg/autumn_courtyard.jpg",
+        charLeft: "serious"
+      },
+      {
+        speaker: "胡桃",
+        text: "变法虽然失败，但思想的火种，永远不会熄灭。它启发了更多人走上救国之路。",
+        scene: "第四幕 · 变法的失败与反思",
+        bg: "images/bg/autumn_courtyard.jpg",
+        charRight: "normal"
+      },
+      {
+        type: "collectible",
+        id: "wuxu_scroll_4",
+        name: "变法诏令残篇",
+        desc: "被慈禧政变后废止的变法诏令，以'被划掉'的形式呈现",
+        scene: "第四幕 · 变法的失败与反思"
+      },
+      {
+        type: "choice",
+        scene: "第四幕 · 变法的失败与反思",
+        prompt: "戊戌变法在中国近代史上的最大贡献是什么？",
+        choices: [
+          { text: "A. 成功建立了君主立宪制", effects: { rule: -3 } },
+          { text: "B. 掀起了思想解放的浪潮，启发了后来的革命", effects: { reform: 10, patriotism: 5, responsibility: 5 } },
+          { text: "C. 废除了科举制度", effects: { reform: 3 } }
+        ]
+      },
+
+      // ── 过渡到第五幕 ──
+      {
+        type: "act_transition",
+        scene: "第五幕 · 维新精神永存",
+        actTitle: "第五程",
+        subtitle: "维新精神永存",
+        bg: "images/bg/dawn_light.jpg"
+      },
+
+      // ──────────────────────────────────────────────
+      // 第五幕：维新精神永存
+      // ──────────────────────────────────────────────
+      {
+        speaker: "旁白",
+        text: "历史的车轮滚滚向前。戊戌变法虽败，但它点燃的思想火炬，照亮了中华民族的前行之路。",
+        scene: "第五幕 · 维新精神永存",
+        bg: "images/bg/dawn_light.jpg"
+      },
+      {
+        speaker: "芙宁娜",
+        text: "变法失败，中国民族危机进一步加深。但失败不是终点，它唤醒了更多中国人，为后来的革命埋下了种子。",
+        scene: "第五幕 · 维新精神永存",
+        bg: "images/bg/dawn_light.jpg",
+        charLeft: "normal"
+      },
+      {
+        speaker: "胡桃",
+        text: "谭嗣同的血没有白流。他用生命告诉世人：真正的爱国，不是空谈，是用生命守护家国。",
+        scene: "第五幕 · 维新精神永存",
+        bg: "images/bg/dawn_light.jpg",
+        charRight: "solemn"
+      },
+      {
+        speaker: "芙宁娜",
+        text: "真正的爱国，不是空谈，是用生命守护家国。维新志士的精神，永远照亮中国。",
+        scene: "第五幕 · 维新精神永存",
+        bg: "images/bg/dawn_light.jpg",
+        charLeft: "serious"
+      },
+      {
+        type: "knowledge",
+        id: "k_wuxu_09",
+        name: "📚 维新变法的历史意义",
+        desc: "戊戌变法虽然失败，但在社会上起了思想启蒙的作用，推动了维新思想的传播，促进了中国人民的觉醒，为后来的资产阶级民主革命奠定了思想基础。",
+        category: "爱国"
+      },
+      {
+        type: "knowledge",
+        id: "k_wuxu_10",
+        name: "📚 改革创新与社会发展",
+        desc: "道法启示：改革是社会发展的动力。戊戌变法证明，只有不断改革创新，才能推动社会进步。即使失败，改革者的勇气与探索精神也值得铭记。",
+        category: "责任"
+      },
+      {
+        speaker: "胡桃",
+        text: "今天的我们，站在历史的长河中回望，更应铭记那段岁月。爱国是本分，改革是出路，生命因理想而崇高。",
+        scene: "第五幕 · 维新精神永存",
+        bg: "images/bg/dawn_light.jpg",
+        charRight: "normal"
+      },
+      { type: "hook", text: "变法失败了，但变法的种子已经种下。它在等待下一个春天。" },
+
+      {
+        speaker: "芙宁娜",
+        text: "维新精神永存。感谢各位观众，与我们一同走过这段波澜壮阔的历史。",
+        scene: "第五幕 · 维新精神永存",
+        bg: "images/bg/dawn_light.jpg",
+        charLeft: "normal"
+      },
+
+      // ── 结局判定 ──
+      {
+        type: "ending_check",
+        scene: "结局判定"
+      }
+    ];
+</script>
+
+<!-- Game Engine -->
+<script src="engine.js?v=20260526e"></script>
+
+</body>
+</html>

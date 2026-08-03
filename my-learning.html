@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>时空剧场 - 我的学习</title>
+<link rel="stylesheet" href="dist/output.css?v=5"/>
+<script src="audio-manager.js?v=20260525c"></script>
+<style>
+body {
+  background-color: #0a0e27;
+  color: #dbe1ff;
+  font-family: 'Manrope', sans-serif;
+}
+.glass-panel {
+  background: rgba(40, 51, 86, 0.5);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(68, 70, 81, 0.3);
+}
+.progress-bar-bg {
+  background: rgba(68, 70, 81, 0.4);
+}
+.progress-bar-fill {
+  background: linear-gradient(90deg, #efbd8a, #5a3912);
+  transition: width 0.6s ease;
+}
+.ending-card {
+  transition: all 0.3s ease;
+}
+.ending-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(239, 189, 138, 0.15);
+}
+.collectible-item {
+  transition: all 0.3s ease;
+}
+.collectible-item:hover {
+  transform: translateY(-2px);
+}
+button:active { transform: scale(0.9); }
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- Main Content -->
+<main class="pt-4 pb-20 px-4 md:px-8 max-w-5xl mx-auto">
+
+  <!-- Title -->
+  <h1 class="text-2xl font-headline text-[#dbe1ff] mb-8">我的学习</h1>
+
+  <!-- Section 1: 学习进度 -->
+  <section class="glass-panel rounded-2xl p-6 md:p-8 mb-6">
+    <h2 class="text-lg font-headline text-[#efbd8a] mb-5">学习进度</h2>
+    <div id="progressList" class="space-y-4">
+      <!-- Dynamically populated -->
+    </div>
+  </section>
+
+  <!-- Section 2: 已解锁结局 -->
+  <section class="glass-panel rounded-2xl p-6 md:p-8 mb-6">
+    <h2 class="text-lg font-headline text-[#efbd8a] mb-5">已解锁结局</h2>
+    <div id="endingsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <!-- Dynamically populated -->
+    </div>
+  </section>
+
+  <!-- Section 3: 收集品图鉴 -->
+  <section class="glass-panel rounded-2xl p-6 md:p-8 mb-6">
+    <h2 class="text-lg font-headline text-[#efbd8a] mb-5">收集品图鉴</h2>
+    <div id="collectiblesGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <!-- Dynamically populated -->
+    </div>
+  </section>
+
+  <!-- Section 4: 学习统计 -->
+  <section class="glass-panel rounded-2xl p-6 md:p-8">
+    <h2 class="text-lg font-headline text-[#efbd8a] mb-5">学习统计</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl bg-[#264191]/30 flex items-center justify-center">
+          <span class="text-2xl">&#9201;</span>
+        </div>
+        <div>
+          <p class="text-xs text-[#8f909d] font-label uppercase tracking-widest mb-1">总游戏时长</p>
+          <p id="totalPlayTime" class="text-xl font-headline text-[#dbe1ff]">0小时0分钟</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl bg-[#93000a]/30 flex items-center justify-center">
+          <span class="text-2xl">&#10060;</span>
+        </div>
+        <div>
+          <p class="text-xs text-[#8f909d] font-label uppercase tracking-widest mb-1">总错题数</p>
+          <p id="totalWrongAnswers" class="text-xl font-headline text-[#dbe1ff]">0 道</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 5: 成就勋章 -->
+  <section class="glass-panel rounded-2xl p-6 md:p-8">
+    <h2 class="text-lg font-headline text-[#efbd8a] mb-5">&#127942; 成就勋章</h2>
+    <div id="achievementsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    </div>
+  </section>
+
+</main>
+
+<script src="data-store.js"></script>
+<script src="script-registry.js"></script>
+<script>
+(function() {
+  if (typeof DataStore === 'undefined') {
+    var pl = document.getElementById('progressList');
+    if (pl) pl.innerHTML = '<p class="text-red-400 text-center py-8">数据模块加载失败，请刷新页面</p>';
+    return;
+  }
+  // Script definitions
+  const SCRIPTS = [
+    { id: 'french_revolution', name: '法国大革命', totalEndings: 3, totalCollectibles: 5,
+      allCollectibles: [
+        { id: 'c1', name: '巴士底狱牺牲者的亡魂碎片' },
+        { id: 'c2', name: '路易十六的亡魂碎片' },
+        { id: 'c3', name: '无辜市民的亡魂碎片 x2' },
+        { id: 'c4', name: '罗伯斯庇尔的亡魂碎片' },
+        { id: 'c5', name: '拿破仑的亡魂碎片' }
+      ],
+      endings: [
+        { type: 'historical', name: '历史结局', desc: '波旁王朝复辟，但革命思想永存' },
+        { type: 'dramatic', name: '戏剧结局', desc: '玛丽在乡下过着简朴的生活' },
+        { type: 'afterlife', name: '往生结局', desc: '所有亡魂得到安息，化作星光' }
+      ]
+    },
+    { id: 'industrial_revolution', name: '蒸汽时代的光与影', totalEndings: 3, totalCollectibles: 5,
+      allCollectibles: [
+        { id: 'c1', name: '珍妮纺纱机图纸' },
+        { id: 'c2', name: '工人日记碎片' },
+        { id: 'c3', name: '工厂法法案' },
+        { id: 'c4', name: '蒸汽机专利证书' },
+        { id: 'c5', name: '铁路通车纪念章' }
+      ],
+      endings: [
+        { type: 'historical', name: '历史结局', desc: '工业革命改变世界' },
+        { type: 'dramatic', name: '戏剧结局', desc: '工人阶级的觉醒' },
+        { type: 'afterlife', name: '往生结局', desc: '蒸汽中的幽灵安息' }
+      ]
+    },
+    {
+      id: 'american_revolution',
+      name: '美国独立战争',
+      icon: '🗽',
+      totalEndings: 3,
+      totalCollectibles: 5,
+      allCollectibles: [
+        { id: 'c1', name: '独立宣言手稿碎片' },
+        { id: 'c2', name: '波士顿倾茶事件记录' },
+        { id: 'c3', name: '萨拉托加大捷战报' },
+        { id: 'c4', name: '1787年宪法草案' },
+        { id: 'c5', name: '华盛顿告别演说' }
+      ],
+      endings: [
+        { type: 'historical', name: '历史记录', desc: '美国独立，建立共和政体' },
+        { type: 'dramatic', name: '需要修正', desc: '历史走向另一条道路' },
+        { type: 'afterlife', name: '宪法通过', desc: '理想照进现实' }
+      ],
+      knowledgePoints: 10,
+      totalPlayTime: 0
+    },
+    {
+      id: 'wuxu_reform',
+      name: '戊戌变法',
+      icon: '📜',
+      totalEndings: 3,
+      totalCollectibles: 4,
+      allCollectibles: [
+        { id: 'c1', name: '公车上书奏折' },
+        { id: 'c2', name: '光绪帝密诏' },
+        { id: 'c3', name: '谭嗣同绝笔信' },
+        { id: 'c4', name: '戊戌六君子纪念碑文' }
+      ],
+      endings: [
+        { type: 'historical', name: '史书一笔', desc: '变法失败，但思想启蒙永存' },
+        { type: 'dramatic', name: '留得青山', desc: '康梁出逃，来日方长' },
+        { type: 'afterlife', name: '以身殉道', desc: '六君子血染长街，精神不朽' }
+      ],
+      knowledgePoints: 8,
+      totalPlayTime: 0
+    },
+    {
+      id: 'xinhai_revolution',
+      name: '辛亥革命',
+      icon: '⚡',
+      totalEndings: 3,
+      totalCollectibles: 6,
+      allCollectibles: [
+        { id: 'c1', name: '兴中会誓词' },
+        { id: 'c2', name: '武昌起义电报' },
+        { id: 'c3', name: '中华民国临时约法' },
+        { id: 'c4', name: '孙中山就任宣言' },
+        { id: 'c5', name: '清帝退位诏书' },
+        { id: 'c6', name: '革命先烈遗书' }
+      ],
+      endings: [
+        { type: 'historical', name: '遗憾结局', desc: '革命果实被窃取' },
+        { type: 'dramatic', name: '历史结局', desc: '帝制终结，共和初建' },
+        { type: 'afterlife', name: '理想结局', desc: '民主共和深入人心' }
+      ],
+      knowledgePoints: 10,
+      totalPlayTime: 0
+    }
+  ];
+
+  // Ending type display names
+  const endingNames = {
+    'historical': '历史结局',
+    'dramatic': '戏剧结局',
+    'afterlife': '往生结局'
+  };
+
+  // ---- Section 1: 学习进度 ----
+  function renderProgress() {
+    const container = document.getElementById('progressList');
+    container.innerHTML = '';
+    SCRIPTS.forEach(script => {
+      const completion = DataStore.getScriptCompletion(script.id);
+      const unlockedCount = (completion.endings || []).length;
+      const totalEnd = script.totalEndings || 3;
+      const collectiblesCount = (completion.collectibles || []).length;
+      const pct = Math.round((unlockedCount / totalEnd) * 100);
+
+      const div = document.createElement('div');
+      div.className = 'p-4 rounded-xl bg-[#121e40]/60 border border-[#444651]/30';
+      div.innerHTML = `
+        <div class="flex items-center justify-between mb-2">
+          <span class="font-headline text-base text-[#dbe1ff]">${script.name}</span>
+          <span class="text-xs font-label px-3 py-1 rounded-full ${completion.completed ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-[#444651]/30 text-[#8f909d] border border-[#444651]/30'}">${completion.completed ? '已完成' : '未完成'}</span>
+        </div>
+        <div class="progress-bar-bg rounded-full h-2 mb-2">
+          <div class="progress-bar-fill h-2 rounded-full" style="width: ${pct}%"></div>
+        </div>
+        <div class="flex gap-4 text-xs text-[#8f909d]">
+          <span>完成度 ${pct}%</span>
+          <span>结局 ${unlockedCount}/${totalEnd}</span>
+          <span>收集品 ${collectiblesCount}/${script.totalCollectibles}</span>
+        </div>
+      `;
+      // 有存档时添加"继续游戏"按钮
+      var saved = DataStore.loadProgress(script.id);
+      if (saved && saved.dialogIndex > 0) {
+        var continueBtn = document.createElement('button');
+        continueBtn.textContent = '继续游戏';
+        continueBtn.className = 'mt-2 px-4 py-1.5 rounded-lg text-xs font-label font-bold uppercase tracking-widest text-white cursor-pointer';
+        continueBtn.style.background = 'linear-gradient(135deg, #059669, #047857)';
+        continueBtn.style.border = 'none';
+        (function(sid) {
+          continueBtn.addEventListener('click', function() {
+            var gameFile = (window.SCRIPT_REGISTRY && window.SCRIPT_REGISTRY[sid]) ? window.SCRIPT_REGISTRY[sid].file : 'game-scene.html';
+            window.location.href = gameFile + '?id=' + sid;
+          });
+        })(script.id);
+        div.appendChild(continueBtn);
+      }
+      container.appendChild(div);
+    });
+  }
+
+  // ---- Section 2: 已解锁结局 ----
+  function renderEndings() {
+    const container = document.getElementById('endingsGrid');
+    container.innerHTML = '';
+    SCRIPTS.forEach(script => {
+      const unlockedEndings = DataStore.getUnlockedEndings(script.id);
+      script.endings.forEach(ending => {
+        const isUnlocked = unlockedEndings.indexOf(ending.type) !== -1;
+        const card = document.createElement('div');
+        card.className = `ending-card rounded-xl p-5 border ${isUnlocked ? 'bg-[#121e40]/80 border-[#efbd8a]/30' : 'bg-[#121e40]/40 border-[#444651]/20 opacity-50'}`;
+        card.innerHTML = `
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-lg">${isUnlocked ? '&#127942;' : '&#128274;'}</span>
+            <span class="font-headline text-sm ${isUnlocked ? 'text-[#dbe1ff]' : 'text-[#8f909d]'}">${ending.name}</span>
+          </div>
+          <p class="text-xs text-[#8f909d] mb-2">${script.name}</p>
+          <p class="text-xs ${isUnlocked ? 'text-[#c5c5d3]' : 'text-[#444651]'}">${isUnlocked ? ending.desc : '未解锁'}</p>
+        `;
+        container.appendChild(card);
+      });
+    });
+  }
+
+  // ---- Section 3: 收集品图鉴 ----
+  function renderCollectibles() {
+    const container = document.getElementById('collectiblesGrid');
+    container.innerHTML = '';
+    SCRIPTS.forEach(script => {
+      const collected = DataStore.getCollectibles(script.id);
+      script.allCollectibles.forEach(item => {
+        var itemName = (typeof item === 'string') ? item : (item.name || item);
+        var itemId = (typeof item === 'string') ? item : (item.id || item.name);
+        var isCollected = collected.some(function(c) {
+          if (typeof c === 'string') return c === itemName || c === itemId;
+          return c.id === itemId || c.name === itemName || c === itemId;
+        });
+        var card = document.createElement('div');
+        card.className = 'collectible-item rounded-xl p-4 border ' + (isCollected ? 'bg-[#121e40]/80 border-[#efbd8a]/30' : 'bg-[#121e40]/40 border-[#444651]/20 opacity-50');
+        card.innerHTML = '<div class="flex items-center gap-2">' +
+          '<span class="text-lg">' + (isCollected ? '&#10024;' : '&#65284;') + '</span>' +
+          '<div>' +
+          '<p class="font-headline text-sm ' + (isCollected ? 'text-[#dbe1ff]' : 'text-[#8f909d]') + '">' + itemName + '</p>' +
+          '<p class="text-xs ' + (isCollected ? 'text-green-400' : 'text-[#444651]') + '">' + (isCollected ? '已收集' : '未收集') + '</p>' +
+          '</div></div>';
+        container.appendChild(card);
+      });
+    });
+  }
+
+  // ---- Section 4: 学习统计 ----
+  function renderStats() {
+    const totalSeconds = DataStore.getPlayTime();
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    document.getElementById('totalPlayTime').textContent = `${hours}小时${minutes}分钟`;
+
+    const wrongAnswers = DataStore.getWrongAnswers();
+    document.getElementById('totalWrongAnswers').textContent = `${wrongAnswers.length} 道`;
+  }
+
+  // ---- Section 5: 成就勋章 ----
+  function renderAchievements() {
+    var grid = document.getElementById('achievementsGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    var achievements = [
+      { id: 'first_explore', icon: '&#127775;', name: '初次探索', desc: '完成任意一个剧本', check: function() {
+        return SCRIPTS.some(function(s) { return DataStore.isScriptCompleted(s.id); });
+      }},
+      { id: 'historian', icon: '&#128214;', name: '历史学者', desc: '完成 3 个剧本', check: function() {
+        return SCRIPTS.filter(function(s) { return DataStore.isScriptCompleted(s.id); }).length >= 3;
+      }},
+      { id: 'omniscient', icon: '&#129504;', name: '全知全能', desc: '完成全部 5 个剧本', check: function() {
+        return SCRIPTS.filter(function(s) { return DataStore.isScriptCompleted(s.id); }).length >= 5;
+      }},
+      { id: 'collector', icon: '&#128230;', name: '收集达人', desc: '任意剧本收集全部收集品', check: function() {
+        return SCRIPTS.some(function(s) {
+          var comp = DataStore.getScriptCompletion(s.id);
+          return (comp.collectibles || []).length >= s.totalCollectibles;
+        });
+      }},
+      { id: 'error_free', icon: '&#128170;', name: '错题消灭者', desc: '错题本为空且至少完成一个剧本', check: function() {
+        var hasCompleted = SCRIPTS.some(function(s) { return DataStore.isScriptCompleted(s.id); });
+        return hasCompleted && DataStore.getWrongAnswers().length === 0;
+      }}
+    ];
+
+    achievements.forEach(function(ach) {
+      var unlocked = ach.check();
+      var card = document.createElement('div');
+      card.className = 'rounded-xl p-4 border ' + (unlocked ? 'bg-[#121e40]/80 border-[#efbd8a]/30' : 'bg-[#121e40]/40 border-[#444651]/20 opacity-50');
+      card.innerHTML = '<div class="flex items-center gap-3 mb-2">' +
+        '<span class="text-2xl">' + ach.icon + '</span>' +
+        '<div>' +
+        '<p class="font-headline text-sm ' + (unlocked ? 'text-[#dbe1ff]' : 'text-[#8f909d]') + '">' + ach.name + '</p>' +
+        '<p class="text-xs text-[#8f909d]">' + ach.desc + '</p>' +
+        '</div>' +
+        (unlocked ? '<span class="ml-auto text-green-400 text-lg">&#10003;</span>' : '<span class="ml-auto text-[#444651] text-lg">&#128274;</span>') +
+        '</div>';
+      grid.appendChild(card);
+    });
+  }
+
+  // ---- Init ----
+  renderProgress();
+  renderEndings();
+  renderCollectibles();
+  renderStats();
+  renderAchievements();
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>时空剧场 - 法国大革命</title>
+  <link rel="stylesheet" href="engine.css?v=20260525c">
+  <link rel="stylesheet" href="card-battle/card-battle.css">
+</head>
+<body>
+
+<!-- 游戏场景 -->
+<div class="game-scene" id="gameScene">
+  <div class="scene-bg-text">1789</div>
+  <div class="scene-label" id="sceneLabel">第一幕 · 巴黎，1789年</div>
+
+  <!-- 游戏控制按钮 -->
+  <div class="game-controls">
+    <button class="game-ctrl-btn" onclick="openCardModal()" title="道法卡牌图鉴">🃏 卡牌</button>
+    <button class="game-ctrl-btn" onclick="confirmMenu()" title="返回菜单">☰ 菜单</button>
+  </div>
+
+  <!-- 四维数值HUD -->
+  <div class="value-hud" id="valueHud"></div>
+
+  <!-- 选择面板 -->
+  <div class="choice-panel" id="choicePanel" style="display:none"></div>
+
+  <!-- 角色立绘显示区域 -->
+  <div id="character-display" style="position:absolute;bottom:100px;left:0;right:0;display:flex;justify-content:center;gap:40px;align-items:flex-end;pointer-events:none;z-index:2">
+    <div id="char-left-wrap" style="position:relative;height:450px;max-height:70vh;max-width:35vw;display:none">
+      <img id="char-left" src="" style="position:relative;z-index:1;max-height:100%;max-width:100%;object-fit:contain;object-position:bottom center">
+    </div>
+    <div id="char-right-wrap" style="position:relative;height:450px;max-height:70vh;max-width:35vw;display:none">
+      <img id="char-right" src="" style="position:relative;z-index:1;max-height:100%;max-width:100%;object-fit:contain;object-position:bottom center">
+    </div>
+  </div>
+
+  <!-- 对话框 -->
+  <div class="dialog-box" id="dialogBox" onclick="advanceDialog()">
+    <div id="voiceBtnContainer" style="display:flex;align-items:center;gap:8px;margin-left:12px;margin-bottom:8px">
+      <button id="voiceToggleBtn" onclick="toggleVoice(event)"
+        style="background:rgba(255,255,255,0.1);border:1px solid rgba(212,165,116,0.5);color:#d4a574;padding:6px 14px;border-radius:20px;font-size:13px;cursor:pointer;transition:all 0.3s">
+        语音 OFF
+      </button>
+    </div>
+    <div class="dialog-speaker" id="dialogSpeaker">
+      <span class="speaker-dot" id="speakerDot"></span>
+      <span id="speakerName"></span>
+    </div>
+    <div class="dialog-text" id="dialogText"></div>
+    <div class="dialog-continue" id="dialogContinue" style="display:none">点击继续 ▼</div>
+  </div>
+</div>
+
+<!-- 卡牌弹窗 -->
+<div class="modal-overlay" id="cardModal">
+  <div class="modal-box">
+    <div class="modal-title">道法卡牌图鉴</div>
+    <div class="modal-desc">（已获取的卡牌可点击查看详情）</div>
+    <div class="card-grid" id="cardGrid"></div>
+    <div class="modal-footer">
+      <button class="modal-close-btn" onclick="closeCardModal()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 卡牌详情弹窗 -->
+<div id="cardDetailOverlay" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;z-index:2000"></div>
+
+<!-- 收集品通知 -->
+<div class="collectible-toast" id="collectibleToast">
+  <div class="toast-title">✨ 获得收集品！</div>
+  <div class="toast-item" id="toastItem"></div>
+</div>
+
+<!-- External JS dependencies -->
+<script src="data-store.js"></script>
+<script src="audio-manager.js?v=20260525c"></script>
+<script src="data/essay-challenges.js"></script>
+
+<!-- Script data: GAME_CONFIG override + DIALOG_SCRIPT -->
+<script>
+    // ========== 法国大革命 - 剧本配置 ==========
+    window.GAME_CONFIG = {
+      scriptId: 'french_revolution',
+      title: '时空剧场 - 法国大革命',
+      values: { freedom: 50, equality: 50, rule: 50, justice: 50 },
+      valueLabels: { freedom: '自由', equality: '平等', rule: '规则', justice: '正义' },
+      valueColors: { freedom: '#4169e1', equality: '#32cd32', rule: '#4682b4', justice: '#dc143c' },
+      charConfig: {
+        louis: { dir: 'npc', defaultExpr: 'louis_king', name: '路易十六', color: '#4169e1', file: 'images/characters/npc/louis_king.png' },
+        robespierre: { dir: 'npc', defaultExpr: 'robespierre', name: '罗伯斯庇尔', color: '#2f4f4f', file: 'images/characters/npc/robespierre.png' },
+        napoleon: { dir: 'npc', defaultExpr: 'napoleon', name: '拿破仑', color: '#8b0000', file: 'images/characters/npc/napoleon.png' },
+        marie: { dir: 'npc', defaultExpr: 'marie', name: '玛丽·安托瓦内特', color: '#9932cc', file: 'images/characters/npc/marie.png' },
+        marie_royal: { name: '玛丽（王后）', color: '#9932cc', file: 'images/characters/npc/marie_royal.png' }
+      },
+      speakerNameToKey: null,
+      sceneBGM: {
+        '第一幕 · 凡尔赛宫': AudioManager.BGM.VERSAILLES,
+        '第二幕 · 巴士底狱': AudioManager.BGM.BASTILLE,
+        '第三幕 · 国民议会': AudioManager.BGM.ASSEMBLY,
+        '第四幕 · 恐怖统治': AudioManager.BGM.TERROR,
+        '第五幕 · 拿破仑': AudioManager.BGM.NAPOLEON,
+        '第五幕 · 欧洲': AudioManager.BGM.NAPOLEON,
+        '第五幕 · 滑铁卢': AudioManager.BGM.TERROR,
+      },
+      CARDS: {
+        human_rights: {
+          name: "人权宣言卡", knowledge: "尊重和保障人权",
+          description: "触发'人权保护'状态，所有角色获得生命权、自由权、财产权保护",
+          effect: {"justice": 20}, color: "#ffd700"
+        },
+        freedom: {
+          name: "自由卡", knowledge: "自由与法治的关系",
+          description: "触发'自由行动'状态，可在法律范围内自由移动和决策",
+          effect: {"freedom": 15}, color: "#4169e1"
+        },
+        equality: {
+          name: "平等卡", knowledge: "法律面前人人平等",
+          description: "触发'人人平等'状态，消除所有身份特权和歧视",
+          effect: {"equality": 15}, color: "#32cd32"
+        },
+        fairness: {
+          name: "公平卡", knowledge: "公平的内涵与价值",
+          description: "触发'公平分配'状态，所有资源和机会平均分配",
+          effect: {"justice": 20}, color: "#ff8c00"
+        },
+        justice: {
+          name: "正义卡", knowledge: "正义的要求",
+          description: "触发'正义审判'状态，所有非正义行为都会受到相应惩罚",
+          effect: {"justice": 15}, color: "#dc143c"
+        },
+        rule_of_law: {
+          name: "法治卡", knowledge: "全面依法治国",
+          description: "触发'法治秩序'状态，建立新的法律体系，规范所有人的行为",
+          effect: {"rule": 15}, color: "#4682b4"
+        },
+        labor: {
+          name: "劳动卡", knowledge: "劳动的意义与价值",
+          description: "触发'劳动光荣'状态，所有劳动者获得应有的尊重和报酬",
+          effect: {"labor": 15}, color: "#daa520"
+        },
+        responsibility: {
+          name: "责任卡", knowledge: "承担社会责任",
+          description: "触发'责任担当'状态，所有角色必须履行自己的法定义务",
+          effect: {"responsibility": 15}, color: "#8b4513"
+        }
+      },
+      NPC_FATE_CONFIG: {
+        anna:   { name: '安娜', title: '面包店学徒', avatar: '👩‍🍳', stateLabels: { unknown: '未知', alive: '生还', injured: '受伤', awakened: '觉醒', worried: '担忧' } },
+        pierre: { name: '皮埃尔', title: '巴黎青年', avatar: '⚔️', stateLabels: { unknown: '未知', awakened: '觉醒', radical: '激进', dead: '阵亡', survived: '生还' } },
+        jacques: { name: '雅克', title: '国民自卫军', avatar: '🛡️', stateLabels: { unknown: '未知', doubt: '怀疑', order: '回归秩序', disappointed: '失望' } },
+        alice:  { name: '艾莉丝', title: '王宫侍女', avatar: '👑', stateLabels: { unknown: '未知', shaken: '动摇', exiled: '流亡', survived: '海外生存' } }
+      },
+      ESSAY_QUESTIONS: [
+        {
+          q: "结合法国大革命，谈谈你对'法治与自由的关系'的理解。（20分）",
+          template: "①法治与自由相互联系、不可分割。（4分）\n②法治标定了自由的界限，自由的实现不能触碰法律的红线。（4分）\n③法治是自由的保障，人们合法的自由和权利不受非法干涉和侵害。（4分）\n④结合材料：法国大革命中，《人权宣言》以法律形式确立了自由平等原则，但恐怖统治时期对自由的践踏说明，没有法治保障的自由会走向反面。（4分）\n⑤结论：有边界才有秩序，守底线才享有自由。（4分）",
+          related: ["k_freedom_law", "k_declaration"],
+          values: ["freedom", "rule"],
+          scoringGuide: "观点句4分+原理阐述8分+材料分析4分+结论4分=20分。常见错误：混淆'法治'与'法制'、材料与原理不匹配。"
+        },
+        {
+          q: "法国大革命中，第三等级为什么要争取平等？请运用'平等'的有关知识加以说明。（20分）",
+          template: "①平等是人类的崇高理想，是社会发展的永恒主题。（4分）\n②同等情况同等对待：第三等级人口占全国98%却只有少数代表权，违反了权利公平。（4分）\n③不同情况差别对待：贵族和教士享有免税特权，违反了规则公平。（4分）\n④法律面前人人平等是社会主义法治的基本原则。（4分）\n⑤结合材料：法国封建等级制度中，第三等级承担重税却无政治权利，这种不平等最终导致了革命的爆发。（4分）",
+          related: ["k_fair", "k_equality"],
+          values: ["equality", "justice"],
+          scoringGuide: "观点句4分+同等情况4分+不同情况4分+原则阐述4分+材料分析4分=20分。常见错误：混淆'平等'与'平均'、忽略'不同情况差别对待'。"
+        },
+        {
+          q: "如何评价拿破仑的对外战争？请从'正义'的角度进行分析。（20分）",
+          template: "①正义是法治追求的基本价值目标之一，是社会制度的重要价值。（4分）\n②拿破仑对外战争具有双重性质：（8分）\n  进步性：在废除各地封建特权的同时，传播了自由民主思想。（4分）\n  局限性：也对当地人民进行压榨和掠夺，损害了当地人民的利益。（4分）\n③真正的正义应该促进社会进步、维护公共利益。（4分）\n④结合材料：拿破仑战争前期传播革命思想具有正义性，后期的侵略掠夺则走向了正义的反面。（4分）",
+          related: ["k_napoleon_code", "k_justice"],
+          values: ["justice", "freedom"],
+          scoringGuide: "观点句4分+双重性质分析8分+正义标准4分+材料分析4分=20分。常见错误：只谈进步性忽略局限性、或反之。"
+        },
+        {
+          q: "从法国大革命的历史中，我们可以得到哪些关于'公平正义'的启示？（20分）",
+          template: "①公平是个人生存和发展的重要保障，是社会稳定和进步的重要基础。（4分）\n②正义是社会和谐的的基本条件，守护正义需要勇气和智慧。（4分）\n③法国大革命启示我们：（8分）\n  - 制度保障公平：立法要公平对待每个人，司法要维护合法权益。（3分）\n  - 个人维护公平：面对不公要敢于说'不'，采用合理合法的方式。（3分）\n  - 公正司法是维护公平正义的最后一道防线。（2分）\n④结论：公平正义是人类永恒的追求，需要法治和德治共同保障。（4分）",
+          related: ["k_fair", "k_justice", "k_equality"],
+          values: ["justice", "equality", "rule"],
+          scoringGuide: "公平重要性4分+正义重要性4分+三点启示8分+结论4分=20分。启示部分每点2-3分，答出两点即可得6分。"
+        },
+        {
+          q: "《人权宣言》和社会主义核心价值观都强调'自由、平等'，这说明了什么？（20分）",
+          template: "①说明了自由平等是人类共同的追求，不分国界和历史时期。（4分）\n②《人权宣言》首次以法律形式宣告了人权、法治、自由、平等原则。（4分）\n③社会主义核心价值观社会层面也包含'自由、平等、公正、法治'。（4分）\n④法治是自由的保障，法律面前人人平等是法治的基本原则。（4分）\n⑤结合材料：从法国大革命到今天，人类对公平正义的追求从未停止，法治是实现这些价值的必由之路。（4分）",
+          related: ["k_declaration", "k_freedom_law", "k_napoleon_code"],
+          values: ["freedom", "equality", "rule"],
+          scoringGuide: "共同追求4分+人权宣言4分+核心价值观4分+法治原则4分+材料分析4分=20分。注意联系中法两国对自由平等的追求。"
+        }
+      ],
+      QUIZ_DATA: [
+        { q: "法国大革命开始的标志是什么？", opts: ["A. 三级会议召开", "B. 攻占巴士底狱", "C. 人权宣言发表", "D. 拿破仑上台"], ans: 1, explain: "1789年7月14日，巴黎人民攻占巴士底狱，标志着法国大革命爆发。" },
+        { q: "《人权宣言》的核心主张是什么？", opts: ["A. 君权神授", "B. 天赋人权、自由平等", "C. 君主立宪", "D. 殖民扩张"], ans: 1, explain: "《人权宣言》确立了人权、法治、自由、平等的基本原则。" },
+        { q: "自由与法治的关系是什么？", opts: ["A. 自由高于法治", "B. 法治保障自由，自由在法治框架内", "C. 法治限制自由", "D. 两者无关"], ans: 1, explain: "法治与自由相互联系、不可分割，法治是自由的保障。" },
+        { q: "以下哪项不属于法律面前人人平等的表现？", opts: ["A. 平等保护", "B. 平等遵守", "C. 所有公民享有相同的权利", "D. 平等反对特权"], ans: 2, explain: "平等不意味着所有人享有完全相同的权利，而是指法律适用上的平等。" },
+        { q: "法国大革命对我们今天的启示是什么？", opts: ["A. 革命是解决问题的唯一方式", "B. 自由平等是人类的共同追求，法治是实现它们的保障", "C. 历史不会重演", "D. 强人政治最有效"], ans: 1, explain: "法国大革命告诉我们，自由平等是人类永恒的追求，而法治是保障这些价值的基础。" }
+      ],
+      endingConditions: {
+        afterlifeMinItems: 5,
+        afterlifeValueKey: 'justice',
+        afterlifeMinValue: 70,
+        dramaticMinHighCount: 2,
+        dramaticMinValue: 80
+      },
+      endingTitles: {
+        historical: {
+          title: "历史结局",
+          text: "合上。合上笔记本。革命结束了，但历史没有给出简单的答案。路易十六被处死，罗伯斯庇尔被处死，拿破仑在滑铁卢失败——每一个试图改变世界的人，最终都被世界改变。但你的选择，安娜的选择，皮埃尔的选择——。"
+        },
+        dramatic: {
+          title: "戏剧结局",
+          text: "看着你：\"你没有躲在答案后面。你进去了，做了选择，然后承担了代价。\"看着你：\"不是每个人都敢进那座剧院。你进去了，这就是你的。\"你的选择。"
+        },
+        afterlife: {
+          title: "往生结局（隐藏）",
+          text: "为每一个灵魂点亮一盏灯。路易、玛丽、罗伯斯庇尔、拿破仑——每一盏灯都说了一句\"一路走好\"。第一次放下了水神的壳，流下了眼泪。她说：\"我也怕过。但你让我知道，怕的时候还能选择，才是真正的勇敢。\"你的选择。"
+        }
+      },
+      totalKnowledge: 16,
+      hasNpcFateSummary: true,
+      ESSAY_CHALLENGE: (typeof FRENCH_REVOLUTION_ESSAY !== 'undefined') ? FRENCH_REVOLUTION_ESSAY : null,
+      ASSESSMENT_CONFIG: {
+        essayWeight: 50,
+        quizWeight: 50,
+        tiers: { master: 100, excellent: 90 }
+      },
+      TIER_LABELS: { master: '学霸成就', excellent: '学习标兵', completed: '剧情通关' }
+    };
+
+    // ========== 法国大革命 - 剧本数据 ==========
+    const DIALOG_SCRIPT = [
+      // ===== 开场：法庭传唤 =====
+      { speaker: "旁白", text: "1789年，法兰西。一场革命即将改变整个欧洲的命运。", scene: "引渡·法国大革命", bg: "images/bg/opera_house.jpg" },
+      { speaker: "旁白", text: "被告：路易十六、罗伯斯庇尔、拿破仑——以及'革命'本身。" },
+      { speaker: "旁白", text: "你是陪审团。你的每一次选择，都是一次判决。" },
+      { speaker: "旁白", text: "你放下笔。练习册上的'自由、平等、法治'，你已经能背出定义。", scene: "引渡·法国大革命" },
+      { speaker: "旁白", text: "但你心里有个问题一直没问出口：那些人站在巴士底狱前的时候，真的知道自己在选什么吗？", scene: "引渡·法国大革命" },
+
+      // ===== 第一幕：三级会议的阴影 =====
+      { type: "act_transition", actTitle: "第一程", actSubtitle: "三级会议的阴影" },
+      { speaker: null, text: "1789年5月，凡尔赛宫。法国国王路易十六被迫召开了中断了175年的三级会议。", scene: "第一幕 · 凡尔赛宫", bg: "images/bg/versailles_hall.jpg" },
+      {
+        type: "evidence",
+        items: [
+          { type: "📄 税单", title: "第一等级免税记录", content: "教士等级享有全面免税特权，年收入约 1.2 亿锂，无需缴纳任何直接税。" },
+          { type: "📊 账本", title: "第二等级土地收益", content: "贵族等级拥有全国约 30% 的土地，年收入约 2 亿锂，仅缴纳极少的土地税。" },
+          { type: "🧾 账单", title: "第三等级面包支出", content: "一个普通工人家庭年收入约 300-500 锂，其中 50% 以上用于购买面包。" }
+        ],
+        question: "真正造成愤怒的核心，不只是穷，而是什么？",
+        options: [
+          { text: "面包价格太高，超出了普通人的承受能力", correctIndex: 2, wrongFeedback: "" },
+          { text: "自然灾害太多，导致粮食歉收", correctIndex: 2, wrongFeedback: "" },
+          { text: "制度让负担集中在最弱的人身上", correctIndex: 2, correctFeedback: "✅ 你看透了本质。制度性不公才是革命的真正根源——不是天灾，不是物价，而是人祸。", effects: { equality: 5, justice: 5 } }
+        ]
+      },
+      { speaker: null, text: "三级会议大厅里，气氛紧张而压抑。教士和贵族坐在右侧，穿着华丽的丝绒长袍。第三等级的代表们挤在左侧，穿着朴素的黑色衣服。" },
+      { speaker: null, text: "大厅外，一个衣衫褴褛的女人带着孩子跪在雪地里，向路过的马车乞讨。一个贵族从窗户扔下一块面包，笑着对同伴说：「看，她们多感激。」" },
+      { speaker: "louis", text: "各位代表，国家财政已经破产了。我决定召开三级会议，向第三等级征税。", scene: "第一幕 · 凡尔赛宫", charLeft: "louis_king" },
+      { speaker: "louis", text: "（揉着眉心）我不是不想改革...可贵族们不同意，教士们不同意，连王后都不同意。做国王，有时候就像做囚徒。" },
+      { type: "knowledge", id: "k_estates", name: "🏛️ 三级会议与封建等级制度", desc: "法国封建社会分为三个等级：第一等级教士（免税，年收入约1.2亿锂）、第二等级贵族（拥有全国约30%土地，仅缴极少税）、第三等级平民（占人口98%，承担绝大部分税负）。这种制度性不公是法国大革命爆发的根本原因。", category: "平等" },
+      {
+        type: "choice", scene: "第一幕 · 凡尔赛宫",
+        prompt: "凡尔赛宫内灯火通明，宫外饥寒交迫。你会怎么做？",
+        choices: [
+          { text: "走出去把那个女人和孩子带进宫殿", effects: { equality: 15, freedom: -5 } },
+          { text: "找宫殿管事，要求设立施粥点", effects: { rule: 10, justice: 10 } },
+          { text: "记住这一幕，等有了力量再来改变", effects: { justice: 15 } }
+        ]
+      },
+      { speaker: "louis", text: "（犹豫）我...我知道人民生活困难。但改革需要时间，不是吗？" },
+      {
+        type: "pressure_choice", timeout: 8, defaultChoice: 2,
+        urgentText: "卫兵已经举起长杖，安娜被推倒在地。你只有几秒决定——",
+        timeoutText: "你犹豫了太久。等你想好时，卫兵已经把安娜拖走了。你什么都没做。",
+        choices: [
+          { text: "冲上去扶起安娜，用身体挡住卫兵", effects: { justice: 10, equality: 5 } },
+          { text: "高声指责卫兵滥权，吸引人群注意", effects: { freedom: 10 } },
+          { text: "先退开观察，避免冲突扩大", effects: { rule: 5 } },
+          { text: "迅速去找第三等级代表求助", effects: { rule: 10 } }
+        ]
+      },
+      { type: "npc_fate_event", npcId: "anna", newState: "grateful", eventText: "安娜看着你的眼神变了——从恐惧到信任。她记住了你的帮助。" },
+      { speaker: null, text: "你默默记下了这一幕。在凡尔赛宫的辉煌背后，你第一次感受到了历史的重量。" },
+      { type: "npc_fate_event", npcId: "anna", newState: "worried", eventText: "安娜在凡尔赛宫外排了整整一天的队，只为买一块面包。她不知道明天还能不能吃到东西。" },
+      { type: 'star_choice', id: 'fr_star_001', title: '特权制度是否正当？', scene: '1789年5月，凡尔赛宫',
+        knowledgeIds: ['fr_three_estates'],
+        Text: '三个等级中，教士和贵族不到总人口的3%，却占据着绝大多数土地和特权。第三等级承担了几乎全部税收，却在政治上毫无发言权。这种结构性不平等是旧制度的核心矛盾。',
+        Text: '当制度本身成为不公正的来源时，改革还是革命，哪个才是更负责任的选择？特权阶层也有他们的历史理由——秩序、传统、对社会稳定的贡献。',
+        prompt: '作为第三等级代表，面对特权阶级的拒绝，你会如何选择？',
+        choices: [
+          { text: '坚持按人头投票，要求平等代表权', valueTag: 'equality', effects: { equality: 10, freedom: 5, rule: -5 },
+            npcFate: { robespierre: 'awakened', louis: 'worried' },
+            consequence: '第三等级的勇气点燃了全国的热情，但贵族阶层开始警惕。', examHint: '公平不是平均，但制度公平是社会正义的基础。' },
+          { text: '寻求妥协，接受双倍代表权的折中方案', valueTag: 'rule', effects: { rule: 10, justice: 5, freedom: -5 },
+            npcFate: { louis: 'relieved', robespierre: 'disappointed' },
+            consequence: '妥协暂时维持了表面和平，但深层矛盾并未解决。', examHint: '法治既要维护秩序，也要保障权利。妥协有时是智慧，有时是逃避。' }
+        ]
+      },
+      { type: "hook", text: "巴黎传来消息：面包价格再次上涨，城里已经有人开始抢粮。" },
+
+      // ===== 第二幕：攻占巴士底狱 =====
+      { type: "act_transition", actTitle: "第二程", actSubtitle: "攻占巴士底狱" },
+      { speaker: null, text: "1789年7月14日，巴黎。愤怒的市民向巴士底狱发起了进攻……", scene: "第二幕 · 巴士底狱", bg: "images/bg/bastille.jpg" },
+      { speaker: null, text: "巴士底狱前，愤怒的市民越聚越多。有人举着火把，有人拿着铁棍。一个老人站在人群最前面，眼里满是泪水。" },
+      { speaker: null, text: "「我儿子就死在这座监狱里！二十年了，我连他埋在哪里都不知道！」" },
+      {
+        type: "pressure_choice", timeout: 6, defaultChoice: 3,
+        urgentText: "炮声响了！皮埃尔在喊你，街上的人群已经失控！",
+        timeoutText: "你被人群推搡着后退，等回过神来，巴士底狱的大门已经被撞开了。",
+        choices: [
+          { text: "跟皮埃尔一起冲向军械库", effects: { freedom: 15 } },
+          { text: "先去救倒地的平民", effects: { justice: 15 } },
+          { text: "去传讯，让第三等级代表赶来稳定局面", effects: { rule: 10 } },
+          { text: "后撤到街角观察局势", effects: {} }
+        ]
+      },
+      { type: "npc_fate_event", npcId: "pierre", newState: "brave", eventText: "皮埃尔握紧了拳头。你的选择让他相信，革命需要每一个人的勇气。" },
+      { type: "knowledge", id: "k_bastille", name: "🏰 攻占巴士底狱的历史意义", desc: "1789年7月14日，巴黎人民攻占巴士底狱，标志着法国大革命爆发。巴士底狱是封建专制的象征，攻占它不仅释放了囚犯，更重要的是宣告了人民反抗压迫的权利。这一天后来成为法国国庆日。", category: "历史" },
+      { type: "collectible", name: "巴士底狱无名囚犯的证词" },
+      {
+        type: "choice", scene: "第二幕 · 巴士底狱",
+        prompt: "你如何回应？",
+        choices: [
+          { text: "当旧秩序只会压迫人时，人民有权反抗", effects: { freedom: 10, justice: 5 } },
+          { text: "暴力本身不是正义，但有时是通向正义的唯一路", effects: { justice: 10, rule: 5 } },
+          { text: "我不知道，但至少那些被关押的人自由了", effects: { equality: 10 } }
+        ]
+      },
+      { type: "npc_fate_event", npcId: "pierre", newState: "awakened", eventText: "皮埃尔在巴士底狱的废墟上站了一整夜。他坚信，只要推翻旧世界，一切都会变好。" },
+      { type: 'star_choice', id: 'fr_star_002', title: '反抗是否可以突破秩序边界？', scene: '1789年7月14日，巴黎',
+        knowledgeIds: ['fr_bastille'],
+        Text: '巴士底狱是王权专制的象征，关押着政治犯。巴黎市民的愤怒已经积累到临界点——面包价格飞涨，失业率居高不下。攻占巴士底狱是人民自发的行动。',
+        Text: '暴力反抗虽然有其历史正当性，但它也可能打开潘多拉魔盒。当法律无法保护人民时，人民有权反抗——但谁来定义"无法保护"的边界？',
+        prompt: '面对失控的愤怒人群，你会如何选择？',
+        choices: [
+          { text: '支持攻占巴士底狱，打破旧制度的枷锁', valueTag: 'freedom', effects: { freedom: 10, rule: -8, justice: 5 },
+            npcFate: { napoleon: 'inspired', marie: 'terrified', anna: 'displaced' },
+            consequence: '革命热情被彻底点燃。但在混乱中，巴士底狱旁边面包店老板安娜家的店铺被人潮撞毁了。安娜抱着最小的孩子，站在废墟前，说不出话。', examHint: '自由不是为所欲为。法治标定自由边界，也保障自由实现。' },
+          { text: '呼吁建立国民自卫军，将暴力纳入制度框架', valueTag: 'rule', effects: { rule: 10, freedom: 5, responsibility: 5 },
+            npcFate: { napoleon: 'impressed', louis: 'hopeful', pierre: 'betrayed' },
+            consequence: '秩序开始建立。但皮埃尔站在人群里，回头看了你一眼——他觉得你背叛了事业。后来他转向了更激进的一派。', examHint: '法治既规范自由，也保障自由。制度化的力量比个人英雄更持久。' },
+          { text: '先去救安娜，再参与革命', valueTag: 'life', effects: { life: 10, justice: 5, freedom: -5 },
+            npcFate: { anna: 'saved', pierre: 'confused' },
+            consequence: '你扶起安娜，带她离开混乱的街道。但当你回头时，巴士底狱已经被攻占了。你错过了历史性的一刻。', examHint: '生命价值高于抽象的口号。但历史不会因为一个人停留。' }
+        ]
+      },
+
+      // ===== 第三幕：《人权宣言》的光辉 =====
+      { type: "act_transition", actTitle: "第三程", actSubtitle: "《人权宣言》的光辉" },
+      { speaker: null, text: "1789年8月，国民议会通过了《人权宣言》。", scene: "第三幕 · 国民议会", bg: "images/bg/national_assembly.jpg" },
+      { speaker: "robespierre", text: "现在，我们要制定一部伟大的宣言，向全世界宣告人类的权利！", scene: "第三幕 · 国民议会", charLeft: "robespierre" },
+      { speaker: "robespierre", text: "《人权宣言》第一条：在权利方面，人们生来是而且始终是自由平等的。" },
+      { speaker: "robespierre", text: "《人权宣言》第二条：任何政治结合的目的都在于保存人的自然的和不可动摇的权利。这些权利就是自由、财产、安全和反抗压迫。" },
+      { type: "knowledge", id: "k_declaration", name: "📜 《人权宣言》的核心精神", desc: "《人权宣言》确立了「主权在民」「法律面前人人平等」「私有财产神圣不可侵犯」三大原则。它不仅是法国大革命的纲领性文件，更深刻影响了后来的《世界人权宣言》和各国的宪法制定。", category: "法治" },
+      { speaker: null, text: "一位代表站起来说：「宣言说『人人生而自由』——那奴隶呢？殖民地的黑人呢？他们也是『人』吗？」会场一片沉默。" },
+      {
+        type: "evidence",
+        items: [
+          { type: "📜 文献", title: "《人权宣言》第一条", content: "在权利方面，人们生来是而且始终是自由平等的。只有在公共利用上面才显示社会上的差别。" },
+          { type: "✉️ 请愿书", title: "自由有色人种协会请愿", content: "1789年，一群自由的黑人混血儿向国民议会递交请愿书，要求获得与白人同等的政治权利。" },
+          { type: "📝 便笺", title: "殖民地种植园主备忘录", content: "如果废除奴隶制，法国殖民地经济将崩溃。蔗糖、咖啡、棉花产量将下降 70%。我们请求议会暂缓执行。" }
+        ],
+        question: "为什么同样写着自由与权利，不同人看完后会做出完全不同的反应？",
+        options: [
+          { text: "因为每个人的教育水平和理解能力不同", correctIndex: 2, wrongFeedback: "" },
+          { text: "因为宣言本身写得不够清楚，存在歧义", correctIndex: 2, wrongFeedback: "" },
+          { text: "因为立场不同、利益不同、理解角度不同", correctIndex: 2, correctFeedback: "✅ 正确！同样的文字，站在不同位置的人会读出完全不同的含义。这就是为什么'自由'需要制度来保障，而不能只靠宣言。", effects: { justice: 5, equality: 5 } }
+        ]
+      },
+      { speaker: "robespierre", text: "（站起来）当然！自由不是白人的专利！" },
+      { speaker: null, text: "另一位代表冷笑道：「罗伯斯庇尔先生，法国的殖民地经济依赖奴隶制。如果废除奴隶制，法国的经济将崩溃。您愿意承担这个后果吗？」" },
+      {
+        type: "pressure_choice", timeout: 6, defaultChoice: 1,
+        urgentText: "殖民地代表要求立即表决废除奴隶制！会场一片混乱！",
+        timeoutText: "你犹豫了太久，表决被推迟到下次会议。奴隶制问题悬而未决。",
+        choices: [
+          { text: "支持立即废除——自由不能等待", effects: { equality: 15, freedom: 10 } },
+          { text: "建议分阶段实施——避免经济崩溃", effects: { rule: 10, justice: 5 } },
+          { text: "提出补偿方案——奴隶主获得赔偿", effects: { rule: 15 } }
+        ]
+      },
+      { speaker: "marie", text: "你们叫我「赤字夫人」...可你们知道，在这个宫廷里，我也不过是一个被摆布的棋子。", scene: "第三幕 · 国民议会", charLeft: "marie" },
+      {
+        type: "pressure_choice", timeout: 6, defaultChoice: 2,
+        urgentText: "艾莉丝被几个激进分子认出是王宫侍女，正被围堵！她惊恐地看向你。",
+        timeoutText: "你犹豫了太久，艾莉丝被人群推搡着消失在走廊尽头，你不知道她后来怎样了。",
+        choices: [
+          { text: "挡在艾莉丝面前，声明她是无辜的普通人", effects: { justice: 15 } },
+          { text: "悄悄带她从侧门离开王宫", effects: { freedom: 10, justice: 5 } },
+          { text: "保持沉默——你帮不了所有人", effects: { rule: 5 } },
+          { text: "劝她公开表明立场，支持革命", effects: { equality: 10, freedom: 5 } }
+        ]
+      },
+      { speaker: "robespierre", text: "各位！刚才的骚动提醒我们——宣言不能只停留在纸上。我提议，我们就「人人生而自由」这句话，再讨论一个现实问题。" },
+      {
+        type: "choice", scene: "第三幕 · 国民议会",
+        prompt: "罗伯斯庇尔提出：《人权宣言》说「人人生而自由」——但法国殖民地的奴隶呢？",
+        choices: [
+          { text: "支持罗伯斯庇尔——自由必须适用于所有人，包括奴隶", effects: { equality: 20, freedom: 10 } },
+          { text: "先保障法国人的自由，殖民地问题以后再说", effects: { rule: 10, justice: 5 } },
+          { text: "指出矛盾——不能一边说「人人生而自由」一边维持奴隶制", effects: { justice: 15, equality: 10 } }
+        ]
+      },
+      { type: "knowledge", id: "k_freedom_law", name: "⚖️ 自由与法律的边界", desc: "自由就像风筝——飞得再高，也需要一根线牵着。这根线就是法律。没有法律约束的自由，就像脱线的风筝，最终会坠落。", category: "自由" },
+      { type: "knowledge", id: "k_equality", name: "🤝 平等的真正含义", desc: "平等不是让所有人都一样高，而是让所有人站在同一个起跑线上。就像跑步比赛——有人跑得快，有人跑得慢，但起点必须相同。", category: "平等" },
+      { type: "card_choice", prompt: "这句话已经写进宣言，但你更愿意向世界强调哪一面？", cards: [
+        { id: "freedom", name: "自由卡", desc: "自由是人的天赋权利", img: "images/cards/card_freedom.jpg", effect: { freedom: 15 }, recommend: false, hint: "提升自由值+15",
+          quote: "我想争取自由，但我也知道自由必须有边界。",
+          Feedback: "最遗憾的不是没有自由，而是从来没有被允许自由地活过一天。"
+        },
+        { id: "equality", name: "平等卡", desc: "法律面前人人平等", img: "images/cards/card_equality.jpg", effect: { equality: 15 }, recommend: false, hint: "提升平等值+15",
+          quote: "身份不应成为特权，法律之前不该有贵贱之分。",
+          Feedback: "平等不是让所有人都一样，而是让每个人都有一样的机会去成为自己。"
+        },
+        { id: "human_rights", name: "人权宣言卡", desc: "人人生而自由，在尊严和权利上一律平等", img: "images/cards/card_human_rights.jpg", effect: { justice: 20 }, recommend: true, hint: "⭐推荐！提升正义值+20，更契合《人权宣言》精神",
+          quote: "权利不是恩赐，而是每个人生来就该拥有的东西。",
+          Feedback: "至少现在，普通人终于有话语能保护自己了。哪怕只是一张纸，也是一道光。"
+        }
+      ]},
+      { type: "if_card_used", cardId: "freedom", speaker: "", text: "（若有所思）你选择了自由...自由确实是美好的。但没有边界的自由，曾经把多少人踩在脚下。" },
+      { type: "if_card_used", cardId: "equality", speaker: "", text: "（微笑）平等...不管是谁，在最后那一刻都是平等的。不是因为制度，而是因为结局一样。" },
+      { type: "if_card_used", cardId: "human_rights", speaker: "", text: "（轻声）权利不是恩赐...这句话说得好。可惜，从宣言到真正落实，中间隔着无数人的血和泪。" },
+      { type: "npc_fate_event", npcId: "alice", newState: "shaken", eventText: "艾莉丝在王宫走廊里偷偷读完了《人权宣言》。她不反对平等，但害怕旧制度崩塌后，自己会失去一切。" },
+      { type: 'star_choice', id: 'fr_star_003', title: '自由平等如何写入制度？', scene: '1789年8月，国民议会',
+        knowledgeIds: ['fr_declaration'],
+        Text: '《人权宣言》宣布"人人生而自由，在权利上一律平等"。这是人类历史上第一次以法律形式确认天赋人权。但"自由"和"平等"在实践中常常互相冲突——绝对自由可能导致不平等，绝对平等可能限制自由。',
+        Text: '权利宣言是伟大的，但权利需要制度保障才能落地。没有法治框架的自由只是口号，没有责任约束的平等可能变成暴政。',
+        prompt: '在制定具体法律时，你会优先保障什么？',
+        choices: [
+          { text: '优先保障个人自由和财产权', valueTag: 'freedom', effects: { freedom: 10, equality: -5, rule: 5 },
+            npcFate: { napoleon: 'approving', robespierre: 'skeptical' },
+            consequence: '自由经济激发了创造力，但贫富差距开始扩大。', examHint: '自由的边界是不侵犯他人自由。财产权是自由的基础，但不是自由的全部。' },
+          { text: '优先保障社会平等和公共福利', valueTag: 'equality', effects: { equality: 10, freedom: -5, justice: 5 },
+            npcFate: { robespierre: 'approving', napoleon: 'cautious' },
+            consequence: '社会福利改善了底层生活，但经济活力受到影响。', examHint: '平等不是结果均等，而是机会均等。公平的制度应该既保障底线，又激励奋斗。' }
+        ]
+      },
+      { type: "hook", text: "宣言已经写好，但城里开始流传一句话：'今天写下权利的人，明天也可能亲手剥夺它。'" },
+
+      // ===== 第四幕：共和国的诞生与恐怖 =====
+      { type: "act_transition", actTitle: "第四程", actSubtitle: "共和国的诞生与恐怖" },
+      { speaker: null, text: "1792年，法兰西第一共和国成立。革命的浪潮越来越激进……", scene: "第四幕 · 共和国", bg: "images/bg/palace_square.jpg" },
+      { speaker: "robespierre", text: "路易十六勾结外国势力，企图复辟！1792年，法兰西第一共和国成立了！", scene: "第四幕 · 共和国", charLeft: "robespierre", charRight: "peasant" },
+      { speaker: null, text: "1793年1月21日，路易十六被送上了断头台……", scene: "第四幕 · 断头台", bg: "images/bg/execution.jpg" },
+      {
+        type: "pressure_choice", timeout: 6, defaultChoice: 3,
+        urgentText: "刑车已经出现，人群开始推搡。艾莉丝快被挤倒了！",
+        timeoutText: "你被人群裹挟着，什么都做不了。远处传来断头台落下的声音。",
+        choices: [
+          { text: "挤过去扶住艾莉丝", effects: { justice: 10 } },
+          { text: "跟随人群高呼共和国万岁", effects: { freedom: 10 } },
+          { text: "协助雅克维持秩序，防止踩踏", effects: { rule: 10 } },
+          { text: "远离现场，避免卷入失控人群", effects: {} }
+        ]
+      },
+      { speaker: "louis", text: "（临死前）我承认我犯了错。但...死刑？以法律的名义处死一个国王？我...我原谅我的敌人。", scene: "第四幕 · 断头台", charLeft: "louis_king" },
+      { type: "knowledge", id: "k_louis_death", name: "👑 路易十六被处死", desc: "1793年1月21日，路易十六被送上断头台，标志着法国封建君主制的终结。他是第一个被以「法律名义」处死的欧洲国王，震惊了整个欧洲王室。这一事件也开启了恐怖统治的序幕。", category: "历史" },
+      { type: "collectible", name: "路易十六的证词" },
+      { speaker: "marie", text: "我从未说过「让他们吃蛋糕」。但就算我说了...那是因为我真的不懂饥饿是什么感觉。这是我的罪。", scene: "第四幕 · 断头台", charLeft: "marie" },
+      { speaker: "robespierre", text: "现在，我们要实行恐怖统治，严厉镇压所有反革命分子！", scene: "第四幕 · 恐怖统治", bg: "images/bg/national_assembly.jpg", charLeft: "robespierre" },
+      { type: "knowledge", id: "k_terror_rule", name: "💀 恐怖统治的教训", desc: "1793-1794年，罗伯斯庇尔领导的雅各宾派实行恐怖统治，以「保卫革命」为名大规模处决「嫌疑人」。巴黎革命法庭判处约1376人死刑，其中仅14%有确凿叛国证据。这段历史深刻警示：不受制约的权力，无论打着什么旗号，最终都会走向暴政。", category: "正义" },
+      {
+        type: "evidence",
+        items: [
+          { type: "📰 法令", title: "嫌疑犯法令（1793年）", content: "凡未能出示爱国证书者，均可被视为嫌疑犯。嫌疑犯可被拘留至和平恢复。" },
+          { type: "📋 名单", title: "革命法庭判决统计", content: "1793年3月至1794年6月：巴黎革命法庭共判处约 1,376 人死刑。其中仅 14% 有确凿的叛国证据。" },
+          { type: "✉️ 信件", title: "一位议员给妻子的信", content: "我每天都在投票处决人，因为如果不这样做，别人就会投票处决我。这不是正义，这是恐惧。" }
+        ],
+        question: "以'保卫革命'为名的恐怖统治，和它要推翻的专制有什么本质区别？",
+        options: [
+          { text: "没有区别，只是换了一批人掌权", correctIndex: 2, wrongFeedback: "" },
+          { text: "有区别，因为革命的目的是好的", correctIndex: 2, wrongFeedback: "" },
+          { text: "区别越来越小——当权力不受制约时，任何旗号都会变成暴政", correctIndex: 2, correctFeedback: "✅ 你触及了法国大革命最深刻的教训：不受制约的权力，无论打着什么旗号，最终都会走向它所反对的东西。", effects: { justice: 10, rule: 5 } }
+        ]
+      },
+      { speaker: null, text: "革命广场上，断头台每天都在运转。罗伯斯庇尔坐在办公室里，面前是一长串「嫌疑人」名单。他的手在微微发抖。" },
+      { speaker: "robespierre", text: "（自言自语）如果不处决他们...王党就会复辟。革命就会失败。我知道很多人是无辜的...但为了大多数人的安全，必须有人牺牲。" },
+      { speaker: null, text: "一个士兵冲进来：「公民代表！一个16岁的男孩被举报『同情贵族』。他只是在自己的日记里写了一句『也许国王也不全是坏的』。怎么处理？」" },
+      {
+        type: "choice", scene: "第四幕 · 恐怖统治",
+        prompt: "一个16岁的男孩因为日记里的一句话被举报。你会怎么做？",
+        choices: [
+          { text: "释放那个男孩——他只是写了自己的想法，这不构成犯罪", effects: { freedom: 15, rule: 10, justice: -5 } },
+          { text: "按照法律程序审理，而不是直接处决", effects: { rule: 15, justice: 10 } },
+          { text: "理解罗伯斯庇尔的困境——革命确实面临威胁", effects: { justice: 10, equality: 5 } }
+        ]
+      },
+      { type: "collectible_conditional", name: "无辜市民的亡魂碎片", condition: () => lastChoiceIndex >= 0 },
+      { speaker: "robespierre", text: "（独白）我...我做错了吗？不，我是为了共和国...为了人民...可是为什么，所有人都在害怕我？" },
+      { speaker: "robespierre", text: "（独白）我知道...我正在变成我反对的人。但如果我手软，革命就会失败。你说，我该怎么办？" },
+      { speaker: null, text: "1794年7月，热月政变。罗伯斯庇尔被送上断头台。雅各宾派统治结束。", scene: "第四幕 · 热月政变" },
+      { type: "knowledge", id: "k_thermidor", name: "🔥 热月政变", desc: "1794年7月27日（热月9日），反对罗伯斯庇尔的议员联合发动政变，逮捕并处死了罗伯斯庇尔。恐怖统治结束，但法国政局依然动荡，直到1799年拿破仑上台。这一事件说明：以暴力推翻暴力，往往只会带来新的暴力循环。", category: "历史" },
+      { type: "knowledge", id: "k_fair", name: "🎯 公平与正义的区别", desc: "公平是「按规则办事」，正义是「办对的事」。就像考试——公平是所有人都用同一张卷子，正义是让真正努力的人得到好成绩。", category: "正义" },
+      { type: "knowledge", id: "k_justice", name: "🔥 正义的边界", desc: "打着正义旗号做坏事，比单纯的坏事更可怕。罗伯斯庇尔说自己在「保卫革命」，但他杀的人比国王还多。目的再好，手段错了，结果也会错。", category: "正义" },
+      { type: "collectible", name: "罗伯斯庇尔的证词" },
+      { type: "knowledge", id: "k_power_limit", name: "⚡ 权力需要制约", desc: "权力就像猛兽——关在笼子里是保护人民的工具，放出来就会伤人。国王的权力需要制约，革命者的权力同样需要制约。", category: "法治" },
+      { type: "npc_fate_event", npcId: "pierre", newState: "radical", eventText: "皮埃尔加入了革命法庭。他开始相信，只有更多的鲜血才能清洗旧世界的罪恶。" },
+      { type: "npc_fate_event", npcId: "alice", newState: "exiled", eventText: "艾莉丝在深夜收拾了少量行李，从巴黎城门逃出。她决定流亡海外，再不回来。" },
+      { type: "npc_fate_event", npcId: "jacques", newState: "doubt", eventText: "雅克站在空荡荡的广场上，看着断头台被拆除。他开始怀疑：暴力真的能带来正义吗？" },
+      { type: 'star_choice', id: 'fr_star_004', title: '以正义之名实施恐怖是否正当？', scene: '1793-1794年，巴黎',
+        knowledgeIds: ['fr_terror'],
+        Text: '雅各宾派以"保卫革命"为名实施恐怖统治，一年内处决了约17000人。罗伯斯庇尔相信恐怖是"自由的代价"——但恐怖本身正在吞噬革命最初追求的自由和人权。',
+        Text: '这是政治哲学中最深刻的困境之一：为了实现正义的目标，是否可以采用不正义的手段？如果目的可以证明手段的正当性，那么任何暴行都可以找到"正义"的理由。',
+        prompt: '面对恐怖统治的扩大，你会如何选择？',
+        choices: [
+          { text: '支持继续镇压，革命需要铁腕保护', valueTag: 'justice', effects: { justice: 10, life: -10, rule: -5 },
+            npcFate: { robespierre: 'determined', louis: 'dead' },
+            consequence: '短期内压制了反对声音，但人心开始背离革命。', examHint: '正义需要程序保障。没有法治约束的"正义"最终会变成新的不正义。生命权是一切权利的前提。' },
+          { text: '反对恐怖扩大化，呼吁恢复法治', valueTag: 'life', effects: { life: 10, rule: 5, justice: -5 },
+            npcFate: { robespierre: 'isolated', napoleon: 'watching' },
+            consequence: '呼吁得到了响应，但也被视为"革命的背叛者"。', examHint: '生命权是不可剥夺的基本权利。法治社会中，任何人未经公正审判不受处罚。' }
+        ]
+      },
+      { type: "hook", text: "革命最激烈的浪潮退去了，但远处有另一个名字开始被反复提起：拿破仑。" },
+
+      // ===== 第五幕：拿破仑的传奇 =====
+      { type: "act_transition", actTitle: "第五程", actSubtitle: "拿破仑的传奇" },
+      { speaker: null, text: "1799年，拿破仑·波拿巴发动雾月政变，夺取了法国政权。", scene: "第五幕 · 拿破仑", bg: "images/bg/arc_de_triomphe.jpg" },
+      { type: "knowledge", id: "k_brumaire", name: "⚔️ 雾月政变", desc: "1799年11月9日（雾月18日），拿破仑·波拿巴发动政变，推翻督政府，建立执政府，自任第一执政。这标志着法国从共和制向军事独裁的转变，也开启了拿破仑时代。政变说明：在动荡时期，强人往往能利用人们对「秩序」的渴望夺取权力。", category: "历史" },
+      { speaker: "napoleon", text: "混乱结束了。法国需要秩序，需要法律，需要一个强有力的领导人。", scene: "第五幕 · 拿破仑", charLeft: "napoleon" },
+      { speaker: "napoleon", text: "（独白）他们说我是暴君。可我给了法国秩序，给了欧洲法典。没有我，法国会怎样？大革命喊了十年自由平等，可自由平等喂不饱一个面包师的孩子。" },
+      { speaker: "napoleon", text: "（独白）科西嘉岛上的穷小子……我走到今天，靠的是炮火和运气。可运气总有用完的一天。我比任何人都清楚，王冠是用骷髅堆起来的。" },
+      { speaker: "napoleon", text: "（低声）也许...我和路易十六没有区别。我们都以为自己是对的。可他对不起法国，我对不起的……是那些再也没能回家的士兵。" },
+      { speaker: "napoleon", text: "（对身边的年轻士兵）你叫什么名字？多大了？" },
+      { speaker: null, text: "一个瘦弱的年轻士兵立正回答：「报告将军，我叫让-皮埃尔，十七岁。」" },
+      { speaker: "napoleon", text: "（拍了拍他的肩膀）十七岁……和我第一次上战场一样大。让-皮埃尔，记住——活着回来。比任何勋章都重要。" },
+      { speaker: null, text: "年轻士兵眼眶微红，用力点了点头。拿破仑转过身，脸上的温情一闪而逝，恢复了冷峻的表情。" },
+      { speaker: "napoleon", text: "1804年，我加冕为皇帝，建立了法兰西第一帝国。" },
+      { speaker: "napoleon", text: "我最伟大的功绩，是颁布了《拿破仑法典》。它确认了资产阶级私有制，废除了封建特权，确立了自由平等的原则。" },
+      { type: "knowledge", id: "k_napoleon_code", name: "📋 《拿破仑法典》的双重遗产", desc: "《拿破仑法典》（1804年）确立了法律面前人人平等、契约自由、私有财产保护等现代民法基本原则，影响了全球40多个国家的法律体系。但拿破仑本人通过政变夺权、恢复奴隶制、发动侵略战争，说明「好的制度」和「好的执行者」是两回事。制度需要人来执行，但更需要制衡来约束人。", category: "法治" },
+      {
+        type: "pressure_choice", timeout: 8, defaultChoice: 3,
+        urgentText: "征兵官正在念名单，皮埃尔回头看着你，等你一句话——",
+        timeoutText: "你没有说话。皮埃尔看了你一眼，转身走进了征兵的队伍。你不知道还能不能再见。",
+        choices: [
+          { text: "鼓励他参军，捍卫革命成果", effects: { freedom: 5, justice: 5 } },
+          { text: "劝他留下，别把生命交给战争", effects: { justice: 10 } },
+          { text: "提醒他战争也可能是侵略，不要盲从口号", effects: { rule: 5, justice: 5 } },
+          { text: "沉默不语，让他自己决定", effects: {} }
+        ]
+      },
+      {
+        type: "choice", scene: "第五幕 · 拿破仑",
+        prompt: "拿破仑说人人平等，却自己当了皇帝。你怎么看？",
+        choices: [
+          { text: "肯定法典的价值——即使拿破仑本人有矛盾，法典本身是进步的", effects: { equality: 15, rule: 10 } },
+          { text: "指出拿破仑的虚伪——自己当皇帝却说人人平等", effects: { freedom: 10, justice: 15 } },
+          { text: "思考更深的问题——好的制度能否由不完美的人建立？", effects: { justice: 15, rule: 5 } }
+        ]
+      },
+      { type: 'star_choice', id: 'fr_star_005', title: '革命成果如何制度化传承？', scene: '1804年，巴黎',
+        knowledgeIds: ['fr_napoleon_code'],
+        Text: '拿破仑说："我真正的光荣并非打了40次胜仗，滑铁卢之战抹去了关于这一切的记忆。但有一样东西是不会被人忘却的，它将永垂不朽——那就是我的民法典。"《拿破仑法典》将革命成果（自由、平等、法治）以法律形式固定下来，影响了全世界100多个国家。',
+        Text: '革命的热情终会退去，但制度可以长久存续。法典的价值在于：它把抽象的理念变成了可操作的具体规则。然而，法典也有其局限性——它在保障平等的同时，也限制了某些自由。',
+        prompt: '革命成果制度化，你最看重什么？',
+        choices: [
+          { text: '完善法律体系，让法治成为革命遗产', valueTag: 'rule', effects: { rule: 10, justice: 5, freedom: 5 },
+            npcFate: { napoleon: 'proud', robespierre: 'vindicated' },
+            consequence: '法典成为欧洲大陆的法治标杆，革命成果得以制度化传承。', examHint: '法治是治国理政的基本方式。良法善治需要科学立法、严格执法、公正司法、全民守法。' },
+          { text: '推动民主宪政，让人民持续参与治理', valueTag: 'freedom', effects: { freedom: 10, equality: 5, responsibility: 5 },
+            npcFate: { napoleon: 'cautious', louis: 'philosophical' },
+            consequence: '民主制度逐步建立，但拿破仑最终选择称帝，民主进程被打断。', examHint: '民主是法治的基础，法治是民主的保障。人民当家作主需要制度化的参与渠道。' }
+        ]
+      },
+      { speaker: "napoleon", text: "我率领大军横扫欧洲，把法国大革命的思想传播到了整个欧洲！" },
+      { speaker: null, text: "拿破仑的军队横扫欧洲。所到之处，旧的封建制度被推翻，《拿破仑法典》被引入。" },
+      { speaker: null, text: "但与此同时，征兵令让无数家庭失去了儿子。被征服国家的百姓虽然获得了「自由」，却失去了「自主」。" },
+      { speaker: null, text: "一个西班牙老人愤怒地说：「你们说给我们带来了自由？可你们烧了我们的房子，杀了我们的儿子！」" },
+      { speaker: null, text: "一个德国大学生激动地说：「拿破仑推翻了我们的封建领主！他说法律面前人人平等！这是进步！」" },
+      { type: "knowledge", id: "k_napoleon_war", name: "🌍 拿破仑对外战争的双重性", desc: "拿破仑战争具有双重性质：进步性——打击欧洲封建势力，传播自由民主思想，推动资本主义发展；侵略性——侵犯被征服国家主权，掠夺资源，造成大量平民伤亡。这启示我们：评价历史事件要辩证看待，不能简单定性为「正义」或「非正义」。", category: "正义" },
+      {
+        type: "choice", scene: "第五幕 · 欧洲",
+        prompt: "同一场战争，有人看到了解放，有人看到了侵略。你怎么看？",
+        choices: [
+          { text: "拿破仑的战争本质上是侵略——不能用「传播自由」来美化战争", effects: { rule: 15, justice: 10 } },
+          { text: "承认双重性——战争确实传播了进步思想，但也确实带来了灾难", effects: { justice: 15, equality: 10 } },
+          { text: "反思更深层的问题——「进步」是否有权以「牺牲」为代价？", effects: { freedom: 10, justice: 15 } }
+        ]
+      },
+      { speaker: null, text: "1815年，滑铁卢。拿破仑的帝国梦碎了。", scene: "第五幕 · 滑铁卢", bg: "images/bg/waterloo.jpg" },
+      { type: "knowledge", id: "k_waterloo", name: "⚔️ 滑铁卢战役", desc: "1815年6月18日，拿破仑在比利时滑铁卢被反法联军击败，标志着拿破仑帝国的终结和法国大革命时代的结束。这场战役后，欧洲进入「维也纳体系」时期，封建势力短暂复辟。但大革命播下的自由民主种子已不可逆转。", category: "历史" },
+      { speaker: "napoleon", text: "滑铁卢……我失败了。我用剑征服了欧洲，却无法征服时间。但我的法典，至今仍在守护着公平与正义。" },
+      { type: "collectible", name: "拿破仑的证词" },
+      { type: "knowledge", id: "k_world_impact", name: "🌐 法国大革命的世界影响", desc: "法国大革命传播的自由、平等、民主思想，深刻影响了世界历史进程。它推动了19世纪欧洲和拉丁美洲的资产阶级革命浪潮，为近代中国探索救国道路提供了思想借鉴。从《人权宣言》到《世界人权宣言》，法国大革命的精神遗产延续至今。", category: "历史" },
+      { type: "npc_fate_event", npcId: "anna", newState: "awakened", eventText: "安娜在动荡中学会了识字。她开始读传单上的每一个字，后来成为了一名小学教师。" },
+      { type: "npc_fate_event", npcId: "pierre", newState: "dead", eventText: "皮埃尔跟随拿破仑大军远征。他再也没有回来。" },
+      { type: "npc_fate_event", npcId: "jacques", newState: "order", eventText: "雅克重新穿上了国民自卫军的制服。他选择相信法治，而不是暴力。" },
+      { type: "hook", text: "滑铁卢的炮声停了。可真正的审判，才刚刚开始。" },
+
+      // ===== 结局 =====
+      { type: "ending_check" }
+    ];
+
+    // ===== 语音开关 =====
+    function toggleVoice(event) {
+      if (typeof VoiceManager === 'undefined') return;
+      if (event) event.stopPropagation();
+      var newState = VoiceManager.toggle();
+      var btn = document.getElementById('voiceToggleBtn');
+      if (btn) {
+        btn.textContent = newState ? '语音 ON' : '语音 OFF';
+        btn.style.background = newState ? 'rgba(212,165,116,0.3)' : 'rgba(255,255,255,0.1)';
+        btn.style.borderColor = newState ? '#d4a574' : 'rgba(212,165,116,0.5)';
+      }
+      localStorage.setItem('voiceEnabled', newState ? '1' : '0');
+    }
+
+    // 页面加载时恢复语音状态
+    document.addEventListener('DOMContentLoaded', function() {
+      var saved = localStorage.getItem('voiceEnabled');
+      if (saved === '1' && typeof VoiceManager !== 'undefined') {
+        VoiceManager.toggle();
+        var btn = document.getElementById('voiceToggleBtn');
+        if (btn) {
+          btn.textContent = '语音 ON';
+          btn.style.background = 'rgba(212,165,116,0.3)';
+          btn.style.borderColor = '#d4a574';
+        }
+      }
+    });
+</script>
+
+<!-- Game Engine -->
+<script src="engine.js?v=20260526e">
+<script src="fireworks.js"></script>
+<script src="card-battle/card-battle.js"></script>
+<script src="card-battle/card-battle-ui.js"></script>
+</body>
+</html>
+

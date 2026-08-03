@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>时空剧场 - 玩法说明</title>
+    <link rel="stylesheet" href="dist/output.css?v=5"/>
+<script src="audio-manager.js?v=20260525c"></script>
+<script src="data-store.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Manrope:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.98); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes sectionFadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes iconFloat {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-6px); }
+        }
+        body {
+            font-family: 'Manrope', sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+        .howto-container {
+            animation: fadeIn 0.8s ease-out;
+        }
+        .section-content {
+            animation: sectionFadeIn 0.6s ease-out;
+        }
+        .icon-float {
+            animation: iconFloat 3s ease-in-out infinite;
+        }
+        .glass-panel {
+            background: rgba(40, 51, 86, 0.4);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+        .dot-active {
+            color: #efbd8a;
+        }
+        .dot-inactive {
+            color: #444651;
+        }
+        button:active { transform: scale(0.9); }
+    </style>
+</head>
+<body class="bg-[#0a0e27] min-h-screen flex items-center justify-center">
+    <div class="howto-container flex flex-col items-center justify-center min-h-screen w-full px-6 md:px-8 py-8">
+        <!-- Title -->
+        <h1 class="text-2xl md:text-3xl text-[#dbe1ff] mb-10 tracking-wider" style="font-family: 'Noto Serif SC', serif;">
+            玩法说明
+        </h1>
+
+        <!-- Section Content Area -->
+        <div class="w-full max-w-lg mb-10">
+            <div id="sectionContent" class="section-content glass-panel rounded-xl p-8 md:p-10 border border-white/5 min-h-[220px] flex flex-col items-center justify-center text-center">
+                <!-- Content will be injected by JS -->
+            </div>
+        </div>
+
+        <!-- Dots Indicator -->
+        <div class="flex items-center gap-3 mb-6" id="dotsIndicator">
+            <span class="dot-active text-lg" id="dot0">&#9679;</span>
+            <span class="dot-inactive text-lg" id="dot1">&#9675;</span>
+            <span class="dot-inactive text-lg" id="dot2">&#9675;</span>
+            <span class="dot-inactive text-lg" id="dot3">&#9679;</span>
+        </div>
+        <div class="flex items-center justify-center gap-4 mb-6">
+            <button onclick="if(currentSection>0){currentSection--;renderSection(currentSection)}" class="px-5 py-2 text-sm text-[#8f909d] border border-[#8f909d]/30 rounded-full hover:bg-[#8f909d]/10 transition-colors">上一步</button>
+            <button onclick="nextSection()" class="px-5 py-2 text-sm text-[#0a0e27] bg-[#efbd8a] rounded-full hover:bg-[#efbd8a]/80 transition-colors font-medium">下一步</button>
+        </div>
+
+        <!-- Skip Button -->
+        <div>
+            <button
+                onclick="window.location.href=(function(){var r={french_revolution:'game-scene.html',american_revolution:'american_revolution.html',industrial_revolution:'industrial_revolution.html',wuxu_reform:'wuxu_reform.html',xinhai_revolution:'xinhai_revolution.html'};var p=new URLSearchParams(location.search);var s=p.get('id')||'french_revolution';return r[s]||'game-scene.html';})()"
+                class="text-sm text-[#8f909d] hover:text-[#dbe1ff] transition-colors duration-300 tracking-wider cursor-pointer bg-transparent border-none"
+                style="font-family: 'Plus Jakarta Sans', sans-serif;"
+            >
+                跳过 <span class="text-xs ml-1 opacity-50">SKIP</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Script ID to file mapping for dynamic routing
+        const SCRIPT_FILE_MAP = {
+            french_revolution: 'game-scene.html',
+            american_revolution: 'american_revolution.html',
+            industrial_revolution: 'industrial_revolution.html',
+            wuxu_reform: 'wuxu_reform.html',
+            xinhai_revolution: 'xinhai_revolution.html'
+        };
+
+        const params = new URLSearchParams(location.search);
+        const scriptId = params.get('id') || 'french_revolution';
+        const targetFile = SCRIPT_FILE_MAP[scriptId] || 'game-scene.html';
+
+        // Sections data
+        const sections = [
+            {
+                title: '数值系统',
+                icon: '&#x1F4CA;',
+                description: '你的每个选择都会影响四个核心数值：自由、平等、规则、正义。数值的变化将决定你看到的结局。'
+            },
+            {
+                title: '卡牌系统',
+                icon: '&#x1F0CF;',
+                description: '在关键时刻，你可以使用道法卡牌来影响局势。每张卡牌都有独特的效果，善用它们将帮助你达成目标。'
+            },
+            {
+                title: '结局系统',
+                icon: '&#x1F3AC;',
+                description: '本剧本有三种结局：历史结局、戏剧结局和往生结局。收集全部碎片并保持正义值，即可解锁隐藏的往生结局。'
+            }
+        ];
+
+        let currentSection = 0;
+        const totalSections = sections.length;
+        const sectionDuration = 3000; // 3 seconds per section
+        let autoRedirectTimer = null;
+
+        function renderSection(index) {
+            const section = sections[index];
+            const content = document.getElementById('sectionContent');
+
+            // Re-trigger animation
+            content.style.animation = 'none';
+            content.offsetHeight; // force reflow
+            content.style.animation = 'sectionFadeIn 0.6s ease-out';
+
+            content.innerHTML = `
+                <div class="icon-float text-4xl mb-5">${section.icon}</div>
+                <div class="flex items-center justify-center gap-3 mb-5">
+                    <div class="h-px w-8 bg-gradient-to-r from-transparent to-[#efbd8a]/30"></div>
+                    <span class="text-[10px] text-[#efbd8a]/60 tracking-widest uppercase" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+                        Section ${index + 1} / ${totalSections}
+                    </span>
+                    <div class="h-px w-8 bg-gradient-to-l from-transparent to-[#efbd8a]/30"></div>
+                </div>
+                <h2 class="text-xl md:text-2xl text-[#efbd8a] mb-4 tracking-wider" style="font-family: 'Noto Serif SC', serif;">
+                    ${section.title}
+                </h2>
+                <p class="text-sm md:text-base text-[#c5c5d3] leading-relaxed max-w-sm">
+                    ${section.description}
+                </p>
+            `;
+
+            // Update dots
+            for (let i = 0; i < totalSections; i++) {
+                const dot = document.getElementById('dot' + i);
+                if (i === index) {
+                    dot.className = 'dot-active text-lg';
+                    dot.innerHTML = '&#9679;';
+                } else if (i < index) {
+                    dot.className = 'dot-active text-lg opacity-50';
+                    dot.innerHTML = '&#9679;';
+                } else {
+                    dot.className = 'dot-inactive text-lg';
+                    dot.innerHTML = '&#9675;';
+                }
+            }
+        }
+
+        function nextSection() {
+            currentSection++;
+            if (currentSection < totalSections) {
+                renderSection(currentSection);
+            } else {
+                // All sections shown, redirect
+                clearInterval(autoRedirectTimer);
+                window.location.href = targetFile;
+            }
+        }
+
+        // Initialize first section
+        renderSection(0);
+
+        // Auto-advance every 3 seconds
+        autoRedirectTimer = setInterval(nextSection, sectionDuration);
+    </script>
+
+</body>
+</html>

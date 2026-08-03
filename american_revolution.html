@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>时空剧场 - 美国独立战争</title>
+  <link rel="stylesheet" href="engine.css?v=20260525c">
+</head>
+<body>
+
+
+<!-- 游戏场景 -->
+<div class="game-scene" id="gameScene">
+  <div class="scene-bg-text">1773</div>
+  <div class="scene-label" id="sceneLabel">第一程 · 波士顿的怒火</div>
+
+  <!-- 游戏控制按钮 -->
+  <div class="game-controls">
+    <button class="game-ctrl-btn" onclick="openCardModal()" title="道法卡牌图鉴">🃏 卡牌</button>
+    <button class="game-ctrl-btn" onclick="confirmMenu()" title="返回菜单">☰ 菜单</button>
+  </div>
+
+  <!-- 四维数值HUD -->
+  <div class="value-hud" id="valueHud"></div>
+
+  <!-- 选择面板 -->
+  <div class="choice-panel" id="choicePanel" style="display:none"></div>
+
+  <!-- 角色立绘显示区域 -->
+  <div id="character-display" style="position:absolute;bottom:176px;left:0;right:0;display:flex;justify-content:center;gap:56px;align-items:flex-end;pointer-events:none;z-index:2">
+    <div id="char-left-wrap" style="position:relative;height:min(54vh,520px);max-height:54vh;max-width:min(32vw,420px);display:none;overflow:visible">
+      <img id="char-left" src="" style="position:relative;z-index:1;width:auto;height:100%;max-width:100%;object-fit:contain;object-position:center bottom;display:block">
+    </div>
+    <div id="char-right-wrap" style="position:relative;height:min(54vh,520px);max-height:54vh;max-width:min(32vw,420px);display:none;overflow:visible">
+      <img id="char-right" src="" style="position:relative;z-index:1;width:auto;height:100%;max-width:100%;object-fit:contain;object-position:center bottom;display:block">
+    </div>
+  </div>
+
+  <!-- 对话框 -->
+  <div class="dialog-box" id="dialogBox" onclick="advanceDialog()">
+    <!-- 语音按钮已移除：espeak-ng 机械音暂不可用，等 GPT-SoVITS 配音就绪后恢复 -->
+    <div class="dialog-speaker" id="dialogSpeaker">
+      <span class="speaker-dot" id="speakerDot"></span>
+      <span id="speakerName"></span>
+    </div>
+    <div class="dialog-text" id="dialogText"></div>
+    <div class="dialog-continue" id="dialogContinue" style="display:none">点击继续 ▼</div>
+  </div>
+</div>
+
+<!-- 卡牌弹窗 -->
+<div class="modal-overlay" id="cardModal">
+  <div class="modal-box">
+    <div class="modal-title">道法卡牌图鉴</div>
+    <div class="modal-desc">（已获取的卡牌可点击查看详情）</div>
+    <div class="card-grid" id="cardGrid"></div>
+    <div class="modal-footer">
+      <button class="modal-close-btn" onclick="closeCardModal()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 卡牌详情弹窗 -->
+<div id="cardDetailOverlay" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;z-index:2000"></div>
+
+<!-- 收集品通知 -->
+<div class="collectible-toast" id="collectibleToast">
+  <div class="toast-title">✨ 获得收集品！</div>
+  <div class="toast-item" id="toastItem"></div>
+</div>
+
+<!-- External JS dependencies -->
+<script src="data-store.js"></script>
+<script src="points-system.js"></script>
+<script src="audio-manager.js?v=20260525c"></script>
+<script src="voice-manager.js?v=20260525d"></script>
+<script src="fireworks.js"></script>
+<script src="data/essay-challenges.js"></script>
+
+<!-- Script data: GAME_CONFIG override + DIALOG_SCRIPT -->
+<script>
+    // ========== 美国独立战争 - 剧本配置 ==========
+    window.GAME_CONFIG = {
+      scriptId: 'american_revolution',
+      title: '时空剧场 - 美国独立战争',
+      values: { freedom: 50, equality: 50, justice: 50, rule: 50 },
+      valueLabels: { freedom: '自由', equality: '平等', justice: '正义', rule: '法治' },
+      valueColors: { freedom: '#E74C3C', equality: '#3498DB', justice: '#F39C12', rule: '#2ECC71' },
+      charConfig: {
+        fulina: { name: '芙宁娜', color: '#6A5ACD', dir: 'fulina', defaultExpr: 'normal' },
+        hutao: { name: '胡桃', color: '#DC143C', dir: 'hutao', defaultExpr: 'normal' },
+        jefferson: { name: '杰斐逊', color: '#4682B4', dir: 'npc', defaultExpr: 'jefferson', file: 'jefferson' },
+        washington: { name: '华盛顿', color: '#2F4F4F', dir: 'npc', defaultExpr: 'washington', file: 'washington' },
+        citizen: { name: '市民', color: '#8B4513', dir: 'npc', defaultExpr: 'soldier', file: 'revolutionary_soldier' },
+        soldier: { name: '民兵', color: '#556B2F', dir: 'npc', defaultExpr: 'soldier', file: 'revolutionary_soldier' }
+      },
+      speakerNameToKey: {
+        '芙宁娜': 'fulina', '胡桃': 'hutao',
+        '市民': 'citizen', '民兵': 'soldier',
+        '杰斐逊': 'jefferson', '华盛顿': 'washington'
+      },
+      sceneBGM: {
+        '时空剧场': AudioManager.BGM.AMERICAN_THEATER,
+        '第一幕 · 波士顿的怒火': AudioManager.BGM.AMERICAN_COLONIAL,
+        '第二幕 · 莱克星顿的枪声': AudioManager.BGM.AMERICAN_BATTLE,
+        '第三幕 · 独立宣言的光芒': AudioManager.BGM.AMERICAN_DECLARATION,
+        '第四幕 · 转折与胜利': AudioManager.BGM.AMERICAN_VICTORY,
+        '第五幕 · 共和国的建立': AudioManager.BGM.AMERICAN_CONSTITUTION,
+        '第六幕 · 自由星火永不灭': AudioManager.BGM.AMERICAN_LEGACY,
+      },
+      CARDS: {
+        freedom: {
+          name: "自由卡", knowledge: "自由与法治的关系",
+          description: "触发「自由行动」状态，可在法律范围内自由行动和决策",
+          effect: {"freedom": 20}, color: "#E74C3C"
+        },
+        equality: {
+          name: "平等卡", knowledge: "法律面前人人平等",
+          description: "触发「人人平等」状态，消除所有身份特权和歧视",
+          effect: {"equality": 20}, color: "#3498DB"
+        },
+        justice: {
+          name: "正义卡", knowledge: "正义的要求",
+          description: "触发「正义审判」状态，所有非正义行为都会受到相应惩罚",
+          effect: {"justice": 20}, color: "#F39C12"
+        },
+        rule_of_law: {
+          name: "法治卡", knowledge: "全面依法治国",
+          description: "触发「法治秩序」状态，建立新的法律体系，规范所有人的行为",
+          effect: {"rule": 20}, color: "#2ECC71"
+        }
+      },
+      NPC_FATE_CONFIG: {
+        citizen: {
+          name: "亚当", title: "波士顿市民", avatar: "👨‍🌾",
+          stateLabels: { unknown: "未知", angry: "愤怒", enlisted: "参军", wounded: "负伤", free: "获得自由" }
+        },
+        militiaman: {
+          name: "民兵队长米勒", title: "民兵队长", avatar: "🔫",
+          stateLabels: { unknown: "未知", brave: "英勇", fallen: "阵亡", veteran: "老兵" }
+        }
+      },
+      ESSAY_QUESTIONS: [
+  {
+    question: '分析美国独立战争爆发的根本原因和导火线，并说明两者之间的关系。',
+    template: '美国独立战争爆发的根本原因是「英国殖民统治严重阻碍了北美资本主义经济的发展」，导火线是「1773年波士顿倾茶事件」。根本原因是长期积累的深层矛盾，导火线则是矛盾激化的直接表现。没有根本原因的积累，就不会有导火线的爆发；导火线的出现，加速了战争的到来。'
+  },
+  {
+    question: '《独立宣言》体现了哪些重要思想？它对后世产生了怎样的影响？',
+    template: '《独立宣言》体现了「天赋人权」「人人生而平等」「主权在民」等重要思想。它宣告了生命、自由和追求幸福的权利是不可剥夺的。这些思想不仅为美国建国奠定了理论基础，更深刻影响了法国大革命和世界各国的民主运动，成为人类政治文明的里程碑。'
+  },
+  {
+    question: '美国独立战争具有怎样的双重性质？请结合史实加以说明。',
+    template: '美国独立战争既是一场「民族解放战争」，反抗英国殖民统治，争取民族独立；也是一场「资产阶级革命」，推翻了殖民统治，确立了资本主义制度。从民族解放的角度看，它结束了英国的殖民压迫；从资产阶级革命的角度看，它为资本主义发展扫清了道路。'
+  },
+  {
+    question: '1787年宪法是如何体现「分权制衡」思想的？这一制度设计有何意义？',
+    template: '1787年宪法确立了「三权分立」原则：行政权归总统，立法权归国会，司法权归最高法院。三权相互独立又相互制衡，任何一方都无法独揽大权。这一制度设计的意义在于「防止权力滥用，保障公民自由」，为美国长期的政治稳定提供了制度保障，也对世界各国的宪政建设产生了深远影响。'
+  },
+  {
+    question: '结合美国独立战争的历史，谈谈你对「自由、平等、正义、法治」四个价值观的理解。',
+    template: '美国独立战争的历史深刻诠释了这四个价值观：「自由」是人民反抗压迫的核心动力；「平等」体现在《独立宣言》的天赋人权理念中；「正义」表现为反抗不合理的殖民统治；「法治」则体现在1787年宪法的制度设计中。然而，历史也告诉我们，这些价值的实现是一个渐进的过程——美国虽然确立了自由平等的框架，但奴隶制等问题说明真正的平等需要持续奋斗。'
+  }
+],
+      QUIZ_DATA: [
+  {
+    question: '美国独立战争爆发的根本原因是什么？',
+    options: [
+      'A. 波士顿倾茶事件',
+      'B. 英国殖民统治严重阻碍北美资本主义经济发展',
+      'C. 法国大革命的影响',
+      'D. 印第安人的反抗'
+    ],
+    answer: 1,
+    explanation: '英国殖民统治严重阻碍了北美资本主义经济的发展，这是美国独立战争爆发的根本原因。波士顿倾茶事件只是导火线。'
+  },
+  {
+    question: '美国独立战争的导火线是什么？',
+    options: [
+      'A. 莱克星顿的枪声',
+      'B. 《独立宣言》发表',
+      'C. 波士顿倾茶事件',
+      'D. 约克镇战役'
+    ],
+    answer: 2,
+    explanation: '1773年的波士顿倾茶事件是美国独立战争的导火线，殖民地人民以倾倒茶叶的方式抗议英国的茶税法。'
+  },
+  {
+    question: '标志着美国诞生的事件是什么？',
+    options: [
+      'A. 莱克星顿的枪声',
+      'B. 1787年宪法制定',
+      'C. 1776年7月4日《独立宣言》发表',
+      'D. 约克镇战役胜利'
+    ],
+    answer: 2,
+    explanation: '1776年7月4日，大陆会议发表《独立宣言》，宣告美利坚合众国诞生，这一天也成为美国的国庆日。'
+  },
+  {
+    question: '美国独立战争的转折点是哪场战役？',
+    options: [
+      'A. 莱克星顿战役',
+      'B. 约克镇战役',
+      'C. 萨拉托加大捷',
+      'D. 波士顿倾茶事件'
+    ],
+    answer: 2,
+    explanation: '1777年的萨拉托加大捷是美国独立战争的转折点，此后法国等国家开始援助美国，改变了战争的力量对比。'
+  },
+  {
+    question: '1787年宪法确立了什么政治原则？',
+    options: [
+      'A. 君主立宪制',
+      'B. 三权分立原则',
+      'C. 直接民主制',
+      'D. 神权政治'
+    ],
+    answer: 1,
+    explanation: '1787年宪法确立了三权分立的联邦制共和国，行政、立法、司法三权相互制衡，防止权力滥用。'
+  }
+],
+      endingConditions: {
+        afterlifeMinItems: 4,
+        afterlifeValueKey: 'justice',
+        afterlifeMinValue: 70,
+        dramaticMinHighCount: 2,
+        dramaticMinValue: 80
+      },
+      endingTitles: {
+        afterlife: '【宪法通过】——制度设计趋于完善，但留下了妥协的痕迹',
+        dramatic: '【需要修正】——你看到了制度的裂缝，呼吁继续改革',
+        historical: '【历史记录】——真实的制宪过程，远比教科书复杂'
+      },
+      afterlifeDialog: [
+        { speaker: "hutao", text: "（举起护摩之杖）走好……每一个在战场上倒下的灵魂，每一个为自由而牺牲的灵魂。" },
+        { speaker: "fulina", text: "（轻声）他们用生命换来的自由，不应该被任何人夺走。" },
+        { speaker: "hutao", text: "在往生堂，我们说：死亡不是终点，遗忘才是。只要有人记得他们，他们就还活着。" },
+        { speaker: "fulina", text: "（看着你）你记得他们。这就够了。" },
+        { speaker: "hutao", text: "（最后一首）'自由之星永不灭，那些为自由而战的灵魂，在记忆中永远闪耀。'" }
+      ],
+      dramaticDialog: [
+        { speaker: "fulina", text: "你做出了鲜明的选择。在这个追求自由的时代，这需要非凡的勇气。" },
+        { speaker: "hutao", text: "可选择的勇气，有时候比选择的答案更重要。" },
+        { speaker: "fulina", text: "你比历史上的任何人都更勇敢——因为你敢于在自由和秩序之间做出选择。" },
+        { speaker: "hutao", text: "（微笑）也许有一天，你的选择会成为别人历史课本上的一行字。但对你来说，这一刻就足够了。" },
+        { speaker: "fulina", text: "（轻声）……我喜欢你的选择。" }
+      ],
+      historicalText: "历史的车轮滚滚向前。独立战争诞生了一个新国家，1787年宪法建立了一套全新的政治制度。但进步从来不是免费的——它总是由最普通的人付出最大的代价。",
+      choiceReflectionMap: {
+        "第一幕": "当不公正的税收压在人民头上时，沉默就是纵容。波士顿倾茶事件告诉我们，人民有权对不公正说'不'。",
+        "第二幕": "莱克星顿的枪声响了。有时候，和平的手段已经用尽，人民不得不拿起武器来捍卫自己的权利。",
+        "第三幕": "宣言已经写好。但'人人生而平等'这句话，在1776年的北美，究竟意味着什么？",
+        "第四幕": "萨拉托加的胜利让世界看到了希望——殖民地也能打败帝国。但胜利的代价，是无数个再也回不了家的人。",
+        "第五幕": "宪法签署了。一个新国家诞生了。但'自由'的故事，才刚刚开始。"
+      },
+      totalKnowledge: 10,
+      hasNpcFateSummary: true,
+      ESSAY_CHALLENGE: AMERICAN_REVOLUTION_ESSAY
+    };
+
+    // ========== 美国独立战争 - 剧本数据 ==========
+    window.DIALOG_SCRIPT = [
+  // ---- 制宪会议 开场 ----
+  {
+    speaker: '旁白',
+    text: '1776年，费城。十三个殖民地的代表齐聚一堂。',
+    scene: '引渡·美国独立战争',
+    bg: 'images/bg/continental_congress.jpg'
+  },
+  {
+    speaker: '旁白',
+    text: '他们要做一件前所未有的事——用理性和纸笔，设计一个全新的国家。',
+    scene: '引渡·美国独立战争',
+    bg: 'images/bg/continental_congress.jpg'
+  },
+  {
+    speaker: '旁白',
+    text: '今天，时空剧场变成了一间会议室。你是第十三位代表。',
+    scene: '引渡·美国独立战争',
+    bg: 'images/bg/continental_congress.jpg'
+  },
+  {
+    speaker: '旁白',
+    text: '你的每一次投票，都将写进历史的宪法。',
+    scene: '引渡·美国独立战争',
+    bg: 'images/bg/continental_congress.jpg'
+  },
+  {
+    speaker: '芙宁娜',
+    text: '（翻开羊皮纸）各位代表，会议开始。今天的议题是——',
+    scene: '引渡·美国独立战争',
+    bg: 'images/bg/continental_congress.jpg'
+  },
+  {
+    speaker: '胡桃',
+    text: '（举起羽毛笔）等等，坐在桌子旁边的都是白人男性。那其他人呢？',
+    scene: '引渡·美国独立战争',
+    bg: 'images/bg/continental_congress.jpg'
+  },
+  {
+    type: 'act_transition',
+    scene: '引渡·美国独立战争',
+    actTitle: '第一程',
+    actSubtitle: '波士顿的怒火',
+    bg: 'images/bg/continental_congress.jpg'
+  },
+
+  // ---- 第一幕：波士顿的怒火 ----
+  {
+    speaker: '旁白',
+    text: '波士顿港口，海风凛冽。一艘艘满载茶叶的英国商船停靠在码头，殖民地人民的怒火正在燃烧……',
+    scene: '第一幕 · 波士顿的怒火',
+    bg: 'images/bg/boston_harbor.jpg'
+  },
+  {
+    speaker: '芙宁娜',
+    text: '所有茶叶必须缴纳重税！殖民地的一切，都属于英国国王！这是王室的旨意，谁也不能违抗！',
+    scene: '第一幕 · 波士顿的怒火',
+    bg: 'images/bg/boston_harbor.jpg',
+    charLeft: 'serious'
+  },
+  {
+    speaker: '胡桃',
+    text: '我们在北美辛苦劳作，开垦荒地、建立家园，却没有议会代表权，凭什么被随意征税？',
+    scene: '第一幕 · 波士顿的怒火',
+    bg: 'images/bg/boston_harbor.jpg',
+    charRight: 'normal'
+  },
+  {
+    speaker: '市民',
+    text: '英国禁止我们西进开拓，还垄断贸易，把我们的利益全部掠夺殆尽，这是赤裸裸的压迫！',
+    scene: '第一幕 · 波士顿的怒火',
+    bg: 'images/bg/boston_harbor.jpg',
+    charLeft: 'citizen'
+  },
+  {
+    speaker: "市民",
+    text: "（愤怒地挥舞拳头）英国人把茶叶强卖给我们，还要我们交税！我们在自己的土地上，却连喝什么茶都不能自己做主！",
+    scene: "第一幕 · 波士顿的怒火",
+    bg: "images/bg/boston_harbor.jpg",
+    charLeft: 'angry'
+  },
+  {
+    speaker: "市民",
+    text: "（低声）我是个种地的，不懂什么政治。但我知道一件事——没有人有权拿走我辛苦赚来的钱，却不给我说话的权利。",
+    scene: "第一幕 · 波士顿的怒火",
+    bg: "images/bg/boston_harbor.jpg",
+    charLeft: 'normal'
+  },
+  {
+    type: 'knowledge',
+    id: 'k_boston_tea',
+    name: '📚 波士顿倾茶事件',
+    desc: '1773年，波士顿市民将英国商船上的茶叶倒入海中，抗议英国的不合理征税。这是美国独立战争的导火线。',
+    category: '历史'
+  },
+  {
+    speaker: '胡桃',
+    text: '这就是波士顿倾茶事件的起因——英国殖民统治，已经让我们无法生存了。',
+    scene: '第一幕 · 波士顿的怒火',
+    bg: 'images/bg/boston_harbor.jpg'
+  },
+  {
+    speaker: '芙宁娜',
+    text: '从道法的角度来看，英国的行为侵犯了殖民地人民的公平权与财产权。「无代表不纳税」是他们的核心诉求。',
+    scene: '第一幕 · 波士顿的怒火',
+    bg: 'images/bg/boston_harbor.jpg'
+  },
+  {
+    type: 'knowledge',
+    id: 'k_root_cause',
+    name: '📚 独立战争根本原因',
+    desc: '英国殖民统治严重阻碍了北美资本主义经济的发展，这是美国独立战争爆发的根本原因。',
+    category: '历史'
+  },
+  {
+    type: 'choice',
+    scene: '第一幕 · 波士顿的怒火',
+    prompt: '英国对北美殖民地的统治，侵犯了殖民地人民的哪些权利？',
+    choices: [
+      {
+        text: 'A. 生命权、自由权和财产权',
+        effects: { freedom: 5, justice: 5 }
+      },
+      {
+        text: 'B. 仅财产权',
+        effects: { justice: -2 }
+      },
+      {
+        text: 'C. 仅自由权',
+        effects: { freedom: -2 }
+      },
+      {
+        text: 'D. 殖民地没有任何权利',
+        effects: { freedom: -3, justice: -3 }
+      }
+    ]
+  },
+  {
+    speaker: '旁白',
+    text: '愤怒的波士顿市民化装成印第安人，趁夜色登上商船，将342箱茶叶全部倒入波士顿湾。海面上漂浮着茶叶，也漂浮着殖民地人民不屈的意志……',
+    scene: '第一幕 · 波士顿的怒火',
+    bg: 'images/bg/boston_harbor.jpg'
+  },
+
+  // EV-AR-1：独立战争的根本原因
+  {
+    type: "evidence",
+    items: [
+      { type: "📜 法令", title: "《印花税法》（1765年）",
+        content: "英国议会规定：北美殖民地的所有印刷品（报纸、法律文件、扑克牌等）都必须贴上英国政府发行的印花税票。这是英国首次向北美直接征税。" },
+      { type: "📊 数据", title: "北美贸易利润分配（1770年）",
+        content: "北美殖民地与英国的贸易总额约 300 万英镑，其中 70% 的利润流向英国本土商人。北美商人只能获得 30% 的收益，且必须通过英国港口转运。" },
+      { type: "✉️ 宣言", title: "「无代表不纳税」决议（1765年）",
+        content: "弗吉尼亚议会通过决议：'只有北美人民选举的代表，才有权对北美人民征税。'这一原则成为独立战争的思想基础。" }
+    ],
+    question: "北美独立战争的根本原因是什么？",
+    options: [
+      { text: "因为英国对北美征收的税太高了", correctIndex: 2,
+        wrongFeedback: "税的高低不是根本问题。芙宁娜说：'即使税很低，如果没有代表权，人民也不会接受。'" },
+      { text: "因为北美人民想要建立一个新国家", correctIndex: 2,
+        wrongFeedback: "独立不是最初的目的。胡桃说：'一开始他们只是想要公平的待遇，是英国的一再拒绝把他们推向了独立。'" },
+      { text: "英国的殖民统治严重阻碍了北美资本主义经济发展", correctIndex: 2,
+        correctFeedback: "✅ 正确！英国对北美的经济剥削（税收、贸易限制、禁止自行制造业）严重阻碍了北美经济的发展。当经济矛盾无法调和时，革命就成为了必然。",
+        effects: { equality: 5, justice: 5 } }
+    ]
+  },
+
+  // PC-AR-1：波士顿倾茶——决定是否参与
+  {
+    type: "pressure_choice",
+    timeout: 8,
+    defaultChoice: 2,
+    urgentText: "夜幕降临，三艘运茶船停在港口。有人已经开始往船上爬了——",
+    timeoutText: "你犹豫了太久。等你到达港口时，茶叶已经被倒进了海里。你错过了一个历史性的时刻。",
+    choices: [
+      { text: "加入他们，把茶叶倒进海里！", effects: { freedom: 15, equality: 5 } },
+      { text: "记录这一刻，让后人知道为什么人民会选择反抗", effects: { justice: 10 } },
+      { text: "劝他们用合法途径抗议，不要暴力", effects: { rule: 10 } },
+      { text: "远远看着，不参与", effects: {} }
+    ]
+  },
+
+  { type: "npc_fate_event", npcId: "citizen", newState: "angry",
+    eventText: "亚当加入了波士顿倾茶行动。他说：'我们不是暴徒，我们是被逼到了墙角的老鼠。'" },
+
+  { type: "hook", text: "波士顿港口的茶叶沉入了海底。但真正沉入海底的，是北美人民对英国的最后一点耐心。" },
+
+  {
+    type: 'act_transition',
+    scene: '第一幕 · 波士顿的怒火',
+    actTitle: '第二程',
+    actSubtitle: '莱克星顿的枪声',
+    bg: 'images/bg/boston_harbor.jpg'
+  },
+
+  // ---- 第二幕：莱克星顿的枪声 ----
+  {
+    speaker: '旁白',
+    text: '1775年4月19日，黎明前的莱克星顿小镇笼罩在薄雾之中。英军正秘密行军，企图收缴民兵的武器弹药……',
+    scene: '第二幕 · 莱克星顿的枪声',
+    bg: 'images/bg/lexington.jpg'
+  },
+  {
+    speaker: '市民',
+    text: '英军要来收缴武器了！快通知所有人，准备迎战！',
+    scene: '第二幕 · 莱克星顿的枪声',
+    bg: 'images/bg/lexington.jpg',
+    charLeft: 'citizen'
+  },
+  {
+    speaker: "市民",
+    text: "（握着步枪，手在发抖）我从没拿过枪……但今天我必须拿起来。因为莱克星顿的枪声告诉我，和平请愿已经没有用了。",
+    scene: "第二幕 · 莱克星顿的枪声",
+    bg: "images/bg/lexington.jpg",
+    charLeft: 'nervous'
+  },
+  {
+    speaker: "市民",
+    text: "（坚定地）我种了一辈子的地，现在我要为这片土地而战。不是为了什么伟大的理想，只是为了我的妻子和孩子能过上好日子。",
+    scene: "第二幕 · 莱克星顿的枪声",
+    bg: "images/bg/lexington.jpg",
+    charLeft: 'determined'
+  },
+  {
+    speaker: '胡桃',
+    text: '为了家园，为了自由，我们必须反抗！就算面对世界上最强大的军队，我们也绝不退缩！',
+    scene: '第二幕 · 莱克星顿的枪声',
+    bg: 'images/bg/lexington.jpg',
+    charRight: 'solemn'
+  },
+  {
+    speaker: '旁白',
+    text: '「砰——」一声清脆的枪响划破了黎明的寂静。莱克星顿的枪声，成为了美国独立战争爆发的标志！',
+    scene: '第二幕 · 莱克星顿的枪声',
+    bg: 'images/bg/lexington.jpg'
+  },
+  {
+    type: 'knowledge',
+    id: 'k_lexington',
+    name: '📚 莱克星顿的枪声',
+    desc: '1775年4月19日，莱克星顿的枪声标志着美国独立战争正式爆发。这是北美人民反抗英国殖民统治的第一战。',
+    category: '历史'
+  },
+  {
+    speaker: '芙宁娜',
+    text: '1775年4月19日，莱克星顿的枪声，标志着美国独立战争正式爆发！这一天，改变了整个世界的格局。',
+    scene: '第二幕 · 莱克星顿的枪声',
+    bg: 'images/bg/lexington.jpg',
+    charLeft: 'serious'
+  },
+  {
+    speaker: '胡桃',
+    text: '这不是叛乱，是人民在捍卫自己的生命权与自由权。当统治者成为压迫者，人民有权推翻它！',
+    scene: '第二幕 · 莱克星顿的枪声',
+    bg: 'images/bg/lexington.jpg',
+    charRight: 'solemn'
+  },
+  {
+    type: 'collectible',
+    scene: '第二幕 · 莱克星顿的枪声',
+    id: 'spark_1',
+    name: '《常识》节选',
+    desc: '潘恩——\'在美洲，法律就是国王。\'',
+    flavor: '「那一声枪响，唤醒了一个民族的灵魂。」'
+  },
+  {
+    type: 'knowledge',
+    id: 'k_continental_army',
+    name: '📚 大陆军与华盛顿',
+    desc: '第二届大陆会议组建大陆军，任命乔治·华盛顿为总司令，统一指挥对英作战。',
+    category: '历史'
+  },
+  {
+    speaker: '芙宁娜',
+    text: '随后，第二届大陆会议组建了大陆军，华盛顿被任命为总司令。一支由民兵组成的军队，即将挑战日不落帝国！',
+    scene: '第二幕 · 莱克星顿的枪声',
+    bg: 'images/bg/lexington.jpg'
+  },
+  {
+    speaker: '华盛顿',
+    text: '（站起身，目光坚定）各位代表，我接受总司令的任命。但我要告诉你们——我们没有正规军的后勤，没有海军的支援。我们有的，只是对自由的信念。',
+    scene: '第二幕 · 莱克星顿的枪声',
+    bg: 'images/bg/lexington.jpg',
+    charLeft: 'washington'
+  },
+  {
+    speaker: "华盛顿",
+    text: "（看着地图，神情凝重）我们的军队只有民兵，没有正规训练，没有足够的弹药。而英军是世界上最强大的军队。这场战争的胜算，不到三成。",
+    scene: "第二幕 · 莱克星顿的枪声",
+    bg: "images/bg/lexington.jpg",
+    charLeft: 'serious'
+  },
+  {
+    speaker: "华盛顿",
+    text: "（对士兵们说）我不能承诺你们一定会赢。但我承诺你们，只要我还有一口气，我就不会放弃。因为如果我们放弃了，我们的孩子将永远活在暴政之下。",
+    scene: "第二幕 · 莱克星顿的枪声",
+    bg: "images/bg/lexington.jpg",
+    charLeft: 'determined'
+  },
+  {
+    type: 'choice',
+    scene: '第二幕 · 莱克星顿的枪声',
+    prompt: '美国独立战争爆发的标志是什么？',
+    choices: [
+      {
+        text: 'A. 波士顿倾茶事件',
+        effects: { freedom: -2 }
+      },
+      {
+        text: 'B. 莱克星顿的枪声',
+        effects: { freedom: 5, justice: 3 }
+      },
+      {
+        text: 'C. 《独立宣言》发表',
+        effects: { rule: -2 }
+      },
+      {
+        text: 'D. 萨拉托加大捷',
+        effects: { justice: -2 }
+      }
+    ]
+  },
+
+  // PC-AR-2：莱克星顿的枪声——战斗中救人
+  {
+    speaker: "民兵",
+    text: "（检查步枪）我们是民兵，不是正规军。没有统一制服，没有标准武器。有的人拿着猎枪，有的人只有一把干草叉。",
+    scene: "第二幕 · 莱克星顿的枪声",
+    bg: "images/bg/lexington.jpg",
+    charLeft: 'normal'
+  },
+  {
+    speaker: "民兵",
+    text: "（对莉莉说）别看我们装备差，但我们有一个英军没有的东西——我们是在为自己的家园而战。为家园而战的人，永远比拿钱办事的雇佣兵勇敢。",
+    scene: "第二幕 · 莱克星顿的枪声",
+    bg: "images/bg/lexington.jpg",
+    charLeft: 'proud'
+  },
+  {
+    speaker: "民兵",
+    text: "（望着远方）英军有八百人，我们只有七十多个。但米勒队长说：'人数不重要，重要的是你愿不愿意为自由而死。'",
+    scene: "第二幕 · 莱克星顿的枪声",
+    bg: "images/bg/lexington.jpg",
+    charLeft: 'serious'
+  },
+  {
+    speaker: "民兵",
+    text: "（握紧拳头）'一分钟人'——这是英国人对我们的嘲笑。他们说我们只能坚持一分钟。但就是这一分钟，打响了整个独立战争的第一枪！",
+    scene: "第二幕 · 莱克星顿的枪声",
+    bg: "images/bg/lexington.jpg",
+    charLeft: 'proud'
+  },
+  {
+    speaker: "民兵",
+    text: "（微笑）后来，越来越多的'一分钟人'加入了我们。一分钟变成了八年，八年后，我们赢了。自由从来不是别人给的，是自己争取来的。",
+    scene: "第二幕 · 莱克星顿的枪声",
+    bg: "images/bg/lexington.jpg",
+    charLeft: 'hopeful'
+  },
+  {
+    type: "pressure_choice",
+    timeout: 6,
+    defaultChoice: 3,
+    urgentText: "枪声四起！一位民兵倒在了路中间，子弹在他身边飞过——",
+    timeoutText: "你呆立在原地。等枪声停歇时，那位民兵已经被战友拖走了。你不知道他是否还活着。",
+    choices: [
+      { text: "冲上去把受伤的民兵拖到掩体后面", effects: { justice: 15 } },
+      { text: "捡起民兵的步枪，加入战斗", effects: { freedom: 15 } },
+      { text: "高声呼喊让其他人来帮忙", effects: { equality: 10 } },
+      { text: "趴下躲避，保护自己", effects: { rule: 5 } }
+    ]
+  },
+
+  { type: "npc_fate_event", npcId: "militiaman", newState: "brave",
+    eventText: "民兵队长米勒在莱克星顿第一个开枪。他说：'我没有选择。他们要夺走我们的一切。'" },
+
+  { type: "hook", text: "莱克星顿的枪声响了。这一枪，打响了持续八年的战争。可谁也没有想到，这一枪也打碎了旧世界的秩序。" },
+
+  {
+    type: 'act_transition',
+    scene: '第二幕 · 莱克星顿的枪声',
+    actTitle: '第三程',
+    actSubtitle: '独立宣言的光芒',
+    bg: 'images/bg/lexington.jpg'
+  },
+
+  // ---- 第三幕：独立宣言的光芒 ----
+  {
+    speaker: '旁白',
+    text: '费城，大陆会议会场。1776年的夏天，十三个殖民地的代表齐聚一堂，人类历史上最伟大的政治文件之一即将诞生……',
+    scene: '第三幕 · 独立宣言的光芒',
+    bg: 'images/bg/continental_congress.jpg'
+  },
+  {
+    speaker: '杰斐逊',
+    text: '（手持羽毛笔，神情激动）我起草了宣言——「人人生而平等，享有生命、自由和追求幸福的权利！」这些不是空话，是我们为之战斗的信念。',
+    scene: '第三幕 · 独立宣言的光芒',
+    bg: 'images/bg/continental_congress.jpg',
+    charLeft: 'jefferson'
+  },
+  {
+    speaker: "杰斐逊",
+    text: "（拿着羽毛笔，犹豫）'人人生而平等'……我写下这句话的时候，心里很清楚，它不适用于我庄园里的奴隶。但我们必须从某个理想开始。",
+    scene: "第三幕 · 独立宣言的光芒",
+    bg: "images/bg/continental_congress.jpg",
+    charLeft: 'thinking'
+  },
+  {
+    speaker: "杰斐逊",
+    text: "（苦笑）我在草稿中写了一段谴责奴隶制的文字。但南方代表们说，如果保留这段话，他们就不签字。我不得不删掉了它……这是我一生最大的遗憾。",
+    scene: "第三幕 · 独立宣言的光芒",
+    bg: "images/bg/continental_congress.jpg",
+    charLeft: 'sad'
+  },
+  {
+    speaker: "杰斐逊",
+    text: "（认真地）宣言中最重要的一句话不是'人人生而平等'，而是'生命权、自由权和追求幸福的权利是不可剥夺的'。'不可剥夺'——这意味着政府不能给予，也不能夺走。",
+    scene: "第三幕 · 独立宣言的光芒",
+    bg: "images/bg/continental_congress.jpg",
+    charLeft: 'serious'
+  },
+  {
+    speaker: "杰斐逊",
+    text: "（对莉莉说）自由不是一代人就能实现的事业。我们今天播下的种子，也许要一百年、两百年才能开花。但如果不播，就永远不会开花。",
+    scene: "第三幕 · 独立宣言的光芒",
+    bg: "images/bg/continental_congress.jpg",
+    charLeft: 'normal'
+  },
+  {
+    speaker: "杰斐逊",
+    text: "（望着窗外）富兰克林先生说得对：'我们必须团结一致，否则必然会被一个个绞死。'签名的那一刻，我们每个人都把自己的命押上去了。",
+    scene: "第三幕 · 独立宣言的光芒",
+    bg: "images/bg/continental_congress.jpg",
+    charLeft: 'normal'
+  },
+  {
+    speaker: "杰斐逊",
+    text: "（微笑）但我不后悔。因为这份宣言不仅属于美国，它属于全世界每一个渴望自由的人。一百年后，两百年后，还会有人引用它。",
+    scene: "第三幕 · 独立宣言的光芒",
+    bg: "images/bg/continental_congress.jpg",
+    charLeft: 'hopeful'
+  },
+  {
+    speaker: '芙宁娜',
+    text: '我起草了《独立宣言》——「人人生而平等，享有生命、自由和追求幸福的权利！」这是不可剥夺的天赋人权！',
+    scene: '第三幕 · 独立宣言的光芒',
+    bg: 'images/bg/continental_congress.jpg',
+    charLeft: 'excited'
+  },
+  {
+    speaker: '胡桃',
+    text: '这是人类历史上，第一次以政治纲领的形式明确天赋人权！每一个字都重如千钧！',
+    scene: '第三幕 · 独立宣言的光芒',
+    bg: 'images/bg/continental_congress.jpg',
+    charRight: 'excited'
+  },
+  {
+    type: 'knowledge',
+    id: 'k_declaration',
+    name: '📚 《独立宣言》',
+    desc: '1776年7月4日，大陆会议发表《独立宣言》，宣告美利坚合众国诞生。宣言提出「人人生而平等」，是资产阶级革命的重要文献。',
+    category: '历史'
+  },
+  {
+    speaker: '芙宁娜',
+    text: '1776年7月4日，美利坚合众国正式诞生！从这一天起，十三个殖民地成为了一个独立的国家！',
+    scene: '第三幕 · 独立宣言的光芒',
+    bg: 'images/bg/continental_congress.jpg',
+    charLeft: 'excited'
+  },
+  {
+    speaker: '胡桃',
+    text: '宣言里的平等与自由，正是道法核心的公平正义。法治的起点，就是保障每个人的基本权利。',
+    scene: '第三幕 · 独立宣言的光芒',
+    bg: 'images/bg/continental_congress.jpg',
+    charRight: 'normal'
+  },
+  {
+    speaker: '芙宁娜',
+    text: '没错。天赋人权的理念，不仅属于美国，更属于全人类。它宣告了一个新时代的到来。',
+    scene: '第三幕 · 独立宣言的光芒',
+    bg: 'images/bg/continental_congress.jpg'
+  },
+  {
+    type: 'collectible',
+    scene: '第三幕 · 独立宣言的光芒',
+    id: 'spark_2',
+    name: '《独立宣言》手稿',
+    desc: '\'人人生而平等，享有生命、自由和追求幸福的权利。\'',
+    flavor: '「人人生而平等，造物主赋予他们若干不可剥夺的权利。」'
+  },
+  {
+    type: 'choice',
+    scene: '第三幕 · 独立宣言的光芒',
+    prompt: '《独立宣言》的核心思想是什么？',
+    choices: [
+      {
+        text: 'A. 君权神授，国王至上',
+        effects: { rule: -3, freedom: -3 }
+      },
+      {
+        text: 'B. 天赋人权，人人生而平等',
+        effects: { freedom: 5, equality: 5 }
+      },
+      {
+        text: 'C. 只有富人享有政治权利',
+        effects: { equality: -3, justice: -3 }
+      },
+      {
+        text: 'D. 殖民地应永远效忠英国',
+        effects: { freedom: -3, justice: -3 }
+      }
+    ]
+  },
+  {
+    type: 'card_choice',
+    scene: '第三幕 · 独立宣言的光芒',
+    prompt: '作为大陆会议代表，面对英国的军事威胁，你选择如何投票？',
+    cards: [
+      {
+        id: 'card_declaration',
+        name: '《独立宣言》',
+        desc: '正式宣布独立，不惧英国的报复',
+        img: 'images/cards/card_declaration.jpg',
+        text: '签署《独立宣言》',
+        recommend: false,
+        hint: '自由与独立的呼声不可阻挡',
+        effects: { freedom: 8, justice: 5, rule: 3 },
+        result: '你庄严地在《独立宣言》上签下了自己的名字。「我们必须团结一致，否则必然各自灭亡。」'
+      },
+      {
+        id: 'card_peace',
+        name: '和平谈判',
+        desc: '尝试与英国达成妥协',
+        img: 'images/cards/card_peace.jpg',
+        text: '寻求和平谈判',
+        recommend: false,
+        hint: '外交途径或许还有一线生机',
+        effects: { rule: 3, freedom: -2 },
+        result: '你提议先尝试外交途径，但大多数人认为和平已无可能。妥协的窗口已经关闭。'
+      },
+      {
+        id: 'card_army',
+        name: '加强军备',
+        desc: '等待更成熟的时机',
+        img: 'images/cards/card_army.jpg',
+        text: '推迟独立，先加强军备',
+        recommend: false,
+        hint: '军事准备是胜利的基础',
+        effects: { rule: 2, justice: 2 },
+        result: '你建议暂缓宣布独立，先做好军事准备。但形势逼人，人民已经等不及了。'
+      }
+    ]
+  },
+
+  // EV-AR-2：《独立宣言》的核心原则
+  {
+    type: "evidence",
+    items: [
+      { type: "📜 文献", title: "《独立宣言》核心段落",
+        content: "我们认为以下真理是不言而喻的：人人生而平等，造物主赋予他们若干不可剥夺的权利，其中包括生命权、自由权和追求幸福的权利。" },
+      { type: "📝 草案", title: "杰斐逊的原始草稿（被删改部分）",
+        content: "杰斐逊原本写了一段谴责奴隶制的文字：'他（英王）发动了一场残酷的战争，侵犯了人类本身最神圣的生命权和自由权，把从未冒犯过他的遥远非洲居民抓来，运到另一个半球去当奴隶。'但这段文字因南方代表的反对被删除。" },
+      { type: "✉️ 信件", title: "阿比盖尔·亚当斯给丈夫的信",
+        content: "约翰，在新的法典中，请不要忘记女士们。不要把无限的权力交给丈夫们……如果我们不获得应有的尊重，我们决心煽动一场叛乱，并且不受任何我们没有发言权的法律的约束。" }
+    ],
+    question: "《独立宣言》说'人人生而平等'，但当时哪些人被排除在'平等'之外？",
+    options: [
+      { text: "只有英国人被排除在外", correctIndex: 2,
+        wrongFeedback: "胡桃说：'恰恰相反，英国人不是问题——问题出在宣言的签署者自己身上。'" },
+      { text: "没有人被排除，宣言适用于所有人", correctIndex: 2,
+        wrongFeedback: "芙宁娜说：'理想很美好，但现实很骨感。宣言签署时，奴隶、女性、原住民都不在'人人'之中。'" },
+      { text: "奴隶、女性、原住民和无产者都被排除在外", correctIndex: 2,
+        correctFeedback: "✅ 正确！《独立宣言》的'人人'实际上只指白人男性有产者。杰斐逊谴责奴隶制的段落被删除，女性的权利被忽视。这说明'平等'是一个需要不断扩展的概念。",
+        effects: { equality: 10, justice: 5 } }
+    ]
+  },
+
+  // PC-AR-3：独立宣言——是否署名
+  {
+    type: "pressure_choice",
+    timeout: 8,
+    defaultChoice: 2,
+    urgentText: "富兰克林说：'我们必须团结一致，否则必然会被一个个绞死。'轮到你表态了——",
+    timeoutText: "你没有表态。富兰克林叹了口气，在宣言上签下了自己的名字。你站在一旁，看着历史从你身边流过。",
+    choices: [
+      { text: "坚决签名——不自由，毋宁死！", effects: { freedom: 15, justice: 10 } },
+      { text: "签名，但要求加入更多保障人民权利的条款", effects: { rule: 10, justice: 10 } },
+      { text: "支持独立，但认为应该先尝试和平谈判", effects: { rule: 10 } },
+      { text: "犹豫不决——叛国的代价太大了", effects: {} }
+    ]
+  },
+
+  { type: "npc_fate_event", npcId: "citizen", newState: "enlisted",
+    eventText: "亚当放下了农具，拿起了步枪。他说：'我种了一辈子的地，现在我要为这片土地而战。'" },
+
+  { type: "hook", text: "宣言已经写好。但'人人生而平等'这句话，在1776年的北美，究竟意味着什么？" },
+
+  {
+    type: 'act_transition',
+    scene: '第三幕 · 独立宣言的光芒',
+    actTitle: '第四程',
+    actSubtitle: '转折与胜利',
+    bg: 'images/bg/continental_congress.jpg'
+  },
+
+  // ---- 第四幕：转折与胜利 ----
+  {
+    speaker: '旁白',
+    text: '战争初期，英军凭借强大的军事力量占据优势。大陆军装备简陋、补给不足，多次遭遇挫折。然而，自由之火从未熄灭……',
+    scene: '第四幕 · 转折与胜利',
+    bg: 'images/bg/battlefield.jpg'
+  },
+  {
+    type: 'knowledge',
+    id: 'k_saratoga',
+    name: '📚 萨拉托加大捷',
+    desc: '1777年萨拉托加大捷是美国独立战争的转折点。此役之后，法国开始援助美国，改变了战争的力量对比。',
+    category: '历史'
+  },
+  {
+    speaker: '芙宁娜',
+    text: '1777年，萨拉托加大捷！这是战争的转折点！法国看到我们的决心，开始正式援助美国！',
+    scene: '第四幕 · 转折与胜利',
+    bg: 'images/bg/battlefield.jpg',
+    charLeft: 'excited'
+  },
+  {
+    speaker: '胡桃',
+    text: '军民一心，才能以弱胜强。每一个普通人的勇气，汇聚成了不可阻挡的力量！',
+    scene: '第四幕 · 转折与胜利',
+    bg: 'images/bg/battlefield.jpg',
+    charRight: 'normal'
+  },
+  {
+    speaker: '旁白',
+    text: '1781年，约克镇。华盛顿率领大陆军和法军联军，将英军围困在约克镇。英军统帅康华里走投无路，宣布投降……',
+    scene: '第四幕 · 转折与胜利',
+    bg: 'images/bg/yorktown.jpg'
+  },
+  {
+    type: 'knowledge',
+    id: 'k_yorktown',
+    name: '📚 约克镇战役',
+    desc: '1781年约克镇战役中，英军投降。1783年，英国正式承认美国独立，标志着独立战争的胜利结束。',
+    category: '历史'
+  },
+  {
+    speaker: '芙宁娜',
+    text: '1781年约克镇战役，英军投降！1783年，英国正式承认美国独立。八年的浴血奋战，终于换来了自由！',
+    scene: '第四幕 · 转折与胜利',
+    bg: 'images/bg/yorktown.jpg',
+    charLeft: 'excited'
+  },
+  {
+    type: 'collectible',
+    scene: '第四幕 · 转折与胜利',
+    id: 'spark_3',
+    name: '士兵家书',
+    desc: '\'妈妈，我不知道我们能不能赢。但如果不打，我们就永远是奴隶。\'',
+    flavor: '「八年的抗争，换来了一个国家的诞生。」'
+  },
+  {
+    type: 'choice',
+    scene: '第四幕 · 转折与胜利',
+    prompt: '美国独立战争的转折点是哪场战役？',
+    choices: [
+      {
+        text: 'A. 莱克星顿战役',
+        effects: { justice: -2 }
+      },
+      {
+        text: 'B. 约克镇战役',
+        effects: { freedom: -2 }
+      },
+      {
+        text: 'C. 萨拉托加大捷',
+        effects: { freedom: 5, justice: 3 }
+      },
+      {
+        text: 'D. 波士顿倾茶事件',
+        effects: { justice: -2 }
+      }
+    ]
+  },
+
+  // PC-AR-4：萨拉托加大捷——战地医疗
+  {
+    type: "pressure_choice",
+    timeout: 6,
+    defaultChoice: 2,
+    urgentText: "一个年轻士兵的腿被炮弹炸伤，鲜血染红了绷带。军医说绷带不够了——",
+    timeoutText: "你没有做出选择。军医按伤势轻重分配了仅剩的绷带。那个年轻士兵因为伤势不是最重的，没有分到。",
+    choices: [
+      { text: "把自己的衣服撕成绷带给他包扎", effects: { justice: 15 } },
+      { text: "帮军医分类伤员，确保最重的伤员优先", effects: { rule: 10, justice: 5 } },
+      { text: "安慰他，告诉他很快就会有救援", effects: { equality: 5 } },
+      { text: "去寻找更多医疗物资", effects: { rule: 5 } }
+    ]
+  },
+
+  { type: "npc_fate_event", npcId: "militiaman", newState: "wounded",
+    eventText: "米勒在约克镇战役中负伤，失去了左臂。但他说：'失去一条胳膊，换来了一个国家的自由。值了。'" },
+
+  { type: "hook", text: "萨拉托加的胜利让世界看到了希望——殖民地也能打败帝国。但胜利的代价，是无数个再也回不了家的人。" },
+
+  {
+    type: 'act_transition',
+    scene: '第四幕 · 转折与胜利',
+    actTitle: '第五程',
+    actSubtitle: '共和国的建立',
+    bg: 'images/bg/yorktown.jpg'
+  },
+
+  // ---- 第五幕：共和国的建立 ----
+  {
+    speaker: '旁白',
+    text: '战争胜利了，但真正的挑战才刚刚开始。如何建立一个稳定、自由、公正的新国家？制宪者们齐聚费城，开始了一场伟大的政治实验……',
+    scene: '第五幕 · 共和国的建立',
+    bg: 'images/bg/constitution_hall.jpg'
+  },
+  {
+    type: 'knowledge',
+    id: 'k_constitution',
+    name: '📚 1787年宪法',
+    desc: '1787年，美国制定宪法，确立三权分立的联邦制共和国。行政、立法、司法三权相互制衡，防止权力滥用。',
+    category: '历史'
+  },
+  {
+    speaker: '华盛顿',
+    text: '（沉思）权力会导致腐败。我们必须设计一套制度，让没有任何一个人能独揽大权。三权分立——这是我见过最精妙的制衡设计。',
+    scene: '第五幕 · 共和国的建立',
+    bg: 'images/bg/constitution_hall.jpg',
+    charLeft: 'washington'
+  },
+  {
+    speaker: "华盛顿",
+    text: "（放下佩剑）战争结束了。有人劝我当国王，但我拒绝了。我们打这场仗，不是为了换一个暴君，而是为了建立一个没有人需要向暴君低头国家。",
+    scene: "第五幕 · 共和国的建立",
+    bg: "images/bg/constitution_hall.jpg",
+    charLeft: 'normal'
+  },
+  {
+    speaker: "华盛顿",
+    text: "（平静地）权力是一头野兽。你必须用法律和制度把它关在笼子里，否则它会吃掉所有人——包括喂它的人。",
+    scene: "第五幕 · 共和国的建立",
+    bg: "images/bg/constitution_hall.jpg",
+    charLeft: 'serious'
+  },
+  {
+    speaker: '杰斐逊',
+    text: '（点头）宪法是活的文件。它需要一代又一代的人去修正、去完善。今天的妥协，不代表明天的沉默。',
+    scene: '第五幕 · 共和国的建立',
+    bg: 'images/bg/constitution_hall.jpg',
+    charLeft: 'jefferson'
+  },
+  {
+    speaker: '芙宁娜',
+    text: '为了稳定国家，我们制定了1787年宪法，确立三权分立——行政、立法、司法相互制衡，防止任何一方权力过大。',
+    scene: '第五幕 · 共和国的建立',
+    bg: 'images/bg/constitution_hall.jpg',
+    charLeft: 'serious'
+  },
+  {
+    speaker: '胡桃',
+    text: '但是……宪法保留了奴隶制，没有真正实现人人平等。那些被奴役的人，他们的自由在哪里？',
+    scene: '第五幕 · 共和国的建立',
+    bg: 'images/bg/constitution_hall.jpg',
+    charRight: 'solemn'
+  },
+  {
+    speaker: '芙宁娜',
+    text: '这是历史的局限，也是进步中的缺憾。但三权分立的制度设计，为后世法治建设奠定了重要的基础。',
+    scene: '第五幕 · 共和国的建立',
+    bg: 'images/bg/constitution_hall.jpg',
+    charLeft: 'serious'
+  },
+  {
+    type: 'knowledge',
+    id: 'k_separation',
+    name: '📚 三权分立',
+    desc: '1787年宪法确立的三权分立原则：行政权归总统，立法权归国会，司法权归最高法院。三权相互制衡，保障民主与自由。',
+    category: '道法'
+  },
+  {
+    type: 'knowledge',
+    id: 'k_war_nature',
+    name: '📚 战争的双重性质',
+    desc: '美国独立战争既是一场民族解放战争（反抗英国殖民统治），也是一场资产阶级革命（确立资本主义制度）。',
+    category: '历史'
+  },
+  {
+    type: 'collectible',
+    scene: '第五幕 · 共和国的建立',
+    id: 'spark_4',
+    name: '《1787年宪法》草案',
+    desc: '\'我们人民......\'——但\'我们\'到底包括谁？',
+    flavor: '「权力导致腐败，绝对的权力导致绝对的腐败。」'
+  },
+  {
+    type: 'choice',
+    scene: '第五幕 · 共和国的建立',
+    prompt: '1787年宪法确立了什么重要政治原则？',
+    choices: [
+      {
+        text: 'A. 君主专制',
+        effects: { rule: -3, freedom: -3 }
+      },
+      {
+        text: 'B. 三权分立',
+        effects: { rule: 5, justice: 3 }
+      },
+      {
+        text: 'C. 君主立宪',
+        effects: { rule: -2 }
+      },
+      {
+        text: 'D. 神权统治',
+        effects: { rule: -3, freedom: -3 }
+      }
+    ]
+  },
+
+  // EV-AR-3：1787年宪法的智慧
+  {
+    type: "evidence",
+    items: [
+      { type: "📜 文献", title: "1787年宪法第一条",
+        content: "本宪法所授予的全部立法权，均由参议院和众议院组成的合众国国会行使。行政权属于美利坚合众国总统。司法权属于最高法院。" },
+      { type: "📚 理论", title: "孟德斯鸠《论法的精神》（1748年）",
+        content: "当立法权和行政权集中在同一人或同一机构之手时，自由便不复存在了。如果司法权不同立法权和行政权分立，自由也就不存在了。" },
+      { type: "✉️ 信件", title: "麦迪逊致杰斐逊的信",
+        content: "'在一个纯粹民主政体中，多数人的暴政与少数人的暴政同样危险。因此我们必须设计一种制度，既能反映多数人的意志，又能保护少数人的权利。'" }
+    ],
+    question: "三权分立的核心目的是什么？",
+    options: [
+      { text: "让政府更高效地运作", correctIndex: 2,
+        wrongFeedback: "三权分立反而可能降低效率。芙宁娜说：'分权的目的不是效率，而是安全——防止任何一个人或机构拥有过大的权力。'" },
+      { text: "让三个部门互相竞争", correctIndex: 2,
+        wrongFeedback: "不是竞争，而是制衡。胡桃说：'制衡是让权力互相监督，就像往生堂的规矩——每个人都要遵守同样的规则。'" },
+      { text: "通过权力制约和平衡来防止专制、保障自由", correctIndex: 2,
+        correctFeedback: "✅ 正确！三权分立的精髓在于'制约与平衡'——每个部门都有权力限制其他部门，没有任何一个部门可以独揽大权。规范国家权力运行以保障公民权利，是法治的核心价值。",
+        effects: { rule: 10, justice: 5 } }
+    ]
+  },
+
+  { type: "npc_fate_event", npcId: "citizen", newState: "free",
+    eventText: "战争结束后，亚当回到了自己的农场。他说：'自由不是别人给的，是自己争取来的。'" },
+  { type: "npc_fate_event", npcId: "militiaman", newState: "veteran",
+    eventText: "米勒成为了退伍军人协会的会长。他每年在独立日组织纪念活动，提醒人们不要忘记那些为国捐躯的人。" },
+
+  { type: "hook", text: "宪法签署了。一个新国家诞生了。但'自由'的故事，才刚刚开始。" },
+
+  {
+    type: 'act_transition',
+    scene: '第五幕 · 共和国的建立',
+    actTitle: '第六程',
+    actSubtitle: '自由星火永不灭',
+    bg: 'images/bg/constitution_hall.jpg'
+  },
+
+  // ---- 第六幕：独立战争的意义 ----
+  {
+    speaker: '旁白',
+    text: '战争结束了，但自由的火焰永远不会熄灭。美国独立战争不仅创造了一个新的国家，更照亮了人类追求自由与平等的道路……',
+    scene: '第六幕 · 自由星火永不灭',
+    bg: 'images/bg/america_sunset.jpg'
+  },
+  {
+    speaker: '芙宁娜',
+    text: '美国独立战争具有双重性质：它既是一场民族解放战争，推翻了英国的殖民统治；也是一场资产阶级革命，确立了资本主义制度。',
+    scene: '第六幕 · 自由星火永不灭',
+    bg: 'images/bg/america_sunset.jpg',
+    charLeft: 'serious'
+  },
+  {
+    speaker: '胡桃',
+    text: '战争实现了国家独立，却没有完成真正的平等。奴隶制依然存在，印第安人的权利被忽视……这是历史的真实。',
+    scene: '第六幕 · 自由星火永不灭',
+    bg: 'images/bg/america_sunset.jpg',
+    charRight: 'solemn'
+  },
+  {
+    speaker: '芙宁娜',
+    text: '但正是这些不完美，推动着后人不断追求更完善的制度。《独立宣言》中的理想，至今仍在激励着全世界的人民。',
+    scene: '第六幕 · 自由星火永不灭',
+    bg: 'images/bg/america_sunset.jpg',
+    charLeft: 'normal'
+  },
+  {
+    type: 'knowledge',
+    id: 'k_legacy',
+    name: '📚 独立战争的历史意义',
+    desc: '美国独立战争结束了英国殖民统治，确立了民主共和制，对法国大革命和拉丁美洲独立运动产生了深远影响。',
+    category: '历史'
+  },
+  {
+    speaker: '胡桃',
+    text: '民族独立是国家生存发展的基础。没有独立，就谈不上自由、平等和法治。这是美国独立战争给我们最重要的启示。',
+    scene: '第六幕 · 自由星火永不灭',
+    bg: 'images/bg/america_sunset.jpg',
+    charRight: 'normal'
+  },
+  {
+    speaker: '芙宁娜',
+    text: '自由、平等、正义、法治——这些价值不是某个国家的专利，而是全人类共同的追求。让我们铭记这段历史，珍惜来之不易的权利。',
+    scene: '第六幕 · 自由星火永不灭',
+    bg: 'images/bg/america_sunset.jpg',
+    charLeft: 'normal'
+  },
+  {
+    type: 'choice',
+    scene: '第六幕 · 自由星火永不灭',
+    prompt: '美国独立战争对世界历史产生了怎样的深远影响？',
+    choices: [
+      {
+        text: 'A. 仅影响了北美地区',
+        effects: { justice: -2 }
+      },
+      {
+        text: 'B. 推动了法国大革命和拉丁美洲独立运动',
+        effects: { freedom: 5, equality: 3, justice: 3 }
+      },
+      {
+        text: 'C. 巩固了英国的殖民体系',
+        effects: { freedom: -3, justice: -3 }
+      },
+      {
+        text: 'D. 没有任何国际影响',
+        effects: { freedom: -2, justice: -2 }
+      }
+    ]
+  },
+  {
+    speaker: '旁白',
+    text: '灵魂渡口的彼岸花开得格外灿烂。美国独立战争的故事讲完了，但自由的星火，将永远在人类历史的长河中闪耀……',
+    scene: '第六幕 · 自由星火永不灭',
+    bg: 'images/bg/america_sunset.jpg'
+  },
+
+  { type: "collectible_conditional", name: "杰斐逊被删改的手稿",
+    condition: () => lastChoiceIndex === 0 },
+
+  { type: "if_card_used", cardId: "freedom",
+    speaker: "hutao", text: "（举起护摩之杖）自由……在往生堂，灵魂是自由的，不受任何束缚。可人间的不自由，有时候比死亡更让人窒息。" },
+  { type: "if_card_used", cardId: "rule_of_law",
+    speaker: "fulina", text: "（若有所思）1787年宪法……用规则来约束权力，而不是用权力来制定规则。这个道理，我在枫丹花了500年才真正理解。" },
+
+  {
+    type: 'ending_check',
+    scene: '第六幕 · 自由星火永不灭',
+    bg: 'images/bg/america_sunset.jpg'
+  }
+];
+</script>
+
+<!-- Game Engine -->
+<script src="engine.js?v=20260526e"></script>
+
+</body>
+</html>

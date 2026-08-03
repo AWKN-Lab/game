@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html class="dark" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>The Celestial Scholar - 法国大革命</title>
+<link rel="stylesheet" href="dist/output.css?v=5"/>
+<script src="audio-manager.js?v=20260525c"></script>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+    "three/": "https://unpkg.com/three@0.128.0/"
+  }
+}
+</script>
+<script type="module">
+  window.__knowledgeGraphGalaxyReady = (async () => {
+    try {
+      const t = Date.now();
+      const basePath = window.location.pathname.includes('/game/') ? '/game/' : '/';
+      const modGalaxy = await import(`${basePath}knowledge-graph-galaxy.js?t=${t}`);
+      window.KnowledgeGraphGalaxy = modGalaxy.KnowledgeGraphGalaxy;
+      return modGalaxy.KnowledgeGraphGalaxy;
+    } catch (error) {
+      console.error('剧本页知识星系组件加载失败:', error);
+      return null;
+    }
+  })();
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400;1,700&family=Manrope:wght@300;400;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .sigil-button {
+            background: linear-gradient(135deg, #efbd8a 0%, #5a3912 100%);
+        }
+        .sigil-button:hover {
+            box-shadow: 0 0 15px rgba(239, 189, 138, 0.4);
+        }
+        .glass-panel {
+            background: rgba(40, 51, 86, 0.6);
+            backdrop-filter: blur(20px);
+        }
+        #knowledge-graph-container {
+            background: #000;
+            position: relative;
+        }
+        .ornate-corner {
+            border-top-left-radius: 24px;
+            position: relative;
+        }
+        .ornate-corner::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 40px;
+            height: 2px;
+            background: #efbd8a;
+        }
+        .ornate-corner::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 2px;
+            height: 40px;
+            background: #efbd8a;
+        }
+        button:active { transform: scale(0.9); }
+    </style>
+    <style>
+@media (max-height: 550px) and (orientation: landscape) {
+  #knowledge-graph-container { height: clamp(200px, 45dvh, 420px) !important; }
+  #kp-detail-panel { position: sticky; bottom: 0; z-index: 10; }
+}
+    </style>
+
+</head>
+<body class="bg-surface text-on-surface font-body selection:bg-primary/30 selection:text-primary">
+<!-- SideNavBar（与首页统一） -->
+<aside id="sidebar" class="fixed left-0 top-0 h-full w-16 lg:w-20 z-40 bg-slate-900/40 backdrop-blur-md flex-col items-center py-4 lg:py-6 space-y-2 lg:space-y-4 shadow-2xl shadow-indigo-950/50 pt-14 lg:pt-20 transition-transform duration-300 -translate-x-full lg:translate-x-0">
+<div class="flex flex-col items-center gap-1 mb-2">
+<div class="w-9 h-9 lg:w-11 lg:h-11 rounded-full border-2 border-primary overflow-hidden">
+<img alt="profile portrait" class="w-full h-full object-cover" src="images/ui/scholar_avatar.png"/>
+</div>
+</div>
+<div class="flex flex-col items-center gap-1 lg:gap-2 w-full">
+<button onclick="navigateTo('index.html')" class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
+<span class="material-symbols-outlined text-sm lg:text-base">map</span>
+<span class="text-[8px] lg:text-[9px] font-label tracking-tighter">主页</span>
+</button>
+<button onclick="navigateTo('script-select.html')" class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 bg-amber-400/20 text-amber-400 border-l-4 border-amber-400 group">
+<span class="material-symbols-outlined text-sm lg:text-base" style="font-variation-settings: 'FILL' 1;">auto_stories</span>
+<span class="text-[8px] lg:text-[9px] font-label tracking-tighter">剧本选择</span>
+</button>
+<button onclick="navigateTo('my-learning.html')" class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
+<span class="material-symbols-outlined text-sm lg:text-base">history_edu</span>
+<span class="text-[8px] lg:text-[9px] font-label tracking-tighter">我的学习</span>
+</button>
+<button class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
+<span class="material-symbols-outlined text-sm lg:text-base">edit_note</span>
+<span class="text-[8px] lg:text-[9px] font-label tracking-tighter">错题本</span>
+</button>
+<button onclick="navigateTo('knowledge-base.html')" class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
+<span class="material-symbols-outlined text-sm lg:text-base">database</span>
+<span class="text-[8px] lg:text-[9px] font-label tracking-tighter">知识点库</span>
+</button>
+<button onclick="navigateTo('achievements.html')" class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
+<span class="material-symbols-outlined text-sm lg:text-base">stars</span>
+<span class="text-[8px] lg:text-[9px] font-label tracking-tighter">成就勋章</span>
+</button>
+</div>
+</aside>
+<!-- Mobile menu toggle -->
+<button id="menu-toggle" class="fixed top-4 left-4 z-50 p-2 rounded-lg bg-slate-900/60 backdrop-blur-md text-white hover:bg-slate-800/80 transition-colors lg:hidden">
+<span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">menu</span>
+</button>
+<!-- Main Content Canvas -->
+<main class="ml-0 lg:ml-[80px] pt-16 lg:pt-4 pb-12 px-4 md:px-12 min-h-screen relative overflow-hidden">
+<!-- Background decorative element -->
+<div class="absolute top-0 right-0 w-[600px] h-[600px] bg-secondary/5 rounded-full blur-[120px] -z-10"></div>
+<div class="absolute bottom-0 left-0 w-[400px] h-[400px] bg-primary/5 rounded-full blur-[100px] -z-10"></div>
+<div class="max-w-6xl mx-auto">
+<!-- Header Section: Intelligence Briefing Style -->
+<header class="mb-12 relative">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div>
+<div class="flex items-center gap-3 mb-4">
+<span class="px-3 py-1 rounded-full bg-tertiary/10 border border-tertiary/20 text-tertiary text-[10px] font-label uppercase tracking-widest">Intelligence Briefing</span>
+<div class="flex gap-2">
+<span class="bg-surface-container-high px-2 py-0.5 rounded text-xs text-on-surface-variant font-label">历史</span>
+<span class="bg-surface-container-high px-2 py-0.5 rounded text-xs text-on-surface-variant font-label">道法</span>
+</div>
+</div>
+<div class="flex items-center gap-3 mb-2">
+<button id="backBtn" class="flex items-center gap-1 text-amber-400 hover:text-amber-200 transition-colors cursor-pointer" style="background:none;border:none;font-size:16px;">
+<span class="material-symbols-outlined">arrow_back</span>
+<span class="font-label text-sm uppercase tracking-widest">返回选择</span>
+</button>
+</div>
+<h1 class="text-3xl md:text-5xl lg:text-6xl font-headline font-bold text-primary mb-2">法国大革命</h1>
+<p class="text-base md:text-xl font-headline italic text-on-surface-variant opacity-80">自由、平等、博爱</p>
+</div>
+<div class="flex flex-wrap gap-4 md:gap-8 bg-surface-container-low/50 backdrop-blur-sm p-4 md:p-6 rounded-xl border-l-2 border-primary/30">
+<div class="flex flex-col">
+<span class="text-[10px] font-label uppercase tracking-widest text-outline mb-1">年级</span>
+<span class="text-lg font-headline text-secondary">初二</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] font-label uppercase tracking-widest text-outline mb-1">时长</span>
+<span class="text-lg font-headline text-secondary">5~8分钟</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] font-label uppercase tracking-widest text-outline mb-1">难度</span>
+<div class="flex text-primary" id="difficulty-stars">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 0;">star</span>
+</div>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] font-label uppercase tracking-widest text-outline mb-1">知识点</span>
+<span class="text-lg font-headline text-secondary" data-field="kp-count">加载中...</span>
+</div>
+</div>
+</div>
+</header>
+<section class="mb-8 rounded-xl overflow-hidden border border-primary/20 bg-surface-container-low shadow-2xl">
+<div class="relative" style="height:clamp(220px,34vw,420px);">
+<img id="script-hero-image" alt="剧本封面" class="w-full h-full object-cover" src="images/bg/french_revolution_card.jpg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container/75 via-transparent to-transparent"></div>
+</div>
+</section>
+<!-- Main Panel Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+<!-- Left Content: Tabs & Lists -->
+<div class="lg:col-span-8 space-y-6">
+<div class="glass-panel ornate-corner p-4 md:p-5 rounded-lg shadow-2xl border border-primary/20 flex flex-col items-center justify-center">
+<button class="sigil-button w-full py-4 md:py-5 rounded-lg text-on-primary font-headline font-bold text-lg md:text-xl tracking-wider flex items-center justify-center gap-3 transition-transform active:scale-95 duration-200 whitespace-nowrap">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+开始游戏
+</button>
+<p class="text-center mt-3 text-sm text-on-surface-variant font-label opacity-80 leading-relaxed">准备好进入波澜壮阔的 1789 年了吗？</p>
+</div>
+<div id="learning-achievement-card" class="glass-panel ornate-corner p-3 md:p-4 rounded-lg shadow-2xl border border-primary/20">
+<h4 class="font-headline font-bold text-primary text-sm mb-2">学习成就</h4>
+<div id="learning-achievement-content">
+<div class="text-on-surface-variant text-sm text-center py-2">加载中...</div>
+</div>
+</div>
+<!-- Tabs -->
+<div class="flex items-center space-x-1 p-1 bg-surface-container-low rounded-lg w-fit overflow-x-auto">
+<button class="px-4 md:px-6 py-2.5 md:py-2 rounded-md bg-surface-container text-primary font-label font-bold text-xs md:text-sm transition-all shadow-lg whitespace-nowrap">知识点清单</button>
+<button class="px-4 md:px-6 py-2.5 md:py-2 rounded-md text-on-surface-variant hover:text-on-surface transition-all font-label text-xs md:text-sm whitespace-nowrap">结局介绍</button>
+<button class="px-4 md:px-6 py-2.5 md:py-2 rounded-md text-on-surface-variant hover:text-on-surface transition-all font-label text-xs md:text-sm whitespace-nowrap">收集品</button>
+</div>
+<!-- Knowledge Point Container -->
+<div class="glass-panel ornate-corner p-4 md:p-6 rounded-lg shadow-2xl">
+<div class="space-y-4">
+<!-- Tab Content: 知识点清单 -->
+<div id="tab-knowledge" class="tab-content">
+<!-- 知识图谱 -->
+<div id="knowledge-graph-container" style="width:100%;height:420px;border-radius:12px;overflow:hidden;"></div>
+<div class="mt-3 flex flex-wrap items-center justify-between gap-3">
+  <div class="px-3 py-1.5 rounded-full border border-secondary/20 bg-surface-container-low/70 text-[11px] md:text-xs text-on-surface-variant font-label">
+    拖拽环绕 · 滚轮缩放 · 双向 360° 视角
+  </div>
+  <button id="knowledge-graph-reset" class="px-3 py-1.5 rounded-full border border-primary/25 bg-primary/10 text-primary hover:bg-primary/20 transition-colors text-[11px] md:text-xs font-label">
+    重置视图
+  </button>
+</div>
+<!-- 知识点详情面板 -->
+<div id="kp-detail-panel" style="display:none;margin-top:12px;" class="glass-panel p-4 rounded-lg border border-primary/20">
+  <div class="flex items-center justify-between mb-2">
+    <h4 id="kp-detail-title" class="font-headline font-bold text-primary text-base"></h4>
+    <button onclick="document.getElementById('kp-detail-panel').style.display='none'" class="text-on-surface-variant hover:text-on-surface transition-colors">
+      <span class="material-symbols-outlined text-lg">close</span>
+    </button>
+  </div>
+  <p id="kp-detail-content" class="text-on-surface-variant text-sm leading-relaxed"></p>
+  <div class="flex gap-2 mt-3">
+    <span id="kp-detail-tag" class="px-2 py-0.5 rounded text-xs font-label"></span>
+    <span id="kp-detail-act" class="px-2 py-0.5 rounded text-xs font-label bg-surface-container-high text-on-surface-variant"></span>
+  </div>
+</div>
+</div>
+<!-- Tab Content: 结局介绍 -->
+<div id="tab-endings" class="tab-content" style="display:none">
+<div class="glass-panel p-6 rounded-lg">
+<h4 class="font-headline font-bold text-lg mb-6">结局介绍</h4>
+<!-- Dynamic ending display - populated by JavaScript -->
+</div>
+</div>
+<!-- Tab Content: 收集品 -->
+<div id="tab-collectibles" class="tab-content" style="display:none">
+<div class="glass-panel p-6 rounded-lg border-t-4 border-tertiary">
+<div class="flex justify-between items-center mb-6">
+<h4 class="font-headline font-bold text-lg">收集品</h4>
+<span class="text-tertiary font-label font-bold">0 / 6</span>
+</div>
+<div class="grid grid-cols-3 gap-3">
+<div class="aspect-square bg-surface-container-high rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-outline/40">lock</span>
+</div>
+<div class="aspect-square bg-surface-container-high rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-outline/40">lock</span>
+</div>
+<div class="aspect-square bg-surface-container-high rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-outline/40">lock</span>
+</div>
+<div class="aspect-square bg-surface-container-high rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-outline/40">lock</span>
+</div>
+<div class="aspect-square bg-surface-container-high rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-outline/40">lock</span>
+</div>
+<div class="aspect-square bg-surface-container-high rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-outline/40">lock</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+        </div>
+        <!-- Right Sidebar: Character Cards -->
+        <div class="lg:col-span-4 hidden lg:block">
+        <div class="sticky top-24">
+        <div class="grid grid-cols-2 gap-3">
+        <!-- Furina Card -->
+        <div class="glass-panel ornate-corner p-3 rounded-lg border border-secondary/20 hover:border-secondary/40 transition-colors text-center">
+        <div class="w-14 h-14 mx-auto rounded-full overflow-hidden border-2 border-secondary/40">
+        <img alt="Furina" class="w-full h-full object-cover" src="images/characters/fulina/portrait.png?v=5"/>
+        </div>
+        <h4 class="font-headline font-bold text-secondary text-xs mt-2">芙宁娜</h4>
+        <p class="text-on-surface-variant text-[10px] font-label">历史扮演者</p>
+        </div>
+        <!-- Hu Tao Card -->
+        <div class="glass-panel ornate-corner p-3 rounded-lg border border-tertiary/20 hover:border-tertiary/40 transition-colors text-center">
+        <div class="w-14 h-14 mx-auto rounded-full overflow-hidden border-2 border-tertiary/40">
+        <img alt="Hu Tao" class="w-full h-full object-cover" src="images/characters/hutao/portrait.png"/>
+        </div>
+        <h4 class="font-headline font-bold text-tertiary text-xs mt-2">胡桃</h4>
+        <p class="text-on-surface-variant text-[10px] font-label">历史见证者</p>
+        </div>
+        </div>
+        </div>
+        </div>
+</div>
+</div>
+</main>
+
+<!-- Mobile Fixed Start Button -->
+<div class="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-[#0a0e27]/95 backdrop-blur-md z-50 border-t border-[#444651]/20">
+<button id="mobile-start-btn" class="w-full py-4 rounded-xl bg-gradient-to-b from-[#f5d78e] via-[#e8c35c] to-[#c9a227] text-[#4a3800] font-headline font-bold text-lg tracking-wider flex items-center justify-center gap-3 shadow-lg shadow-amber-500/20 active:scale-95 transition-transform">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+开始游戏
+</button>
+</div>
+
+<!-- Visual Decoration: Overlay Texture -->
+<div class="fixed inset-0 pointer-events-none opacity-[0.03] z-[60] bg-[url('https://www.transparenttextures.com/patterns/pinstriped-suit.png')]"></div>
+<!-- Navigation Script -->
+<script src="script-registry.js"></script>
+<script src="data-store.js"></script>
+<script>
+// 检测部署路径，用于动态资源加载
+window.__basePath = window.location.pathname.includes('/game/') ? '/game/' : '/';
+</script>
+<script>
+// 移动端侧边栏切换
+document.getElementById('menu-toggle')?.addEventListener('click', function() {
+  document.getElementById('sidebar').classList.toggle('-translate-x-full');
+});
+</script>
+<script>
+const params = new URLSearchParams(location.search);
+const scriptId = params.get('id') || params.get('script') || 'french_revolution';
+const scriptInfo = SCRIPT_REGISTRY[scriptId] || SCRIPT_REGISTRY['french_revolution'];
+
+// 立即更新页面标题（不等 DOMContentLoaded）
+document.title = 'The Celestial Scholar - ' + scriptInfo.name;
+const h1El = document.querySelector('h1');
+if (h1El) h1El.textContent = scriptInfo.name;
+const heroImageEl = document.getElementById('script-hero-image');
+if (heroImageEl && scriptInfo.bgImage) {
+  heroImageEl.src = scriptInfo.bgImage;
+  heroImageEl.alt = scriptInfo.name + '剧本封面';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  // 返回按钮
+  var backBtn = document.getElementById('backBtn');
+  if (backBtn) backBtn.addEventListener('click', function() { navigateTo('script-select.html'); });
+
+  // "开始游戏" -> 有存档直接进游戏，无存档走 loading
+  document.querySelectorAll('.sigil-button').forEach(btn => {
+    if (btn.textContent.includes('开始游戏')) {
+      btn.addEventListener('click', function() {
+        var saved = window.DataStore ? DataStore.loadProgress(scriptId) : null;
+        if (saved && saved.dialogIndex > 0) {
+          var gameFile = SCRIPT_REGISTRY[scriptId] ? SCRIPT_REGISTRY[scriptId].file : 'game-scene.html';
+          navigateTo(gameFile + '?id=' + scriptId);
+        } else {
+          navigateTo('loading.html?id=' + scriptId);
+        }
+      });
+    }
+  });
+
+  // Mobile start button handler
+  var mobileStartBtn = document.getElementById('mobile-start-btn');
+  if (mobileStartBtn) {
+    mobileStartBtn.addEventListener('click', function() {
+      var saved = window.DataStore ? DataStore.loadProgress(scriptId) : null;
+      if (saved && saved.dialogIndex > 0) {
+        var gameFile = SCRIPT_REGISTRY[scriptId] ? SCRIPT_REGISTRY[scriptId].file : 'game-scene.html';
+        navigateTo(gameFile + '?id=' + scriptId);
+      } else {
+        navigateTo('loading.html?id=' + scriptId);
+      }
+    });
+  }
+
+  // Nav "Archive" -> script-select.html
+  document.querySelectorAll('nav span, nav a').forEach(el => {
+    if (el.textContent.trim() === 'Archive') {
+      el.style.cursor = 'pointer';
+      el.addEventListener('click', () => navigateTo('script-select.html'));
+    }
+    if (el.textContent.trim() === 'World Map') {
+      el.style.cursor = 'pointer';
+      el.addEventListener('click', () => navigateTo('index.html'));
+    }
+    if (el.textContent.trim() === 'Social') {
+      el.style.cursor = 'pointer';
+      el.addEventListener('click', () => showToast('社交功能即将上线'));
+    }
+    if (el.textContent.trim() === 'Log') {
+      el.style.cursor = 'pointer';
+      el.addEventListener('click', () => navigateTo('my-learning.html'));
+    }
+  });
+
+  // Sidebar buttons (desktop)
+  document.querySelectorAll('aside div[class*="cursor-pointer"], aside div[class*="group"]').forEach(el => {
+    el.addEventListener('click', function() {
+      const text = this.textContent;
+      if (text.includes('World Map')) navigateTo('index.html');
+      else if (text.includes('Archive')) navigateTo('script-select.html');
+      else if (text.includes('Social')) showToast('社交功能即将上线');
+      else if (text.includes('Log')) navigateTo('my-learning.html');
+    });
+  });
+
+  // Tab switching
+  const tabContainer = document.querySelector('.flex.items-center.space-x-1');
+  if (tabContainer) {
+    const tabs = tabContainer.querySelectorAll('button');
+    const contents = document.querySelectorAll('.tab-content');
+    tabs.forEach((tab, i) => {
+      tab.addEventListener('click', function() {
+        tabs.forEach(t => {
+          t.classList.remove('bg-surface-container', 'text-primary', 'shadow-lg');
+          t.classList.add('text-on-surface-variant');
+        });
+        this.classList.add('bg-surface-container', 'text-primary', 'shadow-lg');
+        this.classList.remove('text-on-surface-variant');
+        contents.forEach(c => c.style.display = 'none');
+        if (contents[i]) contents[i].style.display = '';
+      });
+    });
+  }
+
+  renderLearningAchievement();
+});
+
+function navigateTo(url) {
+  document.body.style.opacity = '0';
+  document.body.style.transition = 'opacity 0.3s ease';
+  setTimeout(() => { window.location.href = url; }, 300);
+}
+function showToast(msg) {
+  var t = document.createElement('div');
+  t.textContent = msg;
+  t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(40,51,86,0.95);color:#dbe1ff;padding:12px 24px;border-radius:8px;font-size:14px;z-index:10001;backdrop-filter:blur(10px);border:1px solid rgba(239,189,138,0.3);';
+  document.body.appendChild(t);
+  setTimeout(function() { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; setTimeout(function() { t.remove(); }, 300); }, 2000);
+}
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Dynamic ending display
+  const endings = [
+      { id: 'historical', name: '历史结局', desc: '法国大革命历时26年，最终以波旁王朝复辟告终。但它摧毁了封建统治，传播了自由民主的进步思想。', color: '#8f909d' },
+      { id: 'dramatic', name: '戏剧结局', desc: '玛丽·安托瓦内特没有被送上断头台，在乡下过着简朴的生活，帮助贫困的农民。', color: '#b6c4ff' },
+      { id: 'afterlife', name: '往生结局', desc: '收集所有亡魂碎片，正义的光芒照亮通往彼岸的道路，所有逝去的灵魂得到安息。', color: '#efbd8a' }
+  ];
+  const unlocked = window.DataStore ? (DataStore.getUnlockedEndings(scriptId) || []) : [];
+  const endTab = document.getElementById('tab-endings');
+  if (endTab) {
+      endTab.innerHTML = '<div class="glass-panel p-6 rounded-lg"><h4 class="font-headline font-bold text-lg mb-6">结局介绍</h4><div class="space-y-4">' + endings.map(e => {
+          const isUnlocked = unlocked.includes(e.id);
+          return `<div class="p-4 rounded-lg bg-surface-container-lowest/50 border-l-2" style="border-color:${isUnlocked ? e.color : 'rgba(68,70,81,0.5)'}">
+              <p class="font-bold mb-1" style="color:${isUnlocked ? e.color : '#6b7280'}">${isUnlocked ? '【' + e.name + '】' : '？？？ 未解锁'}</p>
+              <p class="text-xs text-on-surface-variant">${isUnlocked ? e.desc : '完成特定条件后解锁此结局'}</p>
+          </div>`;
+      }).join('') + '</div></div>';
+  }
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var params = new URLSearchParams(window.location.search);
+  var scriptId = params.get('id') || params.get('script') || 'french_revolution';
+  var CATEGORY_LABELS = { history: '历史', daofa: '道法' };
+  var CATEGORY_COLORS = { history: 'bg-blue-900/50 text-blue-300', daofa: 'bg-green-900/50 text-green-300' };
+  var graph = null;
+  var resetBtn = document.getElementById('knowledge-graph-reset');
+
+  if (resetBtn) {
+    resetBtn.addEventListener('click', function() {
+      if (graph && typeof graph.resetView === 'function') {
+        graph.resetView();
+      }
+    });
+  }
+
+  var kpFetchTimeout = new Promise(function(_, reject) { setTimeout(function() { reject(new Error('timeout')); }, 5000); });
+  Promise.race([fetch((window.__basePath || '/') + 'data/knowledge_points.json'), kpFetchTimeout])
+    .then(function(r) { return r.json(); })
+    .then(async function(data) {
+      var currentData = data[scriptId] || data['french_revolution'];
+      if (!currentData) return;
+
+      var allPoints = [];
+      for (var cat in currentData) {
+        if (!Array.isArray(currentData[cat])) continue;
+        currentData[cat].forEach(function(kp) {
+          kp._category = cat;
+          allPoints.push(kp);
+        });
+      }
+
+      // 更新知识点数量
+      var countEl = document.querySelector('[data-field="kp-count"]');
+      if (countEl) countEl.textContent = allPoints.length + '个';
+
+      // 更新难度星级
+      var count = allPoints.length;
+      var difficulty = count <= 8 ? 2 : count <= 14 ? 3 : count <= 20 ? 4 : 5;
+      var starsHtml = '';
+      for (var i = 0; i < 5; i++) {
+        var filled = i < difficulty;
+        starsHtml += '<span class="material-symbols-outlined text-sm" style="font-variation-settings: \'FILL\' ' + (filled ? 1 : 0) + ';">star</span>';
+      }
+      var starsEl = document.getElementById('difficulty-stars');
+      if (starsEl) starsEl.innerHTML = starsHtml;
+
+      var KnowledgeGraphGalaxy = await Promise.resolve(window.__knowledgeGraphGalaxyReady);
+      if (!KnowledgeGraphGalaxy) {
+        console.error('KnowledgeGraphGalaxy 未就绪');
+        return;
+      }
+
+      // 初始化当前剧本专属知识星系
+      graph = new KnowledgeGraphGalaxy('knowledge-graph-container', {
+        starfieldCountMultiplier: 1.45,
+        starfieldOpacityMultiplier: 1.45,
+        starfieldSizeMultiplier: 1.16,
+        backdropOpacityMultiplier: 1.38,
+        onNodeClick: function(node) {
+          var panel = document.getElementById('kp-detail-panel');
+          document.getElementById('kp-detail-title').textContent = node.name;
+          document.getElementById('kp-detail-content').textContent = node.content;
+          var tagEl = document.getElementById('kp-detail-tag');
+          tagEl.textContent = CATEGORY_LABELS[node.subject] || node.subject;
+          tagEl.className = 'px-2 py-0.5 rounded text-xs font-label ' + (CATEGORY_COLORS[node.subject] || '');
+          document.getElementById('kp-detail-act').textContent = '第' + node.act + '幕';
+          panel.style.display = 'block';
+        }
+      });
+      graph.loadData(currentData);
+      window.scriptDetailKnowledgeGraph = graph;
+    })
+    .catch(function(err) {
+      console.error('知识点数据加载失败:', err);
+      var countEl = document.querySelector('[data-field="kp-count"]');
+      if (countEl) countEl.textContent = '加载失败，请刷新';
+      var starsEl = document.getElementById('difficulty-stars');
+      if (starsEl) starsEl.innerHTML = '<span class="text-on-surface-variant text-xs">加载失败</span>';
+    });
+});
+
+window.addEventListener('beforeunload', function() {
+  if (window.scriptDetailKnowledgeGraph && typeof window.scriptDetailKnowledgeGraph.destroy === 'function') {
+    window.scriptDetailKnowledgeGraph.destroy();
+    window.scriptDetailKnowledgeGraph = null;
+  }
+});
+
+function renderLearningAchievement() {
+  var container = document.getElementById('learning-achievement-content');
+  if (!container) return;
+
+  var tierColors = { master: '#ffd700', excellent: '#a78bfa', completed: '#60a5fa' };
+  var tierLabels = { master: '学霸成就', excellent: '学习标兵', completed: '剧情通关' };
+  var tierIcons = { master: '👑', excellent: '📖', completed: '📜' };
+  var best = window.DataStore ? DataStore.getBestScriptAssessment(scriptId) : null;
+
+  if (!best) {
+    container.innerHTML = '<div class="text-on-surface-variant text-xs text-center py-1">' +
+      '<span style="font-size:18px;">📝</span> 尚未进行学习评级 — 完成剧本后即可挑战' +
+    '</div>';
+    return;
+  }
+
+  var tier = best.bestTier || 'completed';
+  container.innerHTML =
+    '<div style="display:flex;align-items:center;gap:10px;">' +
+      '<div style="font-size:28px;">' + (tierIcons[tier] || '📜') + '</div>' +
+      '<div style="flex:1;">' +
+        '<div style="font-size:14px;font-weight:bold;color:' + (tierColors[tier] || '#60a5fa') + ';">' + (tierLabels[tier] || '剧情通关') + '</div>' +
+        '<div style="font-size:11px;color:#8f909d;">综合 <span style="color:#dbe1ff;font-weight:bold;">' + (best.bestLearningPct || 0) + '%</span> · 论述 ' + (best.essayCorrectSlots || 0) + '/' + (best.essayTotalSlots || 0) + ' · 选择 ' + (best.quizPct || 0) + '%</div>' +
+      '</div>' +
+      '<button onclick="rechallengeLearning()" style="background:linear-gradient(135deg,#efbd8a,#5a3912);color:#472a03;border:none;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:bold;cursor:pointer;white-space:nowrap;">重新挑战</button>' +
+    '</div>';
+}
+
+function rechallengeLearning() {
+  var gameFile = SCRIPT_REGISTRY[scriptId] ? SCRIPT_REGISTRY[scriptId].file : 'game-scene.html';
+  navigateTo(gameFile + '?id=' + scriptId + '&rechallenge=1');
+}
+</script>
+
+</body></html>

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>时空剧场 - 加载剧本</title>
+    <link rel="stylesheet" href="dist/output.css?v=5"/>
+<script src="audio-manager.js?v=20260525c"></script>
+<script src="data-store.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Manrope:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.98); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes progressFill {
+            from { width: 0%; }
+            to { width: 100%; }
+        }
+        @keyframes shimmer {
+            0% { background-position: -200% center; }
+            100% { background-position: 200% center; }
+        }
+        @keyframes factFadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        body {
+            font-family: 'Manrope', sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        .loading-container {
+            animation: fadeIn 0.8s ease-out;
+        }
+        .progress-bar-fill {
+            animation: progressFill 4s ease-in-out forwards;
+            background: linear-gradient(90deg, #b6c4ff, #9db2ff, #b6c4ff);
+            background-size: 200% 100%;
+            animation: progressFill 4s ease-in-out forwards, shimmer 2s linear infinite;
+        }
+        .progress-track {
+            background: rgba(40, 51, 86, 0.6);
+            border: 1px solid rgba(182, 196, 255, 0.15);
+        }
+        .fact-text {
+            animation: factFadeIn 0.6s ease-out;
+        }
+        button:active { transform: scale(0.9); }
+    </style>
+</head>
+<body class="bg-[#0a0e27] min-h-screen flex items-center justify-center">
+    <div class="loading-container flex flex-col items-center justify-center min-h-screen w-full px-8">
+        <!-- Loading Title -->
+        <p class="text-xl text-[#dbe1ff] mb-2 tracking-wider" style="font-family: 'Noto Serif SC', serif;">
+            正在加载剧本...
+        </p>
+        <p id="scriptNameDisplay" class="text-xs text-[#8f909d] mb-10 tracking-widest uppercase" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+            French Revolution
+        </p>
+
+        <!-- Progress Bar -->
+        <div class="w-full max-w-sm mb-12">
+            <div class="progress-track h-1.5 rounded-full overflow-hidden">
+                <div class="progress-bar-fill h-full rounded-full"></div>
+            </div>
+            <div class="flex justify-between mt-2">
+                <span class="text-[10px] text-[#6b7280]" style="font-family: 'Plus Jakarta Sans', sans-serif;">0%</span>
+                <span class="text-[10px] text-[#6b7280]" style="font-family: 'Plus Jakarta Sans', sans-serif;">100%</span>
+            </div>
+        </div>
+
+        <!-- Historical Fun Fact -->
+        <div class="max-w-md text-center px-4">
+            <div class="flex items-center justify-center gap-2 mb-3">
+                <div class="h-px w-8 bg-gradient-to-r from-transparent to-[#efbd8a]/30"></div>
+                <span class="text-[10px] text-[#efbd8a]/60 tracking-widest uppercase" style="font-family: 'Plus Jakarta Sans', sans-serif;">Did You Know</span>
+                <div class="h-px w-8 bg-gradient-to-l from-transparent to-[#efbd8a]/30"></div>
+            </div>
+            <p id="factText" class="fact-text text-sm text-[#8f909d] leading-relaxed">
+            </p>
+        </div>
+    </div>
+
+    <script src="script-registry.js"></script>
+    <script>
+        const params = new URLSearchParams(location.search);
+        const scriptId = params.get('id') || 'french_revolution';
+        const scriptInfo = SCRIPT_REGISTRY[scriptId] || SCRIPT_REGISTRY['french_revolution'];
+
+        // Update script name display
+        document.getElementById('scriptNameDisplay').textContent = scriptInfo.name;
+
+        // Historical fun facts from registry
+        const facts = scriptInfo.facts;
+
+        // Display a random fact
+        const randomFact = facts[Math.floor(Math.random() * facts.length)];
+        document.getElementById('factText').textContent = randomFact;
+
+        // Auto-redirect to character-intro.html after 4 seconds
+        setTimeout(function() {
+            window.location.href = 'character-intro.html?id=' + scriptId;
+        }, 4000);
+    </script>
+
+</body>
+</html>

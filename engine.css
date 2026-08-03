@@ -1,0 +1,1591 @@
+/* ============================================================
+   全局样式
+   ============================================================ */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", "WenQuanYi Micro Hei", sans-serif;
+  background: #0f1b3d;
+  color: #ffffff;
+  overflow: hidden;
+  width: 100vw;
+  height: 100vh;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============================================================
+   动画
+   ============================================================ */
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.98); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes fadeOut {
+  from { opacity: 1; transform: scale(1); }
+  to   { opacity: 0; transform: scale(0.98); }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* ============================================================
+   游戏场景
+   ============================================================ */
+.game-scene {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-size: cover;
+  background-position: center;
+  overflow: visible;
+  width: 100%;
+  height: 100%;
+}
+.game-scene .scene-bg-text {
+  font-size: 120px;
+  color: rgba(255,255,255,0.03);
+  font-weight: bold;
+  position: absolute;
+  letter-spacing: 20px;
+}
+.game-scene .scene-label {
+  font-size: 16px;
+  color: #666;
+  position: absolute;
+  top: 20px;
+  right: 30px;
+}
+
+/* ============================================================
+   四维数值HUD
+   ============================================================ */
+.value-hud {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 16px;
+  background: rgba(0,0,0,0.6);
+  padding: 8px 20px;
+  border-radius: 25px;
+  backdrop-filter: blur(8px);
+  z-index: 5;
+}
+.value-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 100px;
+}
+.value-label {
+  font-size: 12px;
+  color: #aabbcc;
+}
+.value-bar-wrap {
+  width: 100px;
+  height: 8px;
+  background: #333;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.value-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.8s ease;
+}
+.value-num {
+  font-size: 13px;
+  color: #ffffff;
+  font-weight: bold;
+}
+
+/* ============================================================
+   对话框
+   ============================================================ */
+.voice-toggle {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #888;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  z-index: 10;
+  padding: 0;
+  line-height: 1;
+}
+.voice-toggle:hover {
+  background: rgba(255,255,255,0.15);
+  color: #ccc;
+  transform: scale(1.1);
+}
+.voice-toggle.active {
+  color: #d4a574;
+  border-color: rgba(212,165,116,0.4);
+  background: rgba(212,165,116,0.1);
+}
+.dialog-box {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(180deg, rgba(10,14,39,0) 0%, rgba(10,14,39,0.75) 15%, rgba(10,14,39,0.92) 100%);
+  padding: 30px 40px 20px;
+  padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  z-index: 5;
+  min-height: auto;
+  max-height: 35vh;
+  backdrop-filter: blur(4px);
+  cursor: pointer;
+  border-top: 1px solid rgba(212,165,116,0.15);
+}
+.dialog-box.quiz-mode {
+  padding: 22px 32px 22px;
+  padding-bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+  max-height: 58vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  cursor: default;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  background: linear-gradient(180deg, rgba(10,14,39,0.18) 0%, rgba(10,14,39,0.82) 12%, rgba(10,14,39,0.96) 100%);
+}
+.dialog-speaker {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dialog-speaker .speaker-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.dialog-text {
+  font-size: 16px;
+  line-height: 1.7;
+  color: #e0e0e0;
+  min-height: auto;
+  max-height: calc(35vh - 70px);
+  overflow-y: auto;
+}
+.dialog-text .cursor-blink {
+  display: inline-block;
+  width: 2px;
+  height: 16px;
+  background: #d4a574;
+  margin-left: 2px;
+  animation: pulse 0.8s infinite;
+  vertical-align: text-bottom;
+}
+.dialog-continue {
+  text-align: right;
+  font-size: 12px;
+  color: #555;
+  margin-top: 4px;
+  animation: pulse 1.5s infinite;
+}
+
+/* ============================================================
+   选择面板
+   ============================================================ */
+.choice-panel {
+  position: absolute;
+  bottom: 240px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 50;
+  width: 600px;
+}
+.choice-btn {
+  background: rgba(30,58,138,0.85);
+  border: 1px solid #2b6cb0;
+  color: #ffffff;
+  padding: 16px 24px;
+  font-size: 17px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-family: inherit;
+  text-align: left;
+  backdrop-filter: blur(4px);
+}
+.choice-btn:hover {
+  background: rgba(43,108,176,0.95);
+  border-color: #d4a574;
+  transform: translateX(6px);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+/* ============================================================
+   游戏控制按钮
+   ============================================================ */
+.game-controls {
+  position: absolute;
+  top: 12px;
+  right: 20px;
+  display: flex;
+  gap: 8px;
+  z-index: 60;
+}
+.game-ctrl-btn {
+  background: rgba(10,10,30,0.65);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(212,165,116,0.25);
+  color: #d4a574;
+  width: auto;
+  min-width: 42px;
+  height: 36px;
+  border-radius: 18px;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.25s;
+  font-family: inherit;
+  letter-spacing: 0.05em;
+}
+.game-ctrl-btn:hover {
+  background: rgba(212,165,116,0.15);
+  border-color: rgba(212,165,116,0.5);
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+/* ============================================================
+   卡牌弹窗
+   ============================================================ */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.7);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+.modal-overlay.active {
+  display: flex;
+  animation: fadeIn 0.3s ease;
+}
+.modal-box {
+  background: #0f1b3d;
+  border: 1px solid #2b6cb0;
+  border-radius: 16px;
+  padding: 30px;
+  width: 900px;
+  max-width: 95vw;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.4s ease;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+.modal-title {
+  font-size: 28px;
+  color: #d4a574;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 6px;
+}
+.modal-desc {
+  font-size: 14px;
+  color: #888;
+  text-align: center;
+  margin-bottom: 20px;
+}
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  overflow-y: auto;
+  flex: 1;
+  padding: 4px;
+}
+.card-item {
+  background: #162040;
+  border-radius: 10px;
+  padding: 14px;
+  cursor: pointer;
+  transition: all 0.3s;
+  border: 2px solid transparent;
+}
+.card-item:hover {
+  background: #1e2a50;
+  border-color: #d4a574;
+  transform: translateY(-4px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+}
+.card-icon {
+  height: 60px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: bold;
+  color: #ffffff;
+  margin-bottom: 10px;
+}
+.card-name {
+  font-size: 15px;
+  font-weight: bold;
+  color: #ffffff;
+  margin-bottom: 6px;
+}
+.card-knowledge {
+  font-size: 12px;
+  color: #d4a574;
+  margin-bottom: 6px;
+  line-height: 1.5;
+}
+.card-desc {
+  font-size: 12px;
+  color: #b0b8c8;
+  line-height: 1.6;
+}
+.modal-footer {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+.modal-close-btn {
+  background: #1e3a8a;
+  color: #ffffff;
+  border: none;
+  padding: 12px 36px;
+  font-size: 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+.modal-close-btn:hover {
+  background: #2b6cb0;
+}
+
+/* ============================================================
+   收集品通知
+   ============================================================ */
+.collectible-toast {
+  position: fixed;
+  top: 100px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-20px);
+  background: rgba(26,42,90,0.9);
+  border: 1px solid #d4a574;
+  border-radius: 12px;
+  padding: 16px 30px;
+  text-align: center;
+  z-index: 2000;
+  display: none;
+  backdrop-filter: blur(8px);
+  animation: slideDown 0.4s ease;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+}
+.collectible-toast.show { display: block; }
+.collectible-toast .toast-title {
+  font-size: 20px;
+  color: #d4a574;
+  font-weight: bold;
+}
+.collectible-toast .toast-item {
+  font-size: 16px;
+  color: #ffffff;
+  margin-top: 4px;
+}
+
+/* ============================================================
+   响应式
+   ============================================================ */
+@media (max-width: 900px) {
+  .card-grid { grid-template-columns: repeat(2, 1fr); }
+  .choice-panel { width: 90%; }
+  .value-hud { gap: 8px; padding: 6px 12px; }
+  .value-item { min-width: 70px; }
+  .value-bar-wrap { width: 70px; }
+}
+@media (max-width: 480px) {
+  .value-hud {
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 4px 8px;
+    max-width: 95vw;
+  }
+  .value-item {
+    min-width: 0;
+    flex: 1 1 45%;
+    flex-direction: row;
+    gap: 4px;
+  }
+  .value-bar-wrap { width: 100%; }
+  .value-num { font-size: 11px; }
+  .value-label { font-size: 10px; }
+  .dialog-box {
+    padding: 16px 16px 12px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    min-height: auto;
+    margin: 0 4px;
+    max-height: 30vh;
+  }
+  .dialog-box.quiz-mode {
+    padding: 14px 14px 12px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    max-height: 60vh;
+  }
+  .dialog-text { font-size: 14px; line-height: 1.6; }
+  .dialog-speaker { margin-bottom: 4px; font-size: 14px; }
+  .choice-panel {
+    width: 95%;
+    bottom: 160px;
+    left: 2.5%;
+    transform: none;
+  }
+  .choice-btn {
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+  .game-ctrl-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 14px;
+  }
+  .scene-label {
+    font-size: 12px;
+    right: 16px;
+    top: 52px;
+  }
+  .game-controls {
+    top: 8px;
+    right: 8px;
+  }
+  .scene-bg-text {
+    font-size: 60px;
+    opacity: 0.04;
+  }
+  .modal-box {
+    padding: 16px;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  .card-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+}
+/* ============================================================
+   幕间钩子 - 悬念台词
+   ============================================================ */
+.act-hook-text {
+  font-size: 22px;
+  color: #c5c5d3;
+  font-style: italic;
+  margin-top: 40px;
+  opacity: 0;
+  animation: hookFadeIn 1.5s ease 2s forwards;
+  max-width: 600px;
+  text-align: center;
+  line-height: 1.8;
+  letter-spacing: 1px;
+}
+@keyframes hookFadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+/* ============================================================
+   命运档案 - NPC 命运追踪系统
+   ============================================================ */
+.npc-fate-toast {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  background: linear-gradient(135deg, rgba(26,42,90,0.95), rgba(15,26,58,0.95));
+  border: 1px solid #d4a574;
+  border-left: 4px solid #d4a574;
+  padding: 14px 20px;
+  border-radius: 10px;
+  z-index: 2500;
+  opacity: 0;
+  transform: translateX(30px);
+  transition: all 0.5s ease;
+  pointer-events: none;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  max-width: 320px;
+}
+.npc-fate-toast.show {
+  opacity: 1;
+  transform: translateX(0);
+}
+.npc-fate-toast .fate-toast-title {
+  font-size: 11px;
+  color: #d4a574;
+  letter-spacing: 2px;
+  margin-bottom: 6px;
+}
+.npc-fate-toast .fate-toast-name {
+  font-size: 16px;
+  color: #fff;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+.npc-fate-toast .fate-toast-event {
+  font-size: 13px;
+  color: #c5c5d3;
+  line-height: 1.6;
+}
+.npc-fate-summary-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+  opacity: 0;
+  transition: opacity 0.5s;
+  pointer-events: none;
+}
+.npc-fate-summary-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+.npc-fate-summary-panel {
+  background: linear-gradient(135deg, #1a2a5a, #0f1a3a);
+  border: 2px solid #d4a574;
+  border-radius: 16px;
+  padding: 30px;
+  max-width: 800px;
+  width: 90%;
+  max-height: 85vh;
+  overflow-y: auto;
+  text-align: center;
+  box-shadow: 0 0 60px rgba(212,165,116,0.2);
+}
+.npc-fate-summary-panel .summary-title {
+  font-size: 24px;
+  color: #d4a574;
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+.npc-fate-summary-panel .summary-subtitle {
+  font-size: 14px;
+  color: #888;
+  margin-bottom: 24px;
+}
+.npc-fate-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+@media (max-width: 700px) {
+  .npc-fate-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+.npc-fate-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  padding: 16px 12px;
+  text-align: center;
+  transition: all 0.3s;
+}
+.npc-fate-card:hover {
+  border-color: #d4a574;
+  background: rgba(212,165,116,0.08);
+}
+.npc-fate-card .npc-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  margin: 0 auto 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  background: rgba(255,255,255,0.08);
+  border: 2px solid rgba(255,255,255,0.15);
+}
+.npc-fate-card .npc-name {
+  font-size: 15px;
+  color: #fff;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+.npc-fate-card .npc-title {
+  font-size: 11px;
+  color: #888;
+  margin-bottom: 10px;
+}
+.npc-fate-card .npc-state {
+  font-size: 13px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  display: inline-block;
+  margin-bottom: 8px;
+}
+.npc-fate-card .npc-desc {
+  font-size: 12px;
+  color: #aab;
+  line-height: 1.6;
+}
+.fate-state-alive { background: rgba(34,197,94,0.2); color: #22c55e; border: 1px solid rgba(34,197,94,0.3); }
+.fate-state-injured { background: rgba(251,146,60,0.2); color: #fb923c; border: 1px solid rgba(251,146,60,0.3); }
+.fate-state-awakened { background: rgba(59,130,246,0.2); color: #3b82f6; border: 1px solid rgba(59,130,246,0.3); }
+.fate-state-arrested { background: rgba(239,68,68,0.2); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
+.fate-state-exiled { background: rgba(168,85,247,0.2); color: #a855f7; border: 1px solid rgba(168,85,247,0.3); }
+.fate-state-dead { background: rgba(107,114,128,0.2); color: #9ca3af; border: 1px solid rgba(107,114,128,0.3); }
+.fate-state-unknown { background: rgba(255,255,255,0.05); color: #666; border: 1px solid rgba(255,255,255,0.1); }
+.fate-state-worried { background: rgba(251,191,36,0.2); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
+.fate-state-radical { background: rgba(239,68,68,0.25); color: #f87171; border: 1px solid rgba(239,68,68,0.35); }
+.fate-state-doubt { background: rgba(99,102,241,0.2); color: #818cf8; border: 1px solid rgba(99,102,241,0.3); }
+.npc-fate-summary-panel .summary-btn {
+  background: linear-gradient(135deg, #d4a574, #8b6914);
+  color: #1a1a2e;
+  border: none;
+  padding: 12px 36px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.npc-fate-summary-panel .summary-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(212,165,116,0.4);
+}
+/* ============================================================
+   证物调查 - 推理系统
+   ============================================================ */
+.evidence-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2800;
+  opacity: 0;
+  transition: opacity 0.4s;
+  pointer-events: none;
+}
+.evidence-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ============================================================
+   论述题辩论 - 叠加在剧情场景上
+   ============================================================ */
+.debate-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2800;
+  opacity: 0;
+  transition: opacity 0.4s;
+  pointer-events: none;
+  backdrop-filter: blur(4px);
+}
+.debate-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+.debate-panel {
+  background: linear-gradient(135deg, #1a2a5a, #0f1a3a);
+  border: 2px solid rgba(239,189,138,0.3);
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 700px;
+  width: 92%;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 0 50px rgba(239,189,138,0.15);
+  text-align: center;
+}
+.debate-question-badge {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fbbf24;
+  background: rgba(251,191,36,0.1);
+  padding: 4px 14px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+.debate-question {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.7;
+  color: #dbe1ff;
+  padding: 14px;
+  background: rgba(251,191,36,0.06);
+  border: 1px solid rgba(251,191,36,0.2);
+  border-radius: 12px;
+  margin-bottom: 12px;
+  text-align: left;
+}
+.debate-framework {
+  font-size: 12px;
+  color: #c084fc;
+  padding: 8px 12px;
+  background: rgba(168,85,247,0.06);
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+.debate-progress {
+  padding: 8px 10px;
+  background: rgba(251,191,36,0.04);
+  border: 1px solid rgba(251,191,36,0.1);
+  border-radius: 8px;
+  margin-bottom: 14px;
+}
+.debate-progress-label {
+  font-size: 10px;
+  color: #fbbf24;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+.debate-puzzle-row {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+}
+.debate-piece {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  transition: all 0.3s;
+}
+.debate-piece.locked {
+  background: rgba(255,255,255,0.05);
+  border: 1px dashed rgba(255,255,255,0.15);
+  color: #8f909d;
+}
+.debate-piece.current {
+  background: rgba(251,191,36,0.15);
+  border: 1px solid rgba(251,191,36,0.4);
+  color: #fbbf24;
+  animation: debate-pulse 1.5s ease-in-out infinite alternate;
+}
+@keyframes debate-pulse {
+  0% { box-shadow: 0 0 4px rgba(251,191,36,0.2); }
+  100% { box-shadow: 0 0 12px rgba(251,191,36,0.5); }
+}
+.debate-piece.done {
+  background: rgba(34,197,94,0.15);
+  border: 1px solid rgba(34,197,94,0.4);
+  color: #22c55e;
+}
+.debate-opponent {
+  padding: 12px;
+  background: rgba(220,38,38,0.06);
+  border: 1px solid rgba(220,38,38,0.15);
+  border-radius: 10px;
+  margin-bottom: 14px;
+}
+.debate-opp-avatar {
+  font-size: 36px;
+  margin-bottom: 4px;
+}
+.debate-opp-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ef4444;
+  margin-bottom: 4px;
+}
+.debate-opp-claim {
+  font-size: 13px;
+  font-style: italic;
+  color: #fca5a5;
+  line-height: 1.5;
+}
+.debate-quiz {
+  margin-bottom: 8px;
+}
+.debate-quiz-q {
+  font-size: 14px;
+  font-weight: 700;
+  color: #dbe1ff;
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+.debate-quiz-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.debate-quiz-btn {
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #dbe1ff;
+  background: rgba(59,130,246,0.08);
+  border: 1px solid rgba(59,130,246,0.2);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+.debate-quiz-btn:hover {
+  background: rgba(59,130,246,0.15);
+  border-color: rgba(59,130,246,0.4);
+  transform: translateX(4px);
+}
+.debate-result-icon {
+  font-size: 36px;
+  margin-bottom: 8px;
+}
+.debate-result-icon.correct { color: #22c55e; }
+.debate-result-icon.wrong { color: #ef4444; }
+.debate-result-title {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.debate-result-title.correct { color: #22c55e; }
+.debate-result-title.wrong { color: #ef4444; }
+.debate-result-explain {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #c5c5d3;
+  padding: 10px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 8px;
+  margin-bottom: 10px;
+  text-align: left;
+}
+.debate-essay-point {
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  text-align: left;
+  animation: ep-in 0.3s ease-out;
+}
+@keyframes ep-in {
+  0% { transform: translateY(8px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+.debate-essay-point.strong {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.2);
+}
+.debate-essay-point.weak {
+  background: rgba(251,191,36,0.04);
+  border: 1px solid rgba(251,191,36,0.15);
+}
+.debate-ep-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: #22c55e;
+  margin-bottom: 4px;
+}
+.debate-essay-point.weak .debate-ep-badge { color: #fbbf24; }
+.debate-ep-content {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #c5c5d3;
+}
+.debate-logic {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  background: rgba(239,189,138,0.04);
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+.debate-logic-step {
+  font-size: 11px;
+  color: #efbd8a;
+  padding: 2px 6px;
+  background: rgba(239,189,138,0.1);
+  border-radius: 4px;
+}
+.debate-logic-arrow {
+  font-size: 10px;
+  color: #8f909d;
+}
+.debate-next-btn {
+  padding: 12px 32px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #472a03;
+  background: linear-gradient(135deg, #efbd8a, #5a3912);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 8px;
+}
+.debate-next-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(239,189,138,0.3);
+}
+.debate-assembly .debate-assembly-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #efbd8a;
+  margin-bottom: 10px;
+  animation: assembly-pop 0.5s ease-out;
+}
+@keyframes assembly-pop {
+  0% { transform: scale(0.5); opacity: 0; }
+  60% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.debate-assembly-stats {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  font-size: 13px;
+  color: #8f909d;
+  margin-bottom: 14px;
+}
+.debate-assembly-stats span { color: #dbe1ff; font-weight: 700; }
+.debate-assembly-question {
+  font-size: 13px;
+  font-weight: 700;
+  color: #dbe1ff;
+  padding: 10px;
+  background: rgba(251,191,36,0.06);
+  border: 1px solid rgba(251,191,36,0.15);
+  border-radius: 8px;
+  margin-bottom: 12px;
+  text-align: left;
+  line-height: 1.6;
+}
+.debate-assembly-points-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #efbd8a;
+  margin-bottom: 8px;
+}
+.debate-assembly-point {
+  padding: 8px 10px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #c5c5d3;
+  background: rgba(34,197,94,0.04);
+  border-left: 3px solid #22c55e;
+  border-radius: 6px;
+  margin-bottom: 6px;
+  text-align: left;
+}
+.debate-complete-answer {
+  padding: 12px;
+  background: rgba(59,130,246,0.06);
+  border: 1px solid rgba(59,130,246,0.15);
+  border-radius: 8px;
+  margin-bottom: 12px;
+  text-align: left;
+}
+.debate-ca-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #93c5fd;
+  margin-bottom: 8px;
+}
+.debate-ca-line {
+  font-size: 11px;
+  line-height: 1.7;
+  color: #c5c5d3;
+  padding: 2px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+.debate-ca-line:last-child { border-bottom: none; }
+.debate-v2-panel {
+  max-width: 780px;
+}
+.debate-v2-opponent {
+  position: relative;
+}
+.debate-v2-hp {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  margin-top: 6px;
+}
+.debate-v2-heart.full {
+  filter: none;
+}
+.debate-v2-heart.empty {
+  filter: grayscale(1) opacity(0.3);
+}
+.debate-v2-refute-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #93c5fd;
+  margin: 12px 0 8px;
+  text-align: left;
+}
+.debate-v2-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.debate-v2-card {
+  background: rgba(59,130,246,0.06);
+  border: 1px solid rgba(59,130,246,0.2);
+  border-radius: 10px;
+  padding: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+.debate-v2-card:hover {
+  background: rgba(59,130,246,0.12);
+  border-color: rgba(59,130,246,0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59,130,246,0.15);
+}
+.debate-v2-card-source {
+  font-size: 11px;
+  font-weight: 700;
+  color: #fbbf24;
+  margin-bottom: 4px;
+}
+.debate-v2-card-quote {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #dbe1ff;
+  margin-bottom: 8px;
+  font-style: italic;
+}
+.debate-v2-card-btn {
+  display: block;
+  width: 100%;
+  padding: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #dbe1ff;
+  background: rgba(59,130,246,0.15);
+  border: 1px solid rgba(59,130,246,0.3);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.debate-v2-card-btn:hover {
+  background: rgba(59,130,246,0.25);
+}
+.debate-v2-hint {
+  font-size: 12px;
+  color: #ff69b4;
+  padding: 8px 10px;
+  background: rgba(255,105,180,0.06);
+  border-radius: 8px;
+  margin-top: 6px;
+  text-align: left;
+}
+.debate-v2-rebuttal {
+  padding: 12px;
+  background: rgba(34,197,94,0.04);
+  border: 1px solid rgba(34,197,94,0.15);
+  border-radius: 10px;
+  margin-bottom: 10px;
+  text-align: left;
+}
+.debate-v2-ref-source {
+  font-size: 12px;
+  font-weight: 700;
+  color: #fbbf24;
+  margin-bottom: 4px;
+}
+.debate-v2-ref-quote {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #dbe1ff;
+  font-style: italic;
+  margin-bottom: 8px;
+  padding-left: 8px;
+  border-left: 2px solid rgba(251,191,36,0.3);
+}
+.debate-v2-rebuttal-text {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #c5c5d3;
+}
+.debate-v2-opp-line {
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: left;
+}
+.debate-v2-opp-line.shocked {
+  background: rgba(251,191,36,0.06);
+  border: 1px solid rgba(251,191,36,0.2);
+  color: #fbbf24;
+  animation: v2-shake 0.4s ease-in-out;
+}
+.debate-v2-opp-line.defeated {
+  background: rgba(220,38,38,0.06);
+  border: 1px solid rgba(220,38,38,0.2);
+  color: #fca5a5;
+  animation: v2-fade 0.6s ease-out;
+}
+@keyframes v2-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+@keyframes v2-fade {
+  0% { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.debate-v2-hutao {
+  padding: 8px 12px;
+  background: rgba(255,69,0,0.06);
+  border: 1px solid rgba(255,69,0,0.15);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #ff8c00;
+  text-align: left;
+}
+.debate-v2-tip {
+  font-size: 12px;
+  color: #93c5fd;
+  padding: 6px 10px;
+  background: rgba(59,130,246,0.06);
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+.debate-v2-defeated-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #efbd8a;
+  margin-bottom: 10px;
+  animation: assembly-pop 0.5s ease-out;
+}
+.debate-result-title.relevant {
+  color: #fbbf24;
+}
+.debate-result-icon.relevant {
+  color: #fbbf24;
+}
+.debate-result-icon.trap {
+  color: #ef4444;
+}
+.debate-result-title.trap {
+  color: #ef4444;
+}
+.debate-v2-rebuttal.trap-rebuttal {
+  background: rgba(239,68,68,0.04);
+  border: 1px solid rgba(239,68,68,0.2);
+}
+.debate-v2-tip.trap-tip {
+  color: #ef4444;
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.15);
+}
+.debate-v2-victory {
+  border: 2px solid rgba(239,189,138,0.5);
+  box-shadow: 0 0 60px rgba(239,189,138,0.25);
+}
+.evidence-panel {
+  background: linear-gradient(135deg, #1a2a5a, #0f1a3a);
+  border: 2px solid #8b5cf6;
+  border-radius: 16px;
+  padding: 28px;
+  max-width: 750px;
+  width: 92%;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 0 50px rgba(139,92,246,0.2);
+}
+.evidence-panel .evidence-title {
+  font-size: 20px;
+  color: #8b5cf6;
+  font-weight: bold;
+  margin-bottom: 4px;
+  text-align: center;
+}
+.evidence-panel .evidence-subtitle {
+  font-size: 13px;
+  color: #888;
+  margin-bottom: 20px;
+  text-align: center;
+}
+.evidence-items {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+@media (max-width: 600px) {
+  .evidence-items {
+    grid-template-columns: 1fr;
+  }
+  .debate-v2-cards {
+    grid-template-columns: 1fr 1fr;
+  }
+  .debate-v2-panel {
+    max-width: 100%;
+  }
+  .debate-v2-card-quote {
+    font-size: 11px;
+  }
+}
+@media (max-width: 400px) {
+  .debate-v2-cards {
+    grid-template-columns: 1fr;
+  }
+}
+.evidence-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(139,92,246,0.3);
+  border-radius: 10px;
+  padding: 14px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.evidence-card:hover {
+  border-color: #8b5cf6;
+  background: rgba(139,92,246,0.08);
+  transform: translateY(-2px);
+}
+.evidence-card.selected {
+  border-color: #8b5cf6;
+  background: rgba(139,92,246,0.15);
+  box-shadow: 0 0 15px rgba(139,92,246,0.3);
+}
+.evidence-card .ev-type {
+  font-size: 10px;
+  color: #8b5cf6;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+.evidence-card .ev-title {
+  font-size: 14px;
+  color: #fff;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+.evidence-card .ev-content {
+  font-size: 12px;
+  color: #aab;
+  line-height: 1.7;
+}
+.evidence-question {
+  background: rgba(139,92,246,0.1);
+  border: 1px solid rgba(139,92,246,0.25);
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+.evidence-question .eq-text {
+  font-size: 15px;
+  color: #e0d5ff;
+  line-height: 1.6;
+}
+.evidence-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.evidence-option-btn {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 8px;
+  padding: 12px 16px;
+  color: #ddd;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-align: left;
+}
+.evidence-option-btn:hover {
+  border-color: #8b5cf6;
+  background: rgba(139,92,246,0.1);
+}
+.evidence-option-btn.correct {
+  border-color: #22c55e;
+  background: rgba(34,197,94,0.15);
+  color: #22c55e;
+}
+.evidence-option-btn.wrong {
+  border-color: #ef4444;
+  background: rgba(239,68,68,0.1);
+  color: #ef4444;
+}
+.evidence-feedback {
+  text-align: center;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+.evidence-feedback.correct {
+  background: rgba(34,197,94,0.1);
+  color: #22c55e;
+  border: 1px solid rgba(34,197,94,0.2);
+}
+.evidence-feedback.wrong {
+  background: rgba(251,191,36,0.1);
+  color: #fbbf24;
+  border: 1px solid rgba(251,191,36,0.2);
+}
+.evidence-close-btn {
+  display: block;
+  margin: 0 auto;
+  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+  color: #fff;
+  border: none;
+  padding: 10px 30px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.evidence-close-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(139,92,246,0.4);
+}
+/* ============================================================
+   卡牌立场化 - 立场表态系统
+   ============================================================ */
+.card-stance-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2600;
+  opacity: 0;
+  transition: opacity 0.5s;
+  pointer-events: none;
+}
+.card-stance-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+.card-stance-content {
+  text-align: center;
+  max-width: 500px;
+  padding: 30px;
+}
+.card-stance-glow {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 300px; height: 300px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,215,0,0.25) 0%, rgba(255,215,0,0) 70%);
+  animation: cardGlowPulse 1.5s ease-in-out;
+  pointer-events: none;
+}
+@keyframes cardGlowPulse {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
+  40% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.8); }
+}
+.card-stance-quote {
+  font-size: 20px;
+  color: #ffd700;
+  font-style: italic;
+  line-height: 1.8;
+  margin-bottom: 24px;
+  opacity: 0;
+  animation: stanceQuoteIn 1s ease 0.3s forwards;
+  text-shadow: 0 0 20px rgba(255,215,0,0.3);
+}
+@keyframes stanceQuoteIn {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.card-npc-feedback {
+  background: rgba(26,42,90,0.9);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 8px;
+  text-align: left;
+  opacity: 0;
+  animation: stanceQuoteIn 0.8s ease forwards;
+}
+.card-npc-feedback .npc-fb-name {
+  font-size: 13px;
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+.card-npc-feedback .npc-fb-text {
+  font-size: 14px;
+  color: #c5c5d3;
+  line-height: 1.7;
+}
+.card-stance-continue {
+  margin-top: 20px;
+  font-size: 13px;
+  color: #888;
+  opacity: 0;
+  animation: stanceQuoteIn 0.5s ease 2.5s forwards;
+}
+/* ============================================================
+   限压抉择 - 倒计时紧急决策系统
+   ============================================================ */
+.pressure-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 2900;
+  opacity: 0;
+  transition: opacity 0.4s;
+  pointer-events: none;
+}
+.pressure-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+.pressure-red-border {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border: 4px solid transparent;
+  pointer-events: none;
+  z-index: 2899;
+  animation: redBorderFlash 0.8s ease-in-out infinite;
+}
+@keyframes redBorderFlash {
+  0%, 100% { border-color: transparent; }
+  50% { border-color: rgba(239,68,68,0.6); }
+}
+.pressure-shake {
+  animation: screenShake 0.15s ease-in-out infinite;
+}
+@keyframes screenShake {
+  0%, 100% { transform: translate(0,0); }
+  25% { transform: translate(-2px, 1px); }
+  50% { transform: translate(2px, -1px); }
+  75% { transform: translate(-1px, -2px); }
+}
+.pressure-timer-hud {
+  position: fixed;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 48px;
+  font-weight: bold;
+  color: #ef4444;
+  z-index: 2901;
+  text-shadow: 0 0 20px rgba(239,68,68,0.5);
+  font-family: 'Courier New', monospace;
+  pointer-events: none;
+}
+.pressure-timer-hud.urgent {
+  color: #ff0000;
+  animation: timerPulse 0.5s ease infinite;
+}
+@keyframes timerPulse {
+  0%, 100% { transform: translateX(-50%) scale(1); }
+  50% { transform: translateX(-50%) scale(1.15); }
+}
+.pressure-content {
+  text-align: center;
+  max-width: 600px;
+  width: 90%;
+  padding: 20px;
+}
+.pressure-urgent-text {
+  font-size: 16px;
+  color: #fbbf24;
+  margin-bottom: 24px;
+  line-height: 1.6;
+  font-style: italic;
+  animation: pressureTextPulse 1s ease infinite;
+}
+@keyframes pressureTextPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+.pressure-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.pressure-choice-btn {
+  background: rgba(239,68,68,0.08);
+  border: 2px solid rgba(239,68,68,0.4);
+  border-radius: 10px;
+  padding: 14px 20px;
+  color: #fca5a5;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  line-height: 1.5;
+}
+.pressure-choice-btn:hover {
+  background: rgba(239,68,68,0.2);
+  border-color: #ef4444;
+  color: #fff;
+  transform: translateX(4px);
+}
+.pressure-choice-btn.selected {
+  background: rgba(239,68,68,0.25);
+  border-color: #ef4444;
+  color: #fff;
+  box-shadow: 0 0 15px rgba(239,68,68,0.3);
+}
+.pressure-timeout-msg {
+  margin-top: 16px;
+  font-size: 14px;
+  color: #888;
+  font-style: italic;
+}

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3D知识图谱测试</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+body {
+  background-color: #0a0e27;
+  color: #dbe1ff;
+  font-family: 'Manrope', sans-serif;
+  margin: 0;
+  padding: 0;
+}
+.container {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.header {
+  padding: 20px;
+  text-align: center;
+  border-bottom: 1px solid rgba(68, 70, 81, 0.3);
+}
+.graph-container {
+  flex: 1;
+  position: relative;
+}
+#graph3D {
+  width: 100%;
+  height: 100%;
+}
+.info {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: rgba(10, 14, 39, 0.8);
+  padding: 10px 15px;
+  border-radius: 8px;
+  border-left: 3px solid #55ccff;
+  font-size: 14px;
+  z-index: 10;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1 class="text-2xl font-bold">3D知识图谱测试</h1>
+    <p class="text-sm text-gray-400">测试星球环绕式知识点可视化</p>
+  </div>
+  <div class="graph-container">
+    <div id="graph3D"></div>
+    <div class="info">
+      🖱️ 鼠标拖拽旋转视角 | 右键平移 | 滚轮缩放<br>
+      🚀 核心知识点为中心，次要知识点环绕旋转
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  // 使用ES6模块导入Three.js及其组件
+  import * as THREE from 'https://unpkg.com/three@0.128.0/build/three.module.js';
+  import { OrbitControls } from 'https://unpkg.com/three@0.128.0/examples/jsm/controls/OrbitControls.js';
+  import { CSS2DRenderer, CSS2DObject } from 'https://unpkg.com/three@0.128.0/examples/jsm/renderers/CSS2DRenderer.js';
+
+  // 确保Three.js及其组件全局可用
+  window.THREE = THREE;
+  window.OrbitControls = OrbitControls;
+  window.CSS2DRenderer = CSS2DRenderer;
+  window.CSS2DObject = CSS2DObject;
+
+  // 测试数据
+  const testData = {
+    history: [
+      { id: 'fr_h4', name: '人权宣言', content: '法国大革命的重要文献', act: 3 },
+      { id: 'fr_h3', name: '三级会议', content: '革命的导火索', act: 1 },
+      { id: 'fr_h12', name: '雅各宾专政', content: '革命的激进阶段', act: 5 },
+      { id: 'ir_h2', name: '蒸汽机', content: '工业革命的核心发明', act: 2 },
+      { id: 'ir_h5', name: '工厂制度', content: '新的生产组织形式', act: 3 }
+    ],
+    daofa: [
+      { id: 'fr_d2', name: '自由平等', content: '启蒙思想的核心', act: 2 },
+      { id: 'fr_d3', name: '法治精神', content: '现代法治的起源', act: 4 },
+      { id: 'ir_d1', name: '劳动权利', content: '工人运动的诉求', act: 4 }
+    ]
+  };
+
+  // 动态加载knowledge-graph-3d.js
+  const script = document.createElement('script');
+  script.src = 'game/knowledge-graph-3d.js';
+  script.onload = function() {
+    console.log('Page loaded, KnowledgeGraph3D:', window.KnowledgeGraph3D);
+    
+    if (window.KnowledgeGraph3D) {
+      const graph3D = new window.KnowledgeGraph3D('graph3D', {
+        onNodeClick: function(node) {
+          console.log('Clicked node:', node);
+          alert(`点击了节点: ${node.name}\n内容: ${node.content}`);
+        }
+      });
+
+      // 加载测试数据
+      graph3D.loadData(testData);
+      console.log('3D知识图谱初始化完成');
+    } else {
+      console.error('KnowledgeGraph3D is not available');
+      alert('3D知识图谱组件加载失败');
+    }
+  };
+  document.head.appendChild(script);
+</script>
+</body>
+</html>

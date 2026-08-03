@@ -1,0 +1,407 @@
+{
+  "dialog": [
+    {
+      "index": 0,
+      "speaker": "narrator",
+      "text": "灯光亮起，帷幕拉开。时空剧场，今晚上演——《法国大革命》。",
+      "file": "game/audio/voice/narrator_0.wav",
+      "duration": 10.29
+    },
+    {
+      "index": 1,
+      "speaker": "fulina",
+      "text": "灯光就位！音乐响起！欢迎来到时空剧场最盛大的演出——《法国大革命》！",
+      "file": "game/audio/voice/fulina_1.wav",
+      "duration": 9.78
+    },
+    {
+      "index": 2,
+      "speaker": "hutao",
+      "text": "哇，芙宁娜你今天好激动啊。不过我听说这场革命死了很多人呢。",
+      "file": "game/audio/voice/hutao_2.wav",
+      "duration": 7.03
+    },
+    {
+      "index": 3,
+      "speaker": "fulina",
+      "text": "这正是戏剧的魅力所在！冲突、牺牲、理想、背叛……所有最震撼人心的元素都在这里了！",
+      "file": "game/audio/voice/fulina_3.wav",
+      "duration": 11.38
+    },
+    {
+      "index": 4,
+      "speaker": "fulina",
+      "text": "我将扮演那位命运多舛的玛丽·安托瓦内特王后！",
+      "file": "game/audio/voice/fulina_4.wav",
+      "duration": 5.78
+    },
+    {
+      "index": 5,
+      "speaker": "hutao",
+      "text": "那我就扮演一个来自第三等级的普通女孩吧。我想看看，那些被历史遗忘的普通人是怎么生活的。",
+      "file": "game/audio/voice/hutao_5.wav",
+      "duration": 10.32
+    },
+    {
+      "index": 6,
+      "speaker": "narrator",
+      "text": "1789年5月，凡尔赛宫。路易十六召开三级会议，试图解决财政危机。",
+      "file": "game/audio/voice/narrator_6.wav",
+      "duration": 12.36
+    },
+    {
+      "index": 7,
+      "speaker": "louis",
+      "text": "各位代表，国家财政已经破产了。我决定召开三级会议，向第三等级征税。",
+      "file": "game/audio/voice/louis_7.wav",
+      "duration": 13.37
+    },
+    {
+      "index": 8,
+      "speaker": "fulina",
+      "text": "（轻蔑地）你们这些下等人，能为国王和国家交税是你们的荣幸！",
+      "file": "game/audio/voice/fulina_8.wav",
+      "duration": 7.8
+    },
+    {
+      "index": 9,
+      "speaker": "hutao",
+      "text": "（小声）这太不公平了！我们每天累死累活，却连面包都吃不起，而他们却在宫殿里挥霍无度。",
+      "file": "game/audio/voice/hutao_9.wav",
+      "duration": 9.82
+    },
+    {
+      "index": 10,
+      "speaker": "hutao",
+      "text": "他们竟然要求三个等级合并开会，实行一人一票！",
+      "file": "game/audio/voice/hutao_10.wav",
+      "duration": 5.62
+    },
+    {
+      "index": 11,
+      "speaker": "louis",
+      "text": "（愤怒）放肆！第三等级永远只能是第三等级！",
+      "file": "game/audio/voice/louis_11.wav",
+      "duration": 7.93
+    },
+    {
+      "index": 12,
+      "speaker": "fulina",
+      "text": "（惊慌）他们竟然敢违抗国王的命令！",
+      "file": "game/audio/voice/fulina_12.wav",
+      "duration": 4.79
+    },
+    {
+      "index": 13,
+      "speaker": "hutao",
+      "text": "这是他们在争取自己的自由和平等啊。第三等级决定单独召开国民议会了。",
+      "file": "game/audio/voice/hutao_13.wav",
+      "duration": 8.06
+    },
+    {
+      "index": 14,
+      "speaker": "narrator",
+      "text": "1789年7月14日，巴黎。愤怒的市民向巴士底狱发起了进攻……",
+      "file": "game/audio/voice/narrator_14.wav",
+      "duration": 10.58
+    },
+    {
+      "index": 15,
+      "speaker": "hutao",
+      "text": "巴士底狱是封建专制的象征！人民冲啊！",
+      "file": "game/audio/voice/hutao_15.wav",
+      "duration": 4.85
+    },
+    {
+      "index": 16,
+      "speaker": "fulina",
+      "text": "（惊恐）什么？那些暴民竟然攻打巴士底狱！他们这是造反！",
+      "file": "game/audio/voice/fulina_16.wav",
+      "duration": 7.76
+    },
+    {
+      "index": 17,
+      "speaker": "hutao",
+      "text": "不，这不是造反，这是革命！他们在为自由而战！",
+      "file": "game/audio/voice/hutao_17.wav",
+      "duration": 5.51
+    },
+    {
+      "index": 18,
+      "speaker": "hutao",
+      "text": "巴士底狱被攻占了！革命胜利了！",
+      "file": "game/audio/voice/hutao_18.wav",
+      "duration": 3.63
+    },
+    {
+      "index": 19,
+      "speaker": "narrator",
+      "text": "1789年8月，国民议会通过了《人权宣言》。",
+      "file": "game/audio/voice/narrator_19.wav",
+      "duration": 7.29
+    },
+    {
+      "index": 20,
+      "speaker": "robespierre",
+      "text": "现在，我们要制定一部伟大的宣言，向全世界宣告人类的权利！",
+      "file": "game/audio/voice/robespierre_20.wav",
+      "duration": 9.01
+    },
+    {
+      "index": 21,
+      "speaker": "robespierre",
+      "text": "《人权宣言》第一条：在权利方面，人们生来是而且始终是自由平等的。",
+      "file": "game/audio/voice/robespierre_21.wav",
+      "duration": 10.52
+    },
+    {
+      "index": 22,
+      "speaker": "robespierre",
+      "text": "第二条：任何政治结合的目的都在于保存人的自然的和不可动摇的权利。这些权利就是自由、财产、安全和反抗压迫。",
+      "file": "game/audio/voice/robespierre_22.wav",
+      "duration": 16.89
+    },
+    {
+      "index": 23,
+      "speaker": "fulina",
+      "text": "（被囚禁）什么私有财产神圣不可侵犯？我的宫殿、我的珠宝都是我的！",
+      "file": "game/audio/voice/fulina_23.wav",
+      "duration": 8.64
+    },
+    {
+      "index": 24,
+      "speaker": "hutao",
+      "text": "因为你的财产是建立在剥削人民的基础上的。真正的私有财产权，是保护每个人的合法财产。",
+      "file": "game/audio/voice/hutao_24.wav",
+      "duration": 10.35
+    },
+    {
+      "index": 25,
+      "speaker": "robespierre",
+      "text": "1791年，我们制定了第一部宪法，确立了君主立宪制，实行三权分立。",
+      "file": "game/audio/voice/robespierre_25.wav",
+      "duration": 10.7
+    },
+    {
+      "index": 26,
+      "speaker": "narrator",
+      "text": "1792年，法兰西第一共和国成立。革命的浪潮越来越激进……",
+      "file": "game/audio/voice/narrator_26.wav",
+      "duration": 10.28
+    },
+    {
+      "index": 27,
+      "speaker": "robespierre",
+      "text": "路易十六勾结外国势力，企图复辟！1792年，法兰西第一共和国成立了！",
+      "file": "game/audio/voice/robespierre_27.wav",
+      "duration": 10.82
+    },
+    {
+      "index": 28,
+      "speaker": "narrator",
+      "text": "1793年1月21日，路易十六被送上了断头台……",
+      "file": "game/audio/voice/narrator_28.wav",
+      "duration": 8.25
+    },
+    {
+      "index": 29,
+      "speaker": "louis",
+      "text": "（临死前）我是无辜的！我原谅我的敌人。",
+      "file": "game/audio/voice/louis_29.wav",
+      "duration": 6.55
+    },
+    {
+      "index": 30,
+      "speaker": "fulina",
+      "text": "（颤抖）太可怕了！他们竟然把国王送上了断头台！",
+      "file": "game/audio/voice/fulina_30.wav",
+      "duration": 6.3
+    },
+    {
+      "index": 31,
+      "speaker": "hutao",
+      "text": "这就是革命的残酷。为了保卫共和国，他们不得不这样做。",
+      "file": "game/audio/voice/hutao_31.wav",
+      "duration": 6.24
+    },
+    {
+      "index": 32,
+      "speaker": "robespierre",
+      "text": "现在，我们要实行恐怖统治，严厉镇压所有反革命分子！",
+      "file": "game/audio/voice/robespierre_32.wav",
+      "duration": 8.42
+    },
+    {
+      "index": 33,
+      "speaker": "hutao",
+      "text": "太多人死去了。仅仅因为被怀疑是反革命，就被送上了断头台。",
+      "file": "game/audio/voice/hutao_33.wav",
+      "duration": 7.08
+    },
+    {
+      "index": 34,
+      "speaker": "fulina",
+      "text": "是啊，这已经不是革命了，这是屠杀。",
+      "file": "game/audio/voice/fulina_34.wav",
+      "duration": 4.55
+    },
+    {
+      "index": 35,
+      "speaker": "narrator",
+      "text": "1794年7月，热月政变。罗伯斯庇尔被送上断头台。雅各宾派统治结束。",
+      "file": "game/audio/voice/narrator_35.wav",
+      "duration": 12.36
+    },
+    {
+      "index": 36,
+      "speaker": "hutao",
+      "text": "热月政变了。雅各宾派的统治结束了。",
+      "file": "game/audio/voice/hutao_36.wav",
+      "duration": 4.04
+    },
+    {
+      "index": 37,
+      "speaker": "fulina",
+      "text": "革命的高潮过去了。但法国需要一个强有力的人来稳定局势。",
+      "file": "game/audio/voice/fulina_37.wav",
+      "duration": 7.4
+    },
+    {
+      "index": 38,
+      "speaker": "narrator",
+      "text": "1799年，拿破仑·波拿巴发动雾月政变，夺取了法国政权。",
+      "file": "game/audio/voice/narrator_38.wav",
+      "duration": 9.36
+    },
+    {
+      "index": 39,
+      "speaker": "napoleon",
+      "text": "我是拿破仑·波拿巴！我将带领法国走向辉煌！",
+      "file": "game/audio/voice/napoleon_39.wav",
+      "duration": 6.33
+    },
+    {
+      "index": 40,
+      "speaker": "napoleon",
+      "text": "1804年，我加冕为皇帝，建立了法兰西第一帝国。",
+      "file": "game/audio/voice/napoleon_40.wav",
+      "duration": 6.96
+    },
+    {
+      "index": 41,
+      "speaker": "napoleon",
+      "text": "我最伟大的功绩，是颁布了《拿破仑法典》。它确认了资产阶级私有制，废除了封建特权，确立了自由平等的原则。",
+      "file": "game/audio/voice/napoleon_41.wav",
+      "duration": 14.47
+    },
+    {
+      "index": 42,
+      "speaker": "napoleon",
+      "text": "我率领大军横扫欧洲，把法国大革命的思想传播到了整个欧洲！",
+      "file": "game/audio/voice/napoleon_42.wav",
+      "duration": 7.99
+    },
+    {
+      "index": 43,
+      "speaker": "narrator",
+      "text": "1815年，滑铁卢。拿破仑的帝国梦碎了。",
+      "file": "game/audio/voice/narrator_43.wav",
+      "duration": 6.6
+    },
+    {
+      "index": 44,
+      "speaker": "napoleon",
+      "text": "滑铁卢……我失败了。但是，我的功绩不会被遗忘。我的法典将永垂不朽！",
+      "file": "game/audio/voice/napoleon_44.wav",
+      "duration": 9.55
+    }
+  ],
+  "afterlife": [
+    {
+      "index": 0,
+      "speaker": "narrator",
+      "text": "你收集了所有亡魂的碎片，正义的光芒照亮了通往彼岸的道路……",
+      "file": "game/audio/voice/afterlife_narrator_0.wav",
+      "duration": 9.84
+    },
+    {
+      "index": 1,
+      "speaker": "louis",
+      "text": "我曾以为王权不可动摇……但历史证明，人民的力量才是永恒的。谢谢你，让我终于理解了这一点。",
+      "file": "game/audio/voice/afterlife_louis_1.wav",
+      "duration": 17.19
+    },
+    {
+      "index": 2,
+      "speaker": "marie",
+      "text": "如果我能重来，我会选择站在人民的一边。自由和平等，不是口号，而是每个人应得的尊严。",
+      "file": "game/audio/voice/afterlife_marie_2.wav",
+      "duration": 13.24
+    },
+    {
+      "index": 3,
+      "speaker": "robespierre",
+      "text": "我追求的正义，最终变成了恐怖……真正的正义，应该有温度，有慈悲。",
+      "file": "game/audio/voice/afterlife_robespierre_3.wav",
+      "duration": 10.07
+    },
+    {
+      "index": 4,
+      "speaker": "napoleon",
+      "text": "我用剑征服了欧洲，却无法征服时间。但我的法典，至今仍在守护着公平与正义。",
+      "file": "game/audio/voice/afterlife_napoleon_4.wav",
+      "duration": 11.02
+    },
+    {
+      "index": 5,
+      "speaker": "fulina",
+      "text": "所有的灵魂都得到了安息。历史的教训，将由你们这一代来铭记和传承。",
+      "file": "game/audio/voice/afterlife_fulina_5.wav",
+      "duration": 8.92
+    },
+    {
+      "index": 6,
+      "speaker": "hutao",
+      "text": "生死轮回，因果相续。愿逝者安息，愿生者前行。",
+      "file": "game/audio/voice/afterlife_hutao_6.wav",
+      "duration": 5.9
+    },
+    {
+      "index": 7,
+      "speaker": "narrator",
+      "text": "【往生结局】所有在革命中逝去的灵魂化作星光，永远守护着这片土地上的自由与正义。",
+      "file": "game/audio/voice/afterlife_narrator_7.wav",
+      "duration": 13.54
+    }
+  ],
+  "dramatic": [
+    {
+      "index": 0,
+      "speaker": "narrator",
+      "text": "在这个结局里，历史走向了一个不同的方向……",
+      "file": "game/audio/voice/dramatic_narrator_0.wav",
+      "duration": 7.34
+    },
+    {
+      "index": 1,
+      "speaker": "marie",
+      "text": "我没有被送上断头台。在乡下的简朴生活中，我终于理解了人民真正需要的是什么。",
+      "file": "game/audio/voice/dramatic_marie_1.wav",
+      "duration": 12.25
+    },
+    {
+      "index": 2,
+      "speaker": "fulina",
+      "text": "正义不是冰冷的法律条文，它也应该有温度。",
+      "file": "game/audio/voice/dramatic_fulina_2.wav",
+      "duration": 5.61
+    },
+    {
+      "index": 3,
+      "speaker": "narrator",
+      "text": "【戏剧结局】玛丽·安托瓦内特在乡下过着简朴的生活，帮助那些贫困的农民。",
+      "file": "game/audio/voice/dramatic_narrator_3.wav",
+      "duration": 11.51
+    }
+  ]
+}

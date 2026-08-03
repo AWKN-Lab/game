@@ -1,0 +1,42 @@
+# === 标准运行时产物 ===
+node_modules/
+dist/
+.cache/
+.tmp/
+*.log
+*.bak
+*.tmp
+*.swp
+.DS_Store
+Thumbs.db
+
+# === IDE / 编辑器 ===
+.vscode/
+.idea/
+*.iml
+
+# === 本地环境与密钥（绝不入仓）===
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.pfx
+*credentials*
+*.secret
+
+# === 嵌套历史快照目录（不参与历史）===
+game/game/
+
+# === OS 临时 ===
+*~
+*.bak_*
+
+# === 设计：本仓库定位为源码 + 资源；不要把发布产物（zip/tar.gz）入仓 ===
+*.zip
+*.tar.gz
+*.tgz
+
+# === 单文件大小门禁（>25MB 由 pre-push hook 校验，本文件不写大小规则）===
+# 实际处理：阿里云打包阶段已 tar --exclude 4 个超大单文件；本仓库单文件 ≤25MB。

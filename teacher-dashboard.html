@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>时空剧场 · 教师数据面板</title>
+  <script src="data-store.js"></script>
+  <script src="script-registry.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0a0e27; color: #dbe1ff; font-family: 'Plus Jakarta Sans', 'Noto Sans SC', sans-serif; min-height: 100vh; }
+    .container { max-width: 960px; margin: 0 auto; padding: 20px; }
+    h1 { font-size: 24px; color: #efbd8a; margin-bottom: 8px; }
+    h2 { font-size: 18px; color: #efbd8a; margin: 24px 0 12px; }
+    .subtitle { color: #8f909d; font-size: 14px; margin-bottom: 24px; }
+    .card { background: rgba(18,30,64,0.8); border: 1px solid rgba(239,189,138,0.2); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+    .import-area { width: 100%; min-height: 100px; background: rgba(10,14,39,0.8); color: #dbe1ff; border: 1px solid rgba(239,189,138,0.3); border-radius: 8px; padding: 12px; font-size: 12px; font-family: monospace; resize: vertical; }
+    .btn { padding: 10px 24px; border-radius: 8px; font-weight: bold; font-size: 14px; border: none; cursor: pointer; }
+    .btn-primary { background: linear-gradient(135deg,#efbd8a,#5a3912); color: #472a03; }
+    .btn-secondary { background: rgba(255,255,255,0.1); color: #dbe1ff; border: 1px solid rgba(255,255,255,0.2); }
+    .btn-danger { background: rgba(239,68,68,0.2); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
+    .btn-row { display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th { text-align: left; padding: 10px 12px; color: #8f909d; border-bottom: 1px solid rgba(255,255,255,0.1); font-weight: 600; }
+    td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    tr:hover td { background: rgba(239,189,138,0.05); }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+    .badge-gold { background: rgba(255,215,0,0.2); color: #ffd700; }
+    .badge-purple { background: rgba(167,139,250,0.2); color: #a78bfa; }
+    .badge-blue { background: rgba(96,165,250,0.2); color: #60a5fa; }
+    .badge-gray { background: rgba(255,255,255,0.1); color: #8f909d; }
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px; }
+    .stat-card { background: rgba(18,30,64,0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 16px; text-align: center; }
+    .stat-value { font-size: 28px; font-weight: bold; color: #efbd8a; }
+    .stat-label { font-size: 12px; color: #8f909d; margin-top: 4px; }
+    .weak-point { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); border-radius: 8px; padding: 12px 16px; margin-bottom: 8px; }
+    .strong-point { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.2); border-radius: 8px; padding: 12px 16px; margin-bottom: 8px; }
+    .empty-state { text-align: center; padding: 60px 20px; color: #8f909d; }
+    .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+    @media (max-width: 640px) {
+      .container { padding: 12px; }
+      h1 { font-size: 20px; }
+      table { font-size: 12px; }
+      th, td { padding: 8px 6px; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>📊 教师数据面板</h1>
+  <p class="subtitle">粘贴学生导出的学习数据，查看班级学情分析</p>
+
+  <div class="card">
+    <h2 style="margin-top:0">📥 导入学生数据</h2>
+    <textarea id="importArea" class="import-area" placeholder="将学生发送的数据粘贴到这里，每行一个学生的数据…"></textarea>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="importData()">分析数据</button>
+      <button class="btn btn-secondary" onclick="addSampleData()">加载示例数据</button>
+      <button class="btn btn-danger" onclick="clearAll()">清空</button>
+    </div>
+  </div>
+
+  <div id="dashboard" style="display:none;">
+    <div class="stat-grid" id="overviewStats"></div>
+
+    <div class="card">
+      <h2 style="margin-top:0">📋 学生完成进度</h2>
+      <div style="overflow-x:auto;">
+        <table id="studentTable">
+          <thead><tr>
+            <th>学生</th>
+            <th>完成剧本</th>
+            <th>结局</th>
+            <th>学习评级</th>
+            <th>错题数</th>
+          </tr></thead>
+          <tbody id="studentTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-top:0">📚 各剧本班级掌握率</h2>
+      <div id="scriptMastery"></div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-top:0">🎯 班级薄弱知识点</h2>
+      <div id="weakPoints"></div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-top:0">💡 教学建议</h2>
+      <div id="teachingAdvice"></div>
+    </div>
+  </div>
+
+  <div id="emptyState" class="empty-state">
+    <div class="icon">📊</div>
+    <div style="font-size:18px;margin-bottom:8px;">暂无数据</div>
+    <div style="font-size:14px;">请让学生在游戏结束后点击「导出给老师」<br>将数据发送给您，粘贴到上方输入框</div>
+  </div>
+</div>
+
+<script>
+var students = [];
+
+function importData() {
+  var area = document.getElementById('importArea');
+  var lines = area.value.trim().split('\n').filter(function(l) { return l.trim().length > 0; });
+  students = [];
+  lines.forEach(function(line) {
+    var data = DataStore.importStudentData(line.trim());
+    if (data && data.v === 1) {
+      students.push(data);
+    }
+  });
+  if (students.length === 0) {
+    alert('未识别到有效数据，请确认学生已正确导出');
+    return;
+  }
+  renderDashboard();
+}
+
+function addSampleData() {
+  var sample1 = {v:1,email:'student1@school.com',exportedAt:Date.now(),scripts:{
+    french_revolution:{endings:['afterlife'],collectibles:['c1','c2'],assessment:{bestLearningPct:85,bestTier:'excellent',quizPct:80,essayPct:90},knowledge:{k_freedom:true,k_equality:true,k_rule:false,k_justice:true},playTime:1800},
+    industrial_revolution:{endings:['dramatic'],collectibles:['c1'],assessment:{bestLearningPct:72,bestTier:'completed',quizPct:60,essayPct:84},knowledge:{k_labor:true,k_justice:false},playTime:1200}
+  },wrongAnswers:[{question:'自由与法治的关系',subject:'french_revolution'},{question:'工业革命的社会影响',subject:'industrial_revolution'}]};
+  var sample2 = {v:1,email:'student2@school.com',exportedAt:Date.now(),scripts:{
+    french_revolution:{endings:['historical'],collectibles:['c1','c2','c3'],assessment:{bestLearningPct:92,bestTier:'master',quizPct:100,essayPct:84},knowledge:{k_freedom:true,k_equality:true,k_rule:true,k_justice:true},playTime:2400},
+    american_revolution:{endings:['afterlife'],collectibles:['c1'],assessment:{bestLearningPct:78,bestTier:'completed',quizPct:80,essayPct:76},knowledge:{k_independence:true,k_constution:false},playTime:1500}
+  },wrongAnswers:[{question:'美国宪法三权分立',subject:'american_revolution'}]};
+  var sample3 = {v:1,email:'student3@school.com',exportedAt:Date.now(),scripts:{
+    french_revolution:{endings:[],collectibles:[],assessment:null,knowledge:{},playTime:300},
+    wuxu_reform:{endings:['dramatic'],collectibles:['c1','c2'],assessment:{bestLearningPct:65,bestTier:'completed',quizPct:40,essayPct:90},knowledge:{k_reform:true,k_emperor:false},playTime:900}
+  },wrongAnswers:[{question:'戊戌变法持续时间',subject:'wuxu_reform'},{question:'法国大革命标志事件',subject:'french_revolution'},{question:'戊戌六君子',subject:'wuxu_reform'}]};
+
+  var encoded1 = btoa(unescape(encodeURIComponent(JSON.stringify(sample1))));
+  var encoded2 = btoa(unescape(encodeURIComponent(JSON.stringify(sample2))));
+  var encoded3 = btoa(unescape(encodeURIComponent(JSON.stringify(sample3))));
+  document.getElementById('importArea').value = encoded1 + '\n' + encoded2 + '\n' + encoded3;
+  importData();
+}
+
+function clearAll() {
+  students = [];
+  document.getElementById('importArea').value = '';
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('emptyState').style.display = 'block';
+}
+
+function renderDashboard() {
+  document.getElementById('dashboard').style.display = 'block';
+  document.getElementById('emptyState').style.display = 'none';
+
+  var totalStudents = students.length;
+  var completedCount = 0;
+  var totalEndings = 0;
+  var totalWrong = 0;
+  var masterCount = 0;
+  var excellentCount = 0;
+  var scriptStats = {};
+
+  students.forEach(function(s) {
+    var hasCompleted = false;
+    var studentEndings = 0;
+    if (s.scripts) {
+      for (var id in s.scripts) {
+        if (!s.scripts.hasOwnProperty(id)) continue;
+        var sc = s.scripts[id];
+        if (!scriptStats[id]) scriptStats[id] = { completions: 0, endings: 0, assessments: [], knowledgeMastered: 0, knowledgeTotal: 0 };
+        if (sc.endings && sc.endings.length > 0) {
+          scriptStats[id].completions++;
+          scriptStats[id].endings += sc.endings.length;
+          hasCompleted = true;
+          studentEndings += sc.endings.length;
+        }
+        if (sc.assessment) {
+          scriptStats[id].assessments.push(sc.assessment);
+          if (sc.assessment.bestTier === 'master') masterCount++;
+          else if (sc.assessment.bestTier === 'excellent') excellentCount++;
+        }
+        if (sc.knowledge) {
+          for (var k in sc.knowledge) {
+            if (sc.knowledge.hasOwnProperty(k)) {
+              scriptStats[id].knowledgeTotal++;
+              if (sc.knowledge[k]) scriptStats[id].knowledgeMastered++;
+            }
+          }
+        }
+      }
+    }
+    if (hasCompleted) completedCount++;
+    totalEndings += studentEndings;
+    totalWrong += (s.wrongAnswers || []).length;
+  });
+
+  var completionRate = totalStudents > 0 ? Math.round(completedCount / totalStudents * 100) : 0;
+  var avgWrong = totalStudents > 0 ? (totalWrong / totalStudents).toFixed(1) : 0;
+
+  document.getElementById('overviewStats').innerHTML =
+    '<div class="stat-card"><div class="stat-value">' + totalStudents + '</div><div class="stat-label">学生总数</div></div>' +
+    '<div class="stat-card"><div class="stat-value">' + completionRate + '%</div><div class="stat-label">完成率</div></div>' +
+    '<div class="stat-card"><div class="stat-value">' + totalEndings + '</div><div class="stat-label">解锁结局总数</div></div>' +
+    '<div class="stat-card"><div class="stat-value">' + masterCount + '/' + excellentCount + '</div><div class="stat-label">学霸/标兵</div></div>' +
+    '<div class="stat-card"><div class="stat-value">' + avgWrong + '</div><div class="stat-label">人均错题</div></div>';
+
+  var tbody = document.getElementById('studentTableBody');
+  tbody.innerHTML = '';
+  students.forEach(function(s) {
+    var completedScripts = [];
+    var allEndings = [];
+    var bestTier = '';
+    var wrongCount = (s.wrongAnswers || []).length;
+    if (s.scripts) {
+      for (var id in s.scripts) {
+        if (!s.scripts.hasOwnProperty(id)) continue;
+        var sc = s.scripts[id];
+        var name = (SCRIPT_REGISTRY[id] && SCRIPT_REGISTRY[id].name) || id;
+        if (sc.endings && sc.endings.length > 0) {
+          completedScripts.push(name);
+          allEndings = allEndings.concat(sc.endings);
+        }
+        if (sc.assessment && (!bestTier || sc.assessment.bestTier === 'master')) {
+          bestTier = sc.assessment.bestTier;
+        } else if (!bestTier && sc.assessment) {
+          bestTier = sc.assessment.bestTier;
+        }
+      }
+    }
+    var tierBadge = bestTier === 'master' ? '<span class="badge badge-gold">学霸</span>' :
+                    bestTier === 'excellent' ? '<span class="badge badge-purple">标兵</span>' :
+                    bestTier === 'completed' ? '<span class="badge badge-blue">通关</span>' :
+                    '<span class="badge badge-gray">未评级</span>';
+    var endingLabels = { afterlife: '往生', dramatic: '戏剧', historical: '历史' };
+    var endingsStr = allEndings.map(function(e) { return endingLabels[e] || e; }).join('、') || '—';
+    tbody.innerHTML +=
+      '<tr><td>' + (s.email || '未知') + '</td><td>' + (completedScripts.join('、') || '未完成') + '</td><td>' + endingsStr + '</td><td>' + tierBadge + '</td><td>' + wrongCount + '</td></tr>';
+  });
+
+  var masteryHtml = '';
+  for (var id in scriptStats) {
+    if (!scriptStats.hasOwnProperty(id)) continue;
+    var st = scriptStats[id];
+    var name = (SCRIPT_REGISTRY[id] && SCRIPT_REGISTRY[id].name) || id;
+    var masteryPct = st.knowledgeTotal > 0 ? Math.round(st.knowledgeMastered / st.knowledgeTotal * 100) : 0;
+    var avgLearning = 0;
+    if (st.assessments.length > 0) {
+      var sum = 0;
+      st.assessments.forEach(function(a) { sum += (a.bestLearningPct || 0); });
+      avgLearning = Math.round(sum / st.assessments.length);
+    }
+    masteryHtml +=
+      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">' +
+        '<div style="min-width:120px;font-size:14px;">' + name + '</div>' +
+        '<div style="flex:1;background:rgba(255,255,255,0.1);border-radius:4px;height:20px;overflow:hidden;">' +
+          '<div style="height:100%;width:' + masteryPct + '%;background:' + (masteryPct >= 80 ? '#22c55e' : masteryPct >= 60 ? '#eab308' : '#ef4444') + ';border-radius:4px;transition:width 0.5s;"></div>' +
+        '</div>' +
+        '<div style="min-width:80px;text-align:right;font-size:14px;">知识点 ' + masteryPct + '%</div>' +
+        '<div style="min-width:80px;text-align:right;font-size:14px;">评级 ' + avgLearning + '%</div>' +
+        '<div style="min-width:60px;text-align:right;font-size:12px;color:#8f909d;">' + st.completions + '/' + totalStudents + '人</div>' +
+      '</div>';
+  }
+  document.getElementById('scriptMastery').innerHTML = masteryHtml || '<div style="color:#8f909d;text-align:center;padding:20px;">暂无数据</div>';
+
+  var weakKnowledge = {};
+  var strongKnowledge = {};
+  students.forEach(function(s) {
+    if (!s.scripts) return;
+    for (var id in s.scripts) {
+      if (!s.scripts.hasOwnProperty(id)) continue;
+      var sc = s.scripts[id];
+      if (!sc.knowledge) continue;
+      for (var k in sc.knowledge) {
+        if (!sc.knowledge.hasOwnProperty(k)) continue;
+        if (!weakKnowledge[k]) weakKnowledge[k] = { total: 0, failed: 0, scriptId: id };
+        if (!strongKnowledge[k]) strongKnowledge[k] = { total: 0, passed: 0, scriptId: id };
+        weakKnowledge[k].total++;
+        strongKnowledge[k].total++;
+        if (sc.knowledge[k]) { strongKnowledge[k].passed++; }
+        else { weakKnowledge[k].failed++; }
+      }
+    }
+  });
+
+  var weakList = [];
+  for (var k in weakKnowledge) {
+    if (weakKnowledge[k].total >= 2 && weakKnowledge[k].failed >= Math.ceil(weakKnowledge[k].total * 0.5)) {
+      weakList.push({ key: k, failed: weakKnowledge[k].failed, total: weakKnowledge[k].total, scriptId: weakKnowledge[k].scriptId });
+    }
+  }
+  weakList.sort(function(a, b) { return b.failed - a.failed; });
+
+  var weakHtml = '';
+  if (weakList.length > 0) {
+    weakList.slice(0, 5).forEach(function(w) {
+      var scriptName = (SCRIPT_REGISTRY[w.scriptId] && SCRIPT_REGISTRY[w.scriptId].name) || w.scriptId;
+      weakHtml += '<div class="weak-point"><span style="color:#ef4444;font-weight:bold;">⚠ ' + w.failed + '/' + w.total + '人未掌握</span> · ' + scriptName + ' · ' + w.key.replace(/_/g, ' ') + '</div>';
+    });
+  } else {
+    weakHtml = '<div style="color:#22c55e;text-align:center;padding:20px;">✅ 暂无显著薄弱知识点</div>';
+  }
+  document.getElementById('weakPoints').innerHTML = weakHtml;
+
+  var adviceHtml = '';
+  if (weakList.length > 0) {
+    var worstScript = weakList[0].scriptId;
+    var worstScriptName = (SCRIPT_REGISTRY[worstScript] && SCRIPT_REGISTRY[worstScript].name) || worstScript;
+    adviceHtml += '<div class="strong-point">📌 建议优先复习：<strong>' + worstScriptName + '</strong> — ' + weakList.length + '个知识点掌握率低于50%</div>';
+  }
+  if (avgWrong > 2) {
+    adviceHtml += '<div class="weak-point">📌 人均错题' + avgWrong + '道，建议安排错题回顾环节</div>';
+  }
+  if (completionRate < 60) {
+    adviceHtml += '<div class="weak-point">📌 完成率仅' + completionRate + '%，建议设置课堂时间确保学生完成</div>';
+  }
+  if (masterCount > 0) {
+    adviceHtml += '<div class="strong-point">📌 ' + masterCount + '位同学达到学霸级别，可安排其协助其他同学</div>';
+  }
+  if (!adviceHtml) {
+    adviceHtml = '<div class="strong-point">✅ 班级整体表现良好，继续保持！</div>';
+  }
+  document.getElementById('teachingAdvice').innerHTML = adviceHtml;
+}
+</script>
+</body>
+</html>

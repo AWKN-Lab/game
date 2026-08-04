@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "characters": {
+    "fulina": {
+      "displayName": "子衿",
+      "role": "历史引导者",
+      "replacementGlyph": "子",
+      "description": "负责梳理时间线、历史背景和事件因果。"
+    },
+    "hutao": {
+      "displayName": "洛书",
+      "role": "道法追问者",
+      "replacementGlyph": "洛",
+      "description": "负责提出价值、规则、责任和选择后果的问题。"
+    }
+  },
+  "textReplacements": {
+    "芙宁娜": "子衿",
+    "胡桃": "洛书",
+    "枫丹": "文明长河",
+    "往生堂": "星轨书院",
+    "护摩之杖": "星轨手札"
+  }
+}

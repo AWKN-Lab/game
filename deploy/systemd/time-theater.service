@@ -1,0 +1,23 @@
+[Unit]
+Description=Time Theater AI Teaching API
+After=network.target
+
+[Service]
+Type=simple
+User=www
+Group=www
+WorkingDirectory=/www/wwwroot/awkn-lab/game/current
+EnvironmentFile=/www/wwwroot/awkn-lab/game/shared/.env
+ExecStart=/usr/bin/node server/start.js
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=10
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths=/www/wwwroot/awkn-lab/game/shared
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

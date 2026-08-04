@@ -1,4 +1,23 @@
 {
+  "name": "time-theater",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "scripts": {
+    "build:css": "tailwindcss -i ./styles/input.css -o ./dist/output.css --minify",
+    "build": "npm run build:css",
+    "check": "node scripts/validate-content.mjs && node scripts/validate-prompts.mjs && node scripts/validate-events.mjs",
+    "test": "node --test",
+    "smoke": "node scripts/smoke-pages.mjs",
+    "verify": "npm run build && npm run check && npm run test && npm run smoke",
+    "dev": "node server/start.js",
+    "start": "node server/start.js",
+    "db:migrate": "node server/db/migrate.js",
+    "admin:seed": "node server/db/seed-admin.js"
+  },
   "devDependencies": {
     "@tailwindcss/cli": "^4.2.2",
     "tailwindcss": "^4.2.2"

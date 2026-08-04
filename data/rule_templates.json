@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "lessonPlan": {
+    "duration": {
+      "15": {"actCount": 1, "questionCount": 2, "objectiveCount": 2},
+      "20": {"actCount": 2, "questionCount": 3, "objectiveCount": 2},
+      "40": {"actCount": 3, "questionCount": 3, "objectiveCount": 3}
+    },
+    "studentLevel": {
+      "weak": {"label": "基础薄弱", "questionStyle": "事实识别和直接因果", "boardStyle": "关键词填空"},
+      "average": {"label": "基础一般", "questionStyle": "因果解释和概念区分", "boardStyle": "因果链"},
+      "strong": {"label": "基础较好", "questionStyle": "比较评价和证据判断", "boardStyle": "比较表"}
+    }
+  },
+  "learningReview": {
+    "bands": [
+      {"min": 80, "label": "掌握较稳", "action": "增加比较与迁移"},
+      {"min": 60, "label": "基本掌握", "action": "集中补两个薄弱点"},
+      {"min": 0, "label": "需要回到核心线索", "action": "先补时间线和核心概念"}
+    ],
+    "defaultActions": [
+      "重做相关错题，并说出选择依据",
+      "画出一条“背景—事件—结果—影响”因果链",
+      "回到对应剧情段落，用一句话讲清核心知识点"
+    ]
+  }
+}

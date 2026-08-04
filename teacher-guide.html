@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>教师导学卡｜时空剧场</title>
+  <link rel="stylesheet" href="assets/css/mvp.css">
+  <style>@media print{.no-print,.tt-header,.tt-footer,#guideForm{display:none!important}.tt-page{width:100%;padding:0}.tt-card{box-shadow:none;border:0}.tt-result{display:block!important}}</style>
+</head>
+<body>
+  <main class="tt-page">
+    <header class="tt-header no-print">
+      <a class="tt-brand" href="ai-mvp.html"><span class="tt-brand-mark">导</span><span><strong>教师导学卡</strong><span>从现成剧本里整理一堂能直接使用的课</span></span></a>
+      <nav class="tt-nav"><a href="ai-mvp.html">返回首页</a><a href="learning-review.html">学生复盘</a><a href="wish-pool.html">许愿池</a></nav>
+    </header>
+
+    <section class="tt-grid two">
+      <article class="tt-card no-print">
+        <div class="tt-kicker">课前两分钟</div>
+        <h1 style="font-size:42px;margin:8px 0 12px">告诉我这堂课<br>怎么上</h1>
+        <p class="tt-lead">选一个现有剧本，填入课堂时间、学生基础和本节重点。系统只从已有剧情和教学元数据里编排。</p>
+        <form id="guideForm" class="tt-form">
+          <div class="tt-field"><label for="scriptId">选择剧本</label><select id="scriptId" class="tt-select" required></select></div>
+          <div class="tt-form-row">
+            <div class="tt-field"><label for="duration">课堂时长</label><select id="duration" class="tt-select"><option value="15">15 分钟</option><option value="20">20 分钟</option><option value="40" selected>40 分钟</option></select></div>
+            <div class="tt-field"><label for="studentLevel">学生基础</label><select id="studentLevel" class="tt-select"><option value="weak">基础薄弱</option><option value="average" selected>基础一般</option><option value="strong">基础较好</option></select></div>
+          </div>
+          <div class="tt-field"><label for="teachingFocus">本节最想讲清什么</label><textarea id="teachingFocus" class="tt-textarea" maxlength="160" placeholder="例如：区分根本原因、导火线和开始标志"></textarea></div>
+          <div class="tt-field"><label for="usageMode">怎么使用</label><select id="usageMode" class="tt-select"><option value="projection">教师投屏讲解</option><option value="self_study">学生自己体验</option></select></div>
+          <button id="generateButton" class="tt-btn gold" type="submit">生成导学卡</button>
+          <div id="formStatus" class="tt-muted"></div>
+        </form>
+      </article>
+
+      <article class="tt-card">
+        <div id="emptyState">
+          <div class="tt-kicker">输出只有一页</div>
+          <h2>生成后会得到</h2>
+          <ul class="tt-list"><li>本节目标</li><li>建议使用的剧情段落</li><li>三个暂停提问</li><li>板书提纲</li><li>课堂小结与课后任务</li></ul>
+          <div class="tt-note" style="margin-top:18px">模型超时、密钥未配置或返回格式异常时，页面会自动显示本地规则版。</div>
+        </div>
+        <div id="result" class="tt-result">
+          <div class="tt-section-title"><div><div class="tt-kicker">课堂导学卡</div><h2 id="resultTitle"></h2></div><span id="modeBadge" class="tt-chip"></span></div>
+          <h3>今天学什么</h3><ol id="objectives" class="tt-list"></ol>
+          <h3>建议看哪几段</h3><div id="acts" class="tt-grid"></div>
+          <h3>讲到这里停一下</h3><ol id="questions" class="tt-list"></ol>
+          <h3>黑板上写什么</h3><div id="board" class="tt-note"></div>
+          <h3>下课前收回来</h3><p id="summary" class="tt-muted"></p>
+          <h3>课后任务</h3><p id="homework" class="tt-muted"></p>
+          <div id="tip" class="tt-success"></div>
+          <div class="tt-actions no-print" style="margin-top:18px"><button class="tt-btn" type="button" onclick="window.print()">打印</button><a id="playLink" class="tt-btn primary" href="ai-mvp.html">进入剧本</a><button id="regenerate" class="tt-btn ghost" type="button">重新生成</button></div>
+        </div>
+      </article>
+    </section>
+    <footer class="tt-footer no-print">导学卡中的历史信息来自系统已有剧本与教学元数据；使用前由教师做最终确认。</footer>
+  </main>
+
+  <script src="script-registry.js"></script>
+  <script src="assets/js/api-client.js"></script>
+  <script src="assets/js/identity-client.js"></script>
+  <script src="assets/js/event-client.js"></script>
+  <script src="assets/js/teaching-rules.js"></script>
+  <script src="assets/js/ai-teaching-assistant.js"></script>
+  <script>
+    (function () {
+      TTIdentity.setRole('teacher');
+      var select = document.getElementById('scriptId');
+      Object.keys(SCRIPT_REGISTRY || {}).forEach(function (id) {
+        var option = document.createElement('option'); option.value = id; option.textContent = SCRIPT_REGISTRY[id].name; select.appendChild(option);
+      });
+      var requested = new URLSearchParams(location.search).get('script');
+      if (requested && SCRIPT_REGISTRY[requested]) select.value = requested;
+      var saved = JSON.parse(localStorage.getItem('tt_teacher_preferences') || '{}');
+      if (!requested && saved.scriptId && SCRIPT_REGISTRY[saved.scriptId]) select.value = saved.scriptId;
+      if (saved.duration) document.getElementById('duration').value = saved.duration;
+      if (saved.studentLevel) document.getElementById('studentLevel').value = saved.studentLevel;
+      if (saved.usageMode) document.getElementById('usageMode').value = saved.usageMode;
+
+      function fillList(element, values) {
+        element.innerHTML = '';
+        (values || []).forEach(function (value) { var li = document.createElement('li'); li.textContent = value; element.appendChild(li); });
+      }
+      function render(plan) {
+        document.getElementById('emptyState').hidden = true;
+        var result = document.getElementById('result'); result.classList.add('visible');
+        document.getElementById('resultTitle').textContent = plan.title;
+        var badge = document.getElementById('modeBadge'); badge.textContent = plan.sourceLabel || plan.mode; badge.className = 'tt-chip ' + (plan.mode === 'ai' ? 'ai' : 'rule');
+        fillList(document.getElementById('objectives'), plan.objectives);
+        var acts = document.getElementById('acts'); acts.innerHTML = '';
+        (plan.recommendedActs || []).forEach(function (act) {
+          var card = document.createElement('article'); card.className = 'tt-card'; card.innerHTML = '<span class="tt-chip">' + act.minutes + '分钟</span><h3>' + act.title + '</h3><p class="tt-muted">' + act.reason + '</p>'; acts.appendChild(card);
+        });
+        fillList(document.getElementById('questions'), plan.pauseQuestions);
+        document.getElementById('board').innerHTML = (plan.boardOutline || []).map(function (item) { return '<div>' + item.replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]}) + '</div>'; }).join('');
+        document.getElementById('summary').textContent = plan.summary;
+        document.getElementById('homework').textContent = plan.homework;
+        document.getElementById('tip').textContent = plan.teachingTip || '请结合班级实际做最后调整。';
+        document.getElementById('playLink').href = 'ai-mvp.html?play=' + select.value;
+        localStorage.setItem('tt_last_lesson_plan', JSON.stringify({ input: currentInput(), result: plan }));
+      }
+      function currentInput() {
+        return {
+          scriptId: select.value,
+          duration: Number(document.getElementById('duration').value),
+          studentLevel: document.getElementById('studentLevel').value,
+          teachingFocus: document.getElementById('teachingFocus').value.trim(),
+          usageMode: document.getElementById('usageMode').value
+        };
+      }
+      async function generate() {
+        var input = currentInput();
+        localStorage.setItem('tt_teacher_preferences', JSON.stringify(input));
+        var button = document.getElementById('generateButton'); var status = document.getElementById('formStatus');
+        button.disabled = true; button.innerHTML = '<span class="tt-loading"><span class="tt-spinner"></span>正在整理已有剧本…</span>'; status.textContent = '';
+        try { render(await TTAI.generateLessonPlan(input)); }
+        catch (error) { status.textContent = error.message || '生成失败'; }
+        finally { button.disabled = false; button.textContent = '生成导学卡'; }
+      }
+      document.getElementById('guideForm').addEventListener('submit', function (event) { event.preventDefault(); generate(); });
+      document.getElementById('regenerate').addEventListener('click', generate);
+    })();
+  </script>
+</body>
+</html>

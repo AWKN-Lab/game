@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>时空剧场 AI 导学版</title>
+  <link rel="stylesheet" href="assets/css/mvp.css">
+</head>
+<body>
+  <main class="tt-page">
+    <header class="tt-header">
+      <a class="tt-brand" href="ai-mvp.html">
+        <span class="tt-brand-mark">时</span>
+        <span><strong>时空剧场 AI 导学版</strong><span>一部手机，把现成历史剧本带进课堂</span></span>
+      </a>
+      <nav class="tt-nav">
+        <a href="teacher-guide.html">教师导学</a>
+        <a href="learning-review.html">学习复盘</a>
+        <a href="wish-pool.html">许愿池</a>
+        <a href="admin/login.html">管理员</a>
+      </nav>
+    </header>
+
+    <section class="tt-hero">
+      <article class="tt-card">
+        <div class="tt-kicker">AI + 已有五部互动历史剧本</div>
+        <h1>先把一堂课<br>真正用起来</h1>
+        <p class="tt-lead">老师从已有剧本生成一张导学卡，学生继续体验原来的剧情和知识测试，结束后再生成一张基于真实数据的学习复盘。</p>
+        <div class="tt-actions">
+          <a class="tt-btn gold" href="teacher-guide.html">生成教师导学卡</a>
+          <a class="tt-btn primary" href="learning-review.html">生成学习复盘</a>
+        </div>
+      </article>
+      <aside class="tt-card">
+        <div class="tt-grid two">
+          <div class="tt-stat"><strong>5</strong><span>现有历史剧本</span></div>
+          <div class="tt-stat"><strong>64</strong><span>注册知识点</span></div>
+          <div class="tt-stat"><strong>0</strong><span>学生注册门槛</span></div>
+          <div class="tt-stat"><strong>2</strong><span>本次核心新增</span></div>
+        </div>
+        <div class="tt-note" style="margin-top:18px">AI 不可用时自动生成规则版导学卡和复盘卡，旧剧本不会被接口故障拖住。</div>
+      </aside>
+    </section>
+
+    <section class="tt-section">
+      <div class="tt-section-title">
+        <div><h2>选择一段历史</h2><p>可先生成导学卡，也可直接进入原有剧情。</p></div>
+        <label class="tt-chip"><input id="trackingToggle" type="checkbox"> 参与匿名产品改进</label>
+      </div>
+      <div id="scriptGrid" class="tt-grid"></div>
+    </section>
+
+    <section id="playSection" class="tt-section" hidden>
+      <div class="tt-section-title">
+        <div><h2 id="playTitle">剧本体验</h2><p>旧剧本在旁路外壳中运行；兼容层负责原创角色替换和匿名互动记录。</p></div>
+        <div class="tt-actions">
+          <a id="guideCurrent" class="tt-btn gold" href="teacher-guide.html">为本剧生成导学卡</a>
+          <button id="closeFrame" class="tt-btn ghost" type="button">关闭</button>
+        </div>
+      </div>
+      <div class="tt-toolbar">
+        <button id="reloadFrame" class="tt-btn" type="button">重新载入</button>
+        <span id="frameStatus" class="tt-muted">等待加载</span>
+      </div>
+      <iframe id="gameFrame" class="tt-frame" title="时空剧场互动剧本"></iframe>
+    </section>
+
+    <section class="tt-section tt-grid two">
+      <article class="tt-card">
+        <h2>有问题，直接告诉我们</h2>
+        <p class="tt-muted">反馈会带上当前页面和剧本上下文，不会上传密码、键盘输入过程或完整本机学习档案。</p>
+        <form id="feedbackForm" class="tt-form">
+          <div class="tt-form-row">
+            <div class="tt-field"><label for="feedbackCategory">类型</label><select id="feedbackCategory" class="tt-select"><option value="content">内容问题</option><option value="bug">运行问题</option><option value="learning">学习看不懂</option><option value="suggestion">改进建议</option></select></div>
+            <div class="tt-field"><label for="feedbackRating">体验评分</label><select id="feedbackRating" class="tt-select"><option value="5">5 很顺手</option><option value="4">4 基本好用</option><option value="3">3 还需要改</option><option value="2">2 问题较多</option><option value="1">1 无法使用</option></select></div>
+          </div>
+          <div class="tt-field"><label for="feedbackMessage">具体发生了什么</label><textarea id="feedbackMessage" class="tt-textarea" maxlength="1200" required></textarea></div>
+          <div><button class="tt-btn primary" type="submit">提交反馈</button> <span id="feedbackStatus" class="tt-muted"></span></div>
+        </form>
+      </article>
+      <article class="tt-card">
+        <h2>许愿下一部剧本</h2>
+        <p class="tt-lead" style="font-size:16px">希望先开发哪段历史？哪个功能最需要？许愿进入审核、调研、计划、开发和实现路线图。</p>
+        <a class="tt-btn gold" href="wish-pool.html">进入许愿池</a>
+      </article>
+    </section>
+
+    <footer class="tt-footer">学生与教师默认免注册。完整学习进度保存在当前设备；服务端只接收事件白名单内的匿名互动和用户主动提交内容。</footer>
+  </main>
+
+  <script src="script-registry.js"></script>
+  <script src="assets/js/api-client.js"></script>
+  <script src="assets/js/identity-client.js"></script>
+  <script src="assets/js/event-client.js"></script>
+  <script src="assets/js/feedback-client.js"></script>
+  <script src="assets/js/shell-runtime.js"></script>
+  <script>
+    (function () {
+      var grid = document.getElementById('scriptGrid');
+      var frame = document.getElementById('gameFrame');
+      var playSection = document.getElementById('playSection');
+      var current = null;
+      var colors = ['#213d5a','#52382b','#3e3a27','#334f49','#4b334d'];
+
+      Object.keys(window.SCRIPT_REGISTRY || {}).forEach(function (id, index) {
+        var script = SCRIPT_REGISTRY[id];
+        var card = document.createElement('article');
+        card.className = 'tt-card tt-script-card';
+        card.style.background = 'linear-gradient(165deg,' + colors[index % colors.length] + ',#091626)';
+        card.innerHTML = '<div class="tt-chip-row"><span class="tt-chip">' + script.era + '</span><span class="tt-chip">' + script.knowledgePoints + ' 个知识点</span></div><h3>' + script.name + '</h3><p>' + script.subtitle + '</p><div class="tt-actions" style="margin-top:16px"><button class="tt-btn primary" data-play="' + id + '">进入剧情</button><a class="tt-btn gold" href="teacher-guide.html?script=' + id + '">导学卡</a></div>';
+        grid.appendChild(card);
+      });
+
+      TTShell.attach(frame);
+
+      function openScript(scriptId, smooth) {
+        if (!SCRIPT_REGISTRY[scriptId]) return;
+        current = scriptId;
+        var script = SCRIPT_REGISTRY[current];
+        frame.dataset.scriptId = current;
+        document.getElementById('playTitle').textContent = script.name + '｜互动体验';
+        document.getElementById('guideCurrent').href = 'teacher-guide.html?script=' + current;
+        frame.src = script.file + '?mvp_shell=1';
+        playSection.hidden = false;
+        if (smooth !== false) playSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        document.getElementById('frameStatus').textContent = '正在载入…';
+        TTEvents.track('script.open', { scriptId: current, source: 'ai_mvp' });
+        var url = new URL(location.href);
+        url.searchParams.set('play', current);
+        history.replaceState(null, '', url.pathname + '?' + url.searchParams.toString());
+      }
+
+      grid.addEventListener('click', function (event) {
+        var button = event.target.closest('[data-play]');
+        if (button) openScript(button.dataset.play, true);
+      });
+
+      frame.addEventListener('load', function () {
+        if (frame.contentWindow && frame.contentWindow.location.href !== 'about:blank') document.getElementById('frameStatus').textContent = '已载入';
+      });
+      document.getElementById('reloadFrame').addEventListener('click', function () { if (frame.src) frame.contentWindow.location.reload(); });
+      document.getElementById('closeFrame').addEventListener('click', function () {
+        frame.src = 'about:blank';
+        frame.dataset.scriptId = '';
+        current = null;
+        playSection.hidden = true;
+        var url = new URL(location.href);
+        url.searchParams.delete('play');
+        history.replaceState(null, '', url.pathname + (url.searchParams.toString() ? '?' + url.searchParams.toString() : ''));
+      });
+
+      var toggle = document.getElementById('trackingToggle');
+      toggle.checked = TTIdentity.isTrackingEnabled();
+      toggle.addEventListener('change', function () { TTIdentity.setTrackingEnabled(toggle.checked); if (!toggle.checked) TTEvents.clearQueue(); });
+
+      document.getElementById('feedbackForm').addEventListener('submit', async function (event) {
+        event.preventDefault();
+        var status = document.getElementById('feedbackStatus');
+        status.textContent = '正在提交…';
+        try {
+          var response = await TTFeedback.submit({
+            category: document.getElementById('feedbackCategory').value,
+            contextType: current ? 'script' : 'page',
+            contextId: current || 'ai-mvp',
+            scriptId: current || '',
+            rating: document.getElementById('feedbackRating').value,
+            message: document.getElementById('feedbackMessage').value
+          });
+          status.textContent = '已收到，编号：' + (response.publicId || response.id || '已记录');
+          document.getElementById('feedbackMessage').value = '';
+        } catch (error) { status.textContent = error.message || '提交失败'; }
+      });
+
+      var requested = new URLSearchParams(location.search).get('play');
+      if (requested && SCRIPT_REGISTRY[requested]) setTimeout(function () { openScript(requested, false); playSection.scrollIntoView({ block: 'start' }); }, 0);
+    })();
+  </script>
+</body>
+</html>

@@ -32,15 +32,18 @@
     if (element.tagName === 'IMG') {
       var signal = [element.getAttribute('src'), element.alt, element.title, element.className].join(' ').toLowerCase();
       if (/fulina|furina|芙宁娜/.test(signal)) {
-        element.src = avatars.zijin;
+        if (element.src !== avatars.zijin) element.src = avatars.zijin;
         element.alt = '子衿';
       } else if (/hutao|hu-tao|胡桃/.test(signal)) {
-        element.src = avatars.luoshu;
+        if (element.src !== avatars.luoshu) element.src = avatars.luoshu;
         element.alt = '洛书';
       }
     }
     ['title', 'aria-label', 'placeholder', 'alt'].forEach(function (name) {
-      if (element.hasAttribute && element.hasAttribute(name)) element.setAttribute(name, replaceText(element.getAttribute(name)));
+      if (element.hasAttribute && element.hasAttribute(name)) {
+        var next = replaceText(element.getAttribute(name));
+        if (next !== element.getAttribute(name)) element.setAttribute(name, next);
+      }
     });
   }
 
@@ -60,6 +63,13 @@
   function patchDocument(doc) {
     if (!doc || !doc.body) return;
     patchRoot(doc.body, doc);
+  }
+
+  function knownCorrectness(element) {
+    var value = element.dataset.correct;
+    if (value === 'true' || value === '1') return true;
+    if (value === 'false' || value === '0') return false;
+    return undefined;
   }
 
   function classifyClick(target, scriptId) {
@@ -82,7 +92,7 @@
       return { name: 'script.card', payload: { scriptId: scriptId, cardId: element.dataset.card || element.id || '', action: text } };
     }
     if (/answer|quiz|答题|提交答案/.test(signal + ' ' + text)) {
-      return { name: 'quiz.answer', payload: { scriptId: scriptId, questionId: element.dataset.question || '', choiceIndex: index, correct: false, knowledgeId: element.dataset.knowledge || '' } };
+      return { name: 'quiz.answer', payload: { scriptId: scriptId, questionId: element.dataset.question || '', choiceIndex: index, correct: knownCorrectness(element), knowledgeId: element.dataset.knowledge || '' } };
     }
     return null;
   }
@@ -101,6 +111,10 @@
 
         var observer = new MutationObserver(function (records) {
           records.forEach(function (record) {
+            if (record.type === 'attributes') {
+              patchElement(record.target);
+              return;
+            }
             Array.prototype.forEach.call(record.addedNodes || [], function (node) {
               if (node.nodeType === 3) {
                 var next = replaceText(node.nodeValue);

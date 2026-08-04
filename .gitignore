@@ -52,6 +52,10 @@ tools/generate_voice_gptsovits.py
 *~
 *.bak_*
 
+# === 本地工具工作记忆 / 临时验证脚本 ===
+.workbuddy/
+scripts/_tmp_*.mjs
+
 # === 设计：本仓库定位为源码 + 资源；不要把发布产物（zip/tar.gz）入仓 ===
 *.zip
 *.tar.gz

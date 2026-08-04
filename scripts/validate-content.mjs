@@ -36,14 +36,19 @@ if (!fs.existsSync(knowledgePath)) {
   }
 }
 
-const secretPatterns = [/sk-[A-Za-z0-9_-]{16,}/g, /DASHSCOPE_API_KEY\s*=\s*[^\s#]+/g];
 for (const relative of ['.env.example', 'data/ai_prompts.json']) {
   const target = path.join(root, relative);
   if (!fs.existsSync(target)) continue;
   const source = fs.readFileSync(target, 'utf8');
-  for (const pattern of secretPatterns) {
-    const matches = source.match(pattern) || [];
-    if (matches.some((entry) => !entry.endsWith('='))) errors.push(`${relative} 疑似包含真实密钥`);
+  if (/sk-[A-Za-z0-9_-]{16,}/.test(source)) errors.push(`${relative} 疑似包含 OpenAI 风格真实密钥`);
+
+  for (const rawLine of source.split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('#')) continue;
+    const match = line.match(/^DASHSCOPE_API_KEY\s*=\s*(.*)$/);
+    if (!match) continue;
+    const value = match[1].trim().replace(/^['"]|['"]$/g, '');
+    if (value) errors.push(`${relative} 疑似包含真实 DASHSCOPE_API_KEY`);
   }
 }
 

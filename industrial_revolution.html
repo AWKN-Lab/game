@@ -87,8 +87,8 @@
       valueLabels: { labor: '劳动', justice: '正义', responsibility: '责任', life: '生命' },
       valueColors: { labor: '#E67E22', justice: '#9B59B6', responsibility: '#1ABC9C', life: '#E74C3C' },
       charConfig: {
-        fulina: { name: '芙宁娜', color: '#6A5ACD', dir: 'fulina', defaultExpr: 'normal' },
-        hutao: { name: '胡桃', color: '#DC143C', dir: 'hutao', defaultExpr: 'normal' },
+        fulina: { name: '子衿', color: '#6A5ACD', dir: 'fulina', defaultExpr: 'normal' },
+        hutao: { name: '洛书', color: '#DC143C', dir: 'hutao', defaultExpr: 'normal' },
         watt: { name: '瓦特', color: '#4682B4', dir: 'npc', defaultExpr: 'watt', file: 'watt' },
         hargreaves: { name: '哈格里夫斯', color: '#8B4513', dir: 'npc', defaultExpr: 'hargreaves', file: 'hargreaves' },
         stephenson: { name: '史蒂芬孙', color: '#2F4F4F', dir: 'npc', defaultExpr: 'stephenson', file: 'stephenson' },
@@ -97,7 +97,7 @@
         tom: { name: '童工汤姆', color: '#87CEEB', dir: 'npc', defaultExpr: 'child_worker', file: 'child_worker' }
       },
       speakerNameToKey: {
-        '芙宁娜': 'fulina', '胡桃': 'hutao',
+        '子衿': 'fulina', '洛书': 'hutao',
         '哈格里夫斯': 'hargreaves', '瓦特': 'watt',
         '史蒂芬孙': 'stephenson', '工厂主布莱克': 'blake',
         '纺织女工玛丽': 'mary', '童工汤姆': 'tom'
@@ -161,9 +161,9 @@
         afterlife: "机器下的灵魂"
       },
       afterlifeDialog: [
-        { speaker: "hutao", text: "（举起护摩之杖）走好……每一个在机器旁倒下的灵魂，每一个在战场上牺牲的灵魂。" },
+        { speaker: "hutao", text: "（举起星轨手札）走好……每一个在机器旁倒下的灵魂，每一个在战场上牺牲的灵魂。" },
         { speaker: "fulina", text: "（轻声）历史不会记住他们的名字。但我们记得。" },
-        { speaker: "hutao", text: "在往生堂，我们说：死亡不是终点，遗忘才是。只要有人记得他们，他们就还活着。" },
+        { speaker: "hutao", text: "在星轨书院，我们说：死亡不是终点，遗忘才是。只要有人记得他们，他们就还活着。" },
         { speaker: "fulina", text: "（看着你）你记得他们。这就够了。" },
         { speaker: "hutao", text: "（最后一首）'机器轰鸣声渐远，那些被遗忘的脸，在记忆中重新浮现。'" }
       ],
@@ -220,7 +220,7 @@
 
   {
     scene: "引渡·工业革命",
-    speaker: "芙宁娜",
+    speaker: "子衿",
     text: "（纪录片导演语气）我是伊莎贝拉，工厂主的女儿。这是我家的工厂。",
     bg: "images/bg/cotton_mill_1760.jpg",
     charLeft: 'normal'
@@ -228,7 +228,7 @@
 
   {
     scene: "引渡·工业革命",
-    speaker: "胡桃",
+    speaker: "洛书",
     text: "（纪录片摄影师语气）我是莉莉，纺织女工。这是我的工厂。",
     bg: "images/bg/cotton_mill_1760.jpg",
     charRight: 'normal'
@@ -259,7 +259,7 @@
 
   {
     scene: "第一幕 · 珍妮机的诞生",
-    speaker: "胡桃",
+    speaker: "洛书",
     text: "（扮演莉莉）这就是传说中的「珍妮纺纱机」吗？它一次能纺8根纱线，效率是原来的8倍！",
     bg: "images/bg/cotton_mill_1760.jpg",
     charRight: 'excited'
@@ -288,7 +288,7 @@
 
   {
     scene: "第一幕 · 珍妮机的诞生",
-    speaker: "芙宁娜",
+    speaker: "子衿",
     text: "（扮演伊莎贝拉）瓦特先生，您的蒸汽机将彻底改变这个世界！但我想知道……这些机器取代了工人的劳动，那些失去工作的人该怎么办呢？",
     bg: "images/bg/steam_workshop.jpg",
     charLeft: 'curious'
@@ -333,15 +333,15 @@
 
   {
     scene: "第一幕 · 珍妮机的诞生",
-    speaker: "胡桃",
+    speaker: "洛书",
     text: "（扮演莉莉）这就是「卢德运动」的由来吗？工人们因为失业而砸毁机器……他们不是反对进步，只是不想被进步抛弃。",
     bg: "images/bg/steam_workshop.jpg",
     charRight: 'solemn'
   },
 
   {
-    speaker: '胡桃',
-    text: '（看着工厂的烟囱）这些烟囱冒出的黑烟，比往生堂的护摩之火还要浓。但护摩之火是引路的，这些烟……是遮蔽天空的。',
+    speaker: '洛书',
+    text: '（看着工厂的烟囱）这些烟囱冒出的黑烟，比星轨书院的护摩之火还要浓。但护摩之火是引路的，这些烟……是遮蔽天空的。',
     scene: '第一幕 · 珍妮机的诞生',
     bg: 'images/bg/steam_workshop.jpg',
     charRight: 'solemn'
@@ -361,9 +361,9 @@
     question: "工业革命为什么首先发生在英国，而不是其他国家？",
     options: [
       { text: "因为英国人比其他国家的人更聪明", correctIndex: 2,
-        wrongFeedback: "芙宁娜说：'不是智力问题，而是制度环境。英国的政治和经济条件为创新提供了土壤。'" },
+        wrongFeedback: "子衿说：'不是智力问题，而是制度环境。英国的政治和经济条件为创新提供了土壤。'" },
       { text: "因为英国有更多的煤炭和铁矿", correctIndex: 2,
-        wrongFeedback: "资源丰富是条件之一，但不是根本原因。胡桃说：'有矿的地方多了去了，为什么只有英国爆发了工业革命？'" },
+        wrongFeedback: "资源丰富是条件之一，但不是根本原因。洛书说：'有矿的地方多了去了，为什么只有英国爆发了工业革命？'" },
       { text: "因为英国同时具备了市场、资本、劳动力和制度保障", correctIndex: 2,
         correctFeedback: "✅ 正确！工业革命的发生需要多重条件同时具备：海外市场提供需求，资本积累提供资金，圈地运动提供劳动力，专利制度提供创新激励。",
         effects: { justice: 5, responsibility: 5 } }
@@ -423,7 +423,7 @@
 
   {
     scene: "第二幕 · 蒸汽机的怒吼",
-    speaker: "胡桃",
+    speaker: "洛书",
     text: "（扮演莉莉）布莱克先生，工厂里的工人每天要工作14到16个小时，连孩子都要干活……这样真的好吗？",
     bg: "images/bg/steam_workshop.jpg",
     charRight: 'solemn'
@@ -590,15 +590,15 @@
 
   {
     scene: "第三幕 · 工厂的阴影",
-    speaker: "芙宁娜",
+    speaker: "子衿",
     text: "（扮演伊莎贝拉）一个8岁的孩子……这太残忍了！儿童应该在学校里读书，而不是在危险的机器下面爬来爬去！",
     bg: "images/bg/dark_factory.jpg",
     charLeft: 'serious'
   },
 
   {
-    speaker: '胡桃',
-    text: '（握紧拳头）在往生堂，我送别过很多孩子。但那些孩子是病死的、老死的。这里的孩子……是被活活累死的。',
+    speaker: '洛书',
+    text: '（握紧拳头）在星轨书院，我送别过很多孩子。但那些孩子是病死的、老死的。这里的孩子……是被活活累死的。',
     scene: '第三幕 · 工厂的阴影',
     bg: 'images/bg/dark_factory.jpg',
     charRight: 'solemn'
@@ -651,7 +651,7 @@
 
   {
     scene: "第三幕 · 工厂的阴影",
-    speaker: "胡桃",
+    speaker: "洛书",
     text: "（扮演莉莉）我听说有些工人开始秘密组织起来，想要联合起来对抗工厂主的不公待遇……",
     bg: "images/bg/dark_factory.jpg",
     charRight: 'solemn'
@@ -708,9 +708,9 @@
     question: "工业革命最大的受益者是谁？最大的受害者又是谁？",
     options: [
       { text: "最大受益者是工人，因为他们有了工作机会", correctIndex: 2,
-        wrongFeedback: "胡桃说：'有工作不等于有好生活。看看汤姆的手，看看玛丽的脸——他们确实在工作，但他们活得像人吗？'" },
+        wrongFeedback: "洛书说：'有工作不等于有好生活。看看汤姆的手，看看玛丽的脸——他们确实在工作，但他们活得像人吗？'" },
       { text: "最大受益者和受害者都是工人", correctIndex: 2,
-        wrongFeedback: "这个说法看似辩证，但回避了核心问题。芙宁娜说：'不能因为'也有好处'就忽视不公正。'" },
+        wrongFeedback: "这个说法看似辩证，但回避了核心问题。子衿说：'不能因为'也有好处'就忽视不公正。'" },
       { text: "资本家是最大受益者，工人阶级是最大受害者", correctIndex: 2,
         correctFeedback: "✅ 你看到了工业革命的另一面。技术进步确实推动了生产力，但利益分配极度不均。公平是个人生存和发展的重要保障。",
         effects: { justice: 10, life: 5 } }
@@ -764,7 +764,7 @@
 
   {
     scene: "第四幕 · 火车的轰鸣",
-    speaker: "芙宁娜",
+    speaker: "子衿",
     text: "（扮演伊莎贝拉）史蒂芬孙先生，火车的发明确实伟大！它不仅改变了交通，还促进了城市的发展和贸易的繁荣。",
     bg: "images/bg/steam_train_railway.jpg",
     charLeft: 'excited'
@@ -772,7 +772,7 @@
 
   {
     scene: "第四幕 · 火车的轰鸣",
-    speaker: "胡桃",
+    speaker: "洛书",
     text: "（扮演莉莉）可是……修铁路需要大量土地，很多农民被迫离开了家园。而且铁路沿线的工厂排放的浓烟，让天空都变了颜色。",
     bg: "images/bg/steam_train_railway.jpg",
     charRight: 'solemn'
@@ -843,7 +843,7 @@
 
   {
     scene: "第四幕 · 火车的轰鸣",
-    speaker: "芙宁娜",
+    speaker: "子衿",
     text: "（扮演伊莎贝拉）史蒂芬孙先生说得对。科技本身没有善恶，关键在于使用科技的人。如果我们每个人都能承担起社会责任，科技就能真正造福人类。",
     bg: "images/bg/steam_train_railway.jpg",
     charLeft: 'normal'
@@ -927,7 +927,7 @@
 
   {
     scene: "第五幕 · 工业革命的代价",
-    speaker: "胡桃",
+    speaker: "洛书",
     text: "（扮演莉莉）这就是工业革命的另一面……光鲜亮丽的背后，是无数普通人的苦难。我们不能再沉默了！",
     bg: "images/bg/slum.jpg",
     charRight: 'solemn'
@@ -942,15 +942,15 @@
 
   {
     scene: "第五幕 · 工业革命的代价",
-    speaker: "芙宁娜",
+    speaker: "子衿",
     text: "（扮演伊莎贝拉）工人们开始觉醒了。他们组织工会、发起罢工、向议会请愿。虽然过程艰难，但改变正在发生。",
     bg: "images/bg/slum.jpg",
     charLeft: 'normal'
   },
 
   {
-    speaker: '芙宁娜',
-    text: '（低声）在枫丹，水神也曾面对类似的抉择——进步的代价，应该由谁来承担？如果答案是"最弱的人"，那这种进步本身就是一种不正义。',
+    speaker: '子衿',
+    text: '（低声）在文明长河，水神也曾面对类似的抉择——进步的代价，应该由谁来承担？如果答案是"最弱的人"，那这种进步本身就是一种不正义。',
     scene: '第五幕 · 工业革命的代价',
     bg: 'images/bg/slum.jpg',
     charLeft: 'serious'
@@ -1079,7 +1079,7 @@
 
   {
     scene: "第五幕 · 工业革命的代价",
-    speaker: "芙宁娜",
+    speaker: "子衿",
     text: "（扮演伊莎贝拉）工业革命是一面镜子，映照出人类在追求进步过程中的光明与黑暗。让我们铭记这段历史，在未来的道路上走得更加坚定。",
     bg: "images/bg/slum.jpg",
     charLeft: 'serious'
@@ -1087,7 +1087,7 @@
 
   {
     scene: "第五幕 · 工业革命的代价",
-    speaker: "胡桃",
+    speaker: "洛书",
     text: "（扮演莉莉）虽然莉莉的故事结束了，但现实中还有很多人在为公平正义而奋斗。希望我们的演出能让更多人思考这个问题。",
     bg: "images/bg/slum.jpg",
     charRight: 'normal'
@@ -1107,9 +1107,9 @@
     question: "工业革命带来的社会问题，最终是如何被逐步解决的？",
     options: [
       { text: "靠资本家自觉改善工人待遇", correctIndex: 2,
-        wrongFeedback: "芙宁娜说：'如果只靠自觉，工厂主永远不会主动让利。改变需要制度的力量。'" },
+        wrongFeedback: "子衿说：'如果只靠自觉，工厂主永远不会主动让利。改变需要制度的力量。'" },
       { text: "靠工人暴力推翻工厂制度", correctIndex: 2,
-        wrongFeedback: "暴力不是唯一的途径。胡桃说：'法律、工会、选举权——这些'安静'的力量，有时候比暴力更持久。'" },
+        wrongFeedback: "暴力不是唯一的途径。洛书说：'法律、工会、选举权——这些'安静'的力量，有时候比暴力更持久。'" },
       { text: "靠立法保障、工人运动和社会改革多管齐下", correctIndex: 2,
         correctFeedback: "✅ 正确！《工厂法》提供法律保障，工会运动争取集体权益，宪章运动推动政治改革。正义需要制度来维护，也需要人民来争取。",
         effects: { responsibility: 10, justice: 10 } }
@@ -1139,7 +1139,7 @@
     eventText: "汤姆长大后成为了一名教师。他在夜校里教工人识字，他说：'我不想让更多的孩子像我一样。'" },
 
   { type: "if_card_used", cardId: "fairness",
-    speaker: "hutao", text: "（认真地）公平……在往生堂，不管你生前是国王还是乞丐，走的时候都一样轻。可活着的时候，为什么就不能一样呢？" },
+    speaker: "hutao", text: "（认真地）公平……在星轨书院，不管你生前是国王还是乞丐，走的时候都一样轻。可活着的时候，为什么就不能一样呢？" },
   { type: "if_card_used", cardId: "labor",
     speaker: "fulina", text: "（轻声）劳动创造了这个世界……但劳动者却没有得到应有的回报。这就是为什么需要有人站出来，为他们说话。" },
 
@@ -1152,6 +1152,7 @@
 </script>
 
 <!-- Game Engine -->
+<script src="assets/js/game-hooks.js?v=20260804"></script>
 <script src="engine.js?v=20260526e"></script>
 
 </body>

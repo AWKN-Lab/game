@@ -17,8 +17,8 @@
     // ---- 中文名 -> 英文ID 映射 ----
     var _speakerNameMap = {
         '旁白': 'narrator',
-        '芙宁娜': 'fulina',
-        '胡桃': 'hutao',
+        '子衿': 'fulina',
+        '洛书': 'hutao',
         '路易十六': 'louis',
         '罗伯斯庇尔': 'robespierre',
         '拿破仑': 'napoleon',

@@ -6,8 +6,8 @@ window.GAME_CONFIG = window.GAME_CONFIG || {
   valueLabels: { freedom: '自由', equality: '平等', rule: '规则', justice: '正义' },
   valueColors: { freedom: '#4169e1', equality: '#32cd32', rule: '#4682b4', justice: '#dc143c' },
   charConfig: {
-    fulina: { name: '芙宁娜', color: '#ff69b4', dir: 'fulina', defaultExpr: 'normal' },
-    hutao: { name: '胡桃', color: '#ff4500', dir: 'hutao', defaultExpr: 'normal' },
+    fulina: { name: '子衿', color: '#ff69b4', dir: 'zijin', defaultExpr: 'normal' },
+    hutao: { name: '洛书', color: '#ff4500', dir: 'luoshu', defaultExpr: 'normal' },
     louis: { name: '路易十六', color: '#4169e1', dir: 'npc', defaultExpr: 'louis_king', file: 'louis_king' },
     robespierre: { name: '罗伯斯庇尔', color: '#2f4f4f', dir: 'npc', defaultExpr: 'robespierre', file: 'robespierre' },
     napoleon: { name: '拿破仑', color: '#8b0000', dir: 'npc', defaultExpr: 'napoleon', file: 'napoleon' },
@@ -118,6 +118,33 @@ window.GAME_CONFIG = window.GAME_CONFIG || {
 // 卡牌数据
 // ============================================================
 const CARDS = GAME_CONFIG.CARDS;
+
+// ============================================================
+// 正式事件钩子（权威数据源，DOM 监听仅兜底）
+// ============================================================
+function ttCurrentAct() {
+  var el = document.getElementById('sceneLabel');
+  return el ? String(el.textContent || '').trim() : '';
+}
+
+function ttHook(name, payload) {
+  try {
+    if (!window.GameHooks || typeof window.GameHooks.emit !== 'function') return false;
+    payload = payload || {};
+    if (!payload.scriptId) payload.scriptId = (window.GAME_CONFIG && GAME_CONFIG.scriptId) || '';
+    return window.GameHooks.emit(name, payload);
+  } catch (error) {
+    return false;
+  }
+}
+
+let ttLastActId = '';
+function ttEmitActEnter(actId, actTitle) {
+  var key = String(actId || '').trim();
+  if (!key || key === ttLastActId) return;
+  ttLastActId = key;
+  ttHook('script.act_enter', { actId: key, actTitle: String(actTitle || key).trim() });
+}
 
 // ============================================================
 // 立绘显示辅助（兼容 wrapper 结构和直接 img 结构）
@@ -357,6 +384,7 @@ function showDialogLine() {
   // 更新场景标签 + 切换场景BGM + 环境音效
   if (line.scene) {
     document.getElementById('sceneLabel').textContent = line.scene;
+    ttEmitActEnter(line.scene, line.scene);
     // 根据场景切换 BGM 和环境音效
     if (typeof AudioManager !== 'undefined') {
       var sceneBGM = GAME_CONFIG.sceneBGM;
@@ -495,6 +523,7 @@ function showDialogLine() {
 // 幕间过渡
 // ============================================================
 function showActTransition(title, subtitle, hookText) {
+  ttEmitActEnter(title, subtitle || title);
   // 停止当前语音
   if (typeof VoiceManager !== 'undefined') VoiceManager.stop();
   let overlay = document.getElementById('actTransitionOverlay');
@@ -550,6 +579,10 @@ function showCollectibleNotification(name) {
 // 知识点碎片卡片
 // ============================================================
 function showKnowledgeCard(line) {
+  ttHook('script.knowledge_open', {
+    knowledgeId: line.id || line.name || '',
+    title: String(line.name || '').slice(0, 200)
+  });
   if (typeof AudioManager !== 'undefined') {
     AudioManager.playSFX(AudioManager.SFX.COLLECTIBLE);
   }
@@ -700,15 +733,15 @@ const afterlifeDialog = GAME_CONFIG.afterlifeDialog || [
     { speaker: "玛丽·安托瓦内特", text: "如果我能重来，我会选择站在人民的一边。自由和平等，不是口号，而是每个人应得的尊严。", color: "#b6c4ff" },
     { speaker: "罗伯斯庇尔", text: "我追求的正义，最终变成了恐怖……真正的正义，应该有温度，有慈悲。", color: "#dc143c" },
     { speaker: "拿破仑", text: "我用剑征服了欧洲，却无法征服时间。但我的法典，至今仍在守护着公平与正义。", color: "#32cd32" },
-    { speaker: "芙宁娜", text: "所有的灵魂都得到了安息。历史的教训，将由你们这一代来铭记和传承。", color: "#b6c4ff" },
-    { speaker: "胡桃", text: "生死轮回，因果相续。愿逝者安息，愿生者前行。", color: "#ffb2b8" },
+    { speaker: "子衿", text: "所有的灵魂都得到了安息。历史的教训，将由你们这一代来铭记和传承。", color: "#b6c4ff" },
+    { speaker: "洛书", text: "生死轮回，因果相续。愿逝者安息，愿生者前行。", color: "#ffb2b8" },
     { speaker: "旁白", text: "【无罪判决】所有在革命中逝去的灵魂化作星光，永远守护着这片土地上的自由与正义。本庭裁定：革命，无罪。", color: "#c5c5d3" }
 ];
 
 const dramaticDialog = GAME_CONFIG.dramaticDialog || [
     { speaker: "旁白", text: "本庭审议完毕。在这个结局里，历史走向了一个不同的方向……", color: "#c5c5d3" },
     { speaker: "玛丽·安托瓦内特", text: "我没有被送上断头台。在乡下的简朴生活中，我终于理解了人民真正需要的是什么。", color: "#b6c4ff" },
-    { speaker: "芙宁娜", text: "正义不是冰冷的法律条文，它也应该有温度。但本庭必须提醒——宽恕不等于遗忘。", color: "#b6c4ff" },
+    { speaker: "子衿", text: "正义不是冰冷的法律条文，它也应该有温度。但本庭必须提醒——宽恕不等于遗忘。", color: "#b6c4ff" },
     { speaker: "旁白", text: "【有罪判决】玛丽·安托瓦内特在乡下过着简朴的生活，帮助那些贫困的农民。但历史的审判，从未真正结束。", color: "#c5c5d3" }
 ];
 
@@ -742,6 +775,9 @@ function showEnding() {
     endingDialog = null;
     endBg = 'game/images/bg/ending_historical.jpg';
   }
+
+  window._ttEndingType = endingType;
+  ttHook('script.ending', { endingType: endingType, learningTier: 'pending' });
 
   DataStore.saveEnding(GAME_CONFIG.scriptId, endingType);
   DataStore.saveCollectibles(GAME_CONFIG.scriptId, collectedItems);
@@ -951,6 +987,13 @@ function selectAnswer(idx) {
   const correct = idx === q.ans;
   if (correct) quizScore++;
 
+  ttHook('quiz.answer', {
+    questionId: q.id || ('q' + (quizIndex + 1)),
+    choiceIndex: idx,
+    correct: correct,
+    knowledgeId: q.knowledgeId || ''
+  });
+
   // 正确/错误音效
   if (correct) { playCorrectSFX(); } else { playWrongSFX(); }
 
@@ -995,6 +1038,9 @@ function nextQuizQuestion() {
 function showQuizResult() {
   const total = QUIZ_DATA.length;
   const pct = Math.round(quizScore / total * 100);
+  const learningTier = pct >= 90 ? 'S' : pct >= 80 ? 'A' : pct >= 60 ? 'B' : 'C';
+  ttHook('quiz.complete', { score: quizScore, total: total, pct: pct, learningTier: learningTier });
+  ttHook('script.ending', { endingType: window._ttEndingType || 'unknown', learningTier: learningTier });
   const dialogBox = document.querySelector('.dialog-box');
   dialogBox.innerHTML = `
     <div style="text-align:center;padding:20px;">
@@ -1206,6 +1252,13 @@ function showChoices(line) {
         return;
       }
       lastChoiceIndex = idx;
+      ttHook('script.choice', {
+        nodeId: 'dialog_' + dialogIndex,
+        choiceIndex: idx,
+        choiceText: String(choice.text || '').slice(0, 200),
+        actId: ttCurrentAct(),
+        timed: false
+      });
       // 应用效果
       if (choice.effects) {
         for (const [key, val] of Object.entries(choice.effects)) {
@@ -1295,6 +1348,7 @@ function useCard(cardId) {
     return;
   }
   usedCards.add(cardId);
+  ttHook('script.card', { cardId: String(cardId), action: 'use' });
   for (const [key, val] of Object.entries(card.effect)) {
     updateValue(key, val);
   }
@@ -1350,6 +1404,7 @@ function chooseCard(idx) {
     }
     const card = line.cards[idx];
     usedCards.add(card.id);
+    ttHook('script.card', { cardId: String(card.id || idx), action: 'choose' });
     for (const [key, val] of Object.entries(card.effect)) {
         updateValue(key, val);
     }
@@ -1379,10 +1434,10 @@ function showCardStance(card, line) {
     html += `<div class="card-stance-quote">"${card.quote}"</div>`;
   }
   if (card.fulinaFeedback) {
-    html += `<div class="card-npc-feedback" style="animation-delay:1.5s"><div class="npc-fb-name" style="color:#7dd3fc">芙宁娜</div><div class="npc-fb-text">${card.fulinaFeedback}</div></div>`;
+    html += `<div class="card-npc-feedback" style="animation-delay:1.5s"><div class="npc-fb-name" style="color:#7dd3fc">子衿</div><div class="npc-fb-text">${card.fulinaFeedback}</div></div>`;
   }
   if (card.hutaoFeedback) {
-    html += `<div class="card-npc-feedback" style="animation-delay:2s"><div class="npc-fb-name" style="color:#fca5a5">胡桃</div><div class="npc-fb-text">${card.hutaoFeedback}</div></div>`;
+    html += `<div class="card-npc-feedback" style="animation-delay:2s"><div class="npc-fb-name" style="color:#fca5a5">洛书</div><div class="npc-fb-text">${card.hutaoFeedback}</div></div>`;
   }
   html += '<div class="card-stance-continue">点击继续 ▼</div></div>';
   overlay.innerHTML = html;
@@ -1536,6 +1591,11 @@ function showEvidence(line) {
     </div>
   `;
   window._currentEvidence = line;
+  ttHook('script.evidence_open', {
+    nodeId: 'evidence_' + dialogIndex,
+    evidenceId: line.id || ('evidence_' + dialogIndex),
+    evidenceTitle: String(line.question || '证物调查').slice(0, 200)
+  });
   requestAnimationFrame(() => overlay.classList.add('show'));
 }
 
@@ -1543,6 +1603,12 @@ function selectEvidenceOption(idx) {
   const line = window._currentEvidence;
   if (!line) return;
   const opt = line.options[idx];
+  ttHook('quiz.answer', {
+    questionId: 'evidence_' + dialogIndex,
+    choiceIndex: idx,
+    correct: idx === opt.correctIndex,
+    knowledgeId: line.id || ''
+  });
   const btns = document.querySelectorAll('#evidenceOptions .evidence-option-btn');
   const feedbackEl = document.getElementById('evidenceFeedback');
   const closeBtn = document.getElementById('evidenceCloseBtn');
@@ -1563,7 +1629,7 @@ function selectEvidenceOption(idx) {
     }
   } else {
     feedbackEl.className = 'evidence-feedback wrong';
-    feedbackEl.textContent = opt.wrongFeedback || '💡 不完全对。胡桃提示：再仔细看看这些证物之间的关系。';
+    feedbackEl.textContent = opt.wrongFeedback || '💡 不完全对。洛书提示：再仔细看看这些证物之间的关系。';
     playWrongSFX();
   }
   closeBtn.style.display = 'block';
@@ -1679,6 +1745,13 @@ function pressureTimeout() {
   if (!line) return;
   const defaultIdx = line.defaultChoice || 0;
   const choice = line.choices[defaultIdx];
+  ttHook('script.choice', {
+    nodeId: 'pressure_' + dialogIndex,
+    choiceIndex: defaultIdx,
+    choiceText: '[超时默认] ' + String(choice.text || '').slice(0, 180),
+    actId: ttCurrentAct(),
+    timed: true
+  });
   // 显示超时提示
   const textEl = document.getElementById('dialogText');
   textEl.innerHTML = `<span style="color:#fbbf24">⏰ 时间耗尽……</span><br><br>${line.timeoutText || '你犹豫太久，局势已经替你做出了选择。'}`;
@@ -1705,6 +1778,13 @@ function selectPressureChoice(idx) {
   const line = window._currentPressure;
   if (!line) return;
   const choice = line.choices[idx];
+  ttHook('script.choice', {
+    nodeId: 'pressure_' + dialogIndex,
+    choiceIndex: idx,
+    choiceText: String(choice.text || '').slice(0, 200),
+    actId: ttCurrentAct(),
+    timed: true
+  });
   if (choice.effects) {
     for (const [key, val] of Object.entries(choice.effects)) {
       updateValue(key, val);

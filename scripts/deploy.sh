@@ -25,6 +25,12 @@ rsync -a --delete \
   --exclude '.env' \
   --exclude 'node_modules' \
   --exclude 'server/data/*.sqlite*' \
+  --exclude 'th/' \
+  --exclude 'th_hutao/' \
+  --exclude 'yy/' \
+  --exclude 'images/characters/fulina/' \
+  --exclude 'images/characters/hutao/' \
+  --exclude 'images/characters/klee/' \
   "$SOURCE/" "$RELEASE/"
 
 cd "$RELEASE"
@@ -47,7 +53,7 @@ mv -Tf "$ROOT/current.next" "$CURRENT"
 systemctl restart time-theater.service
 sleep 2
 curl -fsS http://127.0.0.1:8787/api/v1/health/ready >/dev/null
-curl -fsS http://127.0.0.1:8787/ai-mvp.html >/dev/null
+curl -fsS http://127.0.0.1:8787/index.html >/dev/null
 
 find "$ROOT/releases" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %p\n' | sort -nr | tail -n +6 | cut -d' ' -f2- | xargs -r rm -rf
 

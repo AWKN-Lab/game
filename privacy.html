@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>隐私与数据说明 · 时空剧场 AI 导学版</title>
+  <link rel="stylesheet" href="assets/css/mvp.css">
+</head>
+<body>
+  <main class="tt-page">
+    <header class="tt-header">
+      <a class="tt-brand" href="index.html">
+        <span class="tt-brand-mark">时</span>
+        <span><strong>时空剧场 AI 导学版</strong><span>隐私与数据说明</span></span>
+      </a>
+      <nav class="tt-nav">
+        <a href="index.html">返回首页</a>
+        <a href="teacher-guide.html">教师导学</a>
+        <a href="learning-review.html">学习复盘</a>
+      </nav>
+    </header>
+
+    <section class="tt-card">
+      <div class="tt-kicker">Privacy</div>
+      <h1 style="font-size:32px;margin:6px 0 12px">隐私与数据说明</h1>
+      <p class="tt-lead">本产品面向中小学课堂，包含未成年人使用场景。<strong>匿名学习数据采集默认关闭</strong>，只有你或老师主动开启后才会记录。</p>
+      <p class="tt-muted">最近更新：2026-08-04</p>
+    </section>
+
+    <section class="tt-section">
+      <h2>1. 我们收集什么</h2>
+      <div class="tt-card">
+        <p>仅在你主动开启后，记录以下<strong>匿名学习行为</strong>：</p>
+        <ul class="tt-list">
+          <li>进入了哪个剧本、哪一幕；</li>
+          <li>做了哪个剧情选择、是否为限时选择；</li>
+          <li>查看了哪条证据、哪个知识点、哪张卡牌；</li>
+          <li>答题的题号、所选项与对错；</li>
+          <li>剧本结局类型与学习评级；</li>
+          <li>生成导学卡 / 复盘卡的耗时与是否降级；</li>
+          <li>你主动提交的反馈与愿望内容。</li>
+        </ul>
+        <p class="tt-note">每条记录只带一个随机生成的匿名 ID 与会话 ID，用于把同一次课堂的行为串起来。</p>
+      </div>
+    </section>
+
+    <section class="tt-section">
+      <h2>2. 我们不收集什么</h2>
+      <div class="tt-card">
+        <ul class="tt-list">
+          <li>不收集姓名、学号、身份证号、手机号、邮箱（除非你在反馈里主动填写）；</li>
+          <li>不收集精确地理位置；</li>
+          <li>不收集人脸、指纹、声纹等生物特征；</li>
+          <li>不收集通讯录、相册、麦克风、摄像头；</li>
+          <li>不使用第三方广告或跨站追踪；</li>
+          <li>不做用户画像用于商业推送。</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="tt-section">
+      <h2>3. 为什么收集</h2>
+      <div class="tt-card">
+        <ul class="tt-list">
+          <li><strong>生成学习复盘</strong>：没有答题与选择记录，复盘卡只能给通用建议；</li>
+          <li><strong>教师了解课堂</strong>：老师可以看到本班在哪些知识点上普遍出错；</li>
+          <li><strong>改进产品</strong>：定位卡顿、剧本断点与理解难点。</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="tt-section">
+      <h2>4. 保存多久</h2>
+      <div class="tt-card">
+        <ul class="tt-list">
+          <li>匿名行为事件：保存 <strong>180 天</strong>，到期自动清理；</li>
+          <li>反馈与愿望：保存至处理完成后 <strong>365 天</strong>；</li>
+          <li>本地浏览器缓存（匿名 ID、待上报队列）：清除浏览器数据即消失。</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="tt-section">
+      <h2>5. 怎样开启、关闭与删除</h2>
+      <div class="tt-card">
+        <ul class="tt-list">
+          <li><strong>开启</strong>：首次访问底部说明条选择"开启并帮助改进"，或在首页"数据与隐私"处打开开关；</li>
+          <li><strong>关闭</strong>：同一开关随时关闭，关闭后立即停止记录并清空本地待上报队列；</li>
+          <li><strong>删除本机数据</strong>：点击下方按钮，清除本机匿名 ID、会话与待上报队列；</li>
+          <li><strong>删除已上报数据</strong>：通过页面反馈入口提交"删除我的学习数据"，管理员在 7 个工作日内处理。</li>
+        </ul>
+        <div class="tt-actions" style="margin-top:14px">
+          <button class="tt-btn danger" type="button" id="clearLocal">清除本机数据并关闭采集</button>
+          <span class="tt-muted" id="clearStatus"></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="tt-section">
+      <h2>6. 未成年人使用说明</h2>
+      <div class="tt-card">
+        <ul class="tt-list">
+          <li>产品无需注册、无需手机号，学生零门槛进入；</li>
+          <li>默认不采集任何行为数据，课堂中由<strong>教师统一决定</strong>是否开启；</li>
+          <li>教师端只能看到匿名 ID 与聚合统计，无法定位到具体个人身份；</li>
+          <li>反馈与许愿池内容会经管理员审核后才可能公开展示；</li>
+          <li>如家长或学校提出异议，可要求删除对应课堂时间段的全部数据。</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="tt-section">
+      <h2>7. AI 使用说明</h2>
+      <div class="tt-card">
+        <ul class="tt-list">
+          <li>导学卡与复盘卡由大模型生成，输入内容仅包含<strong>剧本元数据与匿名学习统计</strong>，不含任何身份信息；</li>
+          <li>模型输出会经过事实校验：幕次、知识点必须来自剧本已有数据，禁止编造历史结论；</li>
+          <li>AI 不可用或超时时自动降级为规则版，功能不中断；</li>
+          <li>AI 生成内容仅作教学参考，最终以教师判断为准。</li>
+        </ul>
+      </div>
+    </section>
+
+    <footer class="tt-footer">
+      时空剧场 AI 导学版 · 隐私问题可通过页面内反馈入口联系我们。
+    </footer>
+  </main>
+
+  <script src="assets/js/identity-client.js"></script>
+  <script>
+    document.getElementById('clearLocal').addEventListener('click', function () {
+      if (window.TTIdentity && window.TTIdentity.clearLocalData) window.TTIdentity.clearLocalData();
+      if (window.TTIdentity && window.TTIdentity.setTrackingEnabled) window.TTIdentity.setTrackingEnabled(false);
+      document.getElementById('clearStatus').textContent = '已清除本机数据，采集已关闭。';
+    });
+  </script>
+</body>
+</html>

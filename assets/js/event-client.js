@@ -19,6 +19,7 @@
     'script.knowledge_open': ['scriptId', 'knowledgeId', 'title'],
     'script.card': ['scriptId', 'cardId', 'action'],
     'quiz.answer': ['scriptId', 'questionId', 'choiceIndex', 'correct', 'knowledgeId'],
+    'quiz.complete': ['scriptId', 'score', 'total', 'pct', 'learningTier'],
     'script.ending': ['scriptId', 'endingType', 'learningTier'],
     'lesson_plan.request': ['scriptId', 'duration', 'studentLevel', 'usageMode'],
     'lesson_plan.generated': ['scriptId', 'mode', 'durationMs', 'success'],

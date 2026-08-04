@@ -87,15 +87,15 @@
       valueLabels: { freedom: '自由', equality: '平等', justice: '正义', rule: '法治' },
       valueColors: { freedom: '#E74C3C', equality: '#3498DB', justice: '#F39C12', rule: '#2ECC71' },
       charConfig: {
-        fulina: { name: '芙宁娜', color: '#6A5ACD', dir: 'fulina', defaultExpr: 'normal' },
-        hutao: { name: '胡桃', color: '#DC143C', dir: 'hutao', defaultExpr: 'normal' },
+        fulina: { name: '子衿', color: '#6A5ACD', dir: 'fulina', defaultExpr: 'normal' },
+        hutao: { name: '洛书', color: '#DC143C', dir: 'hutao', defaultExpr: 'normal' },
         jefferson: { name: '杰斐逊', color: '#4682B4', dir: 'npc', defaultExpr: 'jefferson', file: 'jefferson' },
         washington: { name: '华盛顿', color: '#2F4F4F', dir: 'npc', defaultExpr: 'washington', file: 'washington' },
         citizen: { name: '市民', color: '#8B4513', dir: 'npc', defaultExpr: 'soldier', file: 'revolutionary_soldier' },
         soldier: { name: '民兵', color: '#556B2F', dir: 'npc', defaultExpr: 'soldier', file: 'revolutionary_soldier' }
       },
       speakerNameToKey: {
-        '芙宁娜': 'fulina', '胡桃': 'hutao',
+        '子衿': 'fulina', '洛书': 'hutao',
         '市民': 'citizen', '民兵': 'soldier',
         '杰斐逊': 'jefferson', '华盛顿': 'washington'
       },
@@ -232,9 +232,9 @@
         historical: '【历史记录】——真实的制宪过程，远比教科书复杂'
       },
       afterlifeDialog: [
-        { speaker: "hutao", text: "（举起护摩之杖）走好……每一个在战场上倒下的灵魂，每一个为自由而牺牲的灵魂。" },
+        { speaker: "hutao", text: "（举起星轨手札）走好……每一个在战场上倒下的灵魂，每一个为自由而牺牲的灵魂。" },
         { speaker: "fulina", text: "（轻声）他们用生命换来的自由，不应该被任何人夺走。" },
-        { speaker: "hutao", text: "在往生堂，我们说：死亡不是终点，遗忘才是。只要有人记得他们，他们就还活着。" },
+        { speaker: "hutao", text: "在星轨书院，我们说：死亡不是终点，遗忘才是。只要有人记得他们，他们就还活着。" },
         { speaker: "fulina", text: "（看着你）你记得他们。这就够了。" },
         { speaker: "hutao", text: "（最后一首）'自由之星永不灭，那些为自由而战的灵魂，在记忆中永远闪耀。'" }
       ],
@@ -286,13 +286,13 @@
     bg: 'images/bg/continental_congress.jpg'
   },
   {
-    speaker: '芙宁娜',
+    speaker: '子衿',
     text: '（翻开羊皮纸）各位代表，会议开始。今天的议题是——',
     scene: '引渡·美国独立战争',
     bg: 'images/bg/continental_congress.jpg'
   },
   {
-    speaker: '胡桃',
+    speaker: '洛书',
     text: '（举起羽毛笔）等等，坐在桌子旁边的都是白人男性。那其他人呢？',
     scene: '引渡·美国独立战争',
     bg: 'images/bg/continental_congress.jpg'
@@ -313,14 +313,14 @@
     bg: 'images/bg/boston_harbor.jpg'
   },
   {
-    speaker: '芙宁娜',
+    speaker: '子衿',
     text: '所有茶叶必须缴纳重税！殖民地的一切，都属于英国国王！这是王室的旨意，谁也不能违抗！',
     scene: '第一幕 · 波士顿的怒火',
     bg: 'images/bg/boston_harbor.jpg',
     charLeft: 'serious'
   },
   {
-    speaker: '胡桃',
+    speaker: '洛书',
     text: '我们在北美辛苦劳作，开垦荒地、建立家园，却没有议会代表权，凭什么被随意征税？',
     scene: '第一幕 · 波士顿的怒火',
     bg: 'images/bg/boston_harbor.jpg',
@@ -355,13 +355,13 @@
     category: '历史'
   },
   {
-    speaker: '胡桃',
+    speaker: '洛书',
     text: '这就是波士顿倾茶事件的起因——英国殖民统治，已经让我们无法生存了。',
     scene: '第一幕 · 波士顿的怒火',
     bg: 'images/bg/boston_harbor.jpg'
   },
   {
-    speaker: '芙宁娜',
+    speaker: '子衿',
     text: '从道法的角度来看，英国的行为侵犯了殖民地人民的公平权与财产权。「无代表不纳税」是他们的核心诉求。',
     scene: '第一幕 · 波士顿的怒火',
     bg: 'images/bg/boston_harbor.jpg'
@@ -417,9 +417,9 @@
     question: "北美独立战争的根本原因是什么？",
     options: [
       { text: "因为英国对北美征收的税太高了", correctIndex: 2,
-        wrongFeedback: "税的高低不是根本问题。芙宁娜说：'即使税很低，如果没有代表权，人民也不会接受。'" },
+        wrongFeedback: "税的高低不是根本问题。子衿说：'即使税很低，如果没有代表权，人民也不会接受。'" },
       { text: "因为北美人民想要建立一个新国家", correctIndex: 2,
-        wrongFeedback: "独立不是最初的目的。胡桃说：'一开始他们只是想要公平的待遇，是英国的一再拒绝把他们推向了独立。'" },
+        wrongFeedback: "独立不是最初的目的。洛书说：'一开始他们只是想要公平的待遇，是英国的一再拒绝把他们推向了独立。'" },
       { text: "英国的殖民统治严重阻碍了北美资本主义经济发展", correctIndex: 2,
         correctFeedback: "✅ 正确！英国对北美的经济剥削（税收、贸易限制、禁止自行制造业）严重阻碍了北美经济的发展。当经济矛盾无法调和时，革命就成为了必然。",
         effects: { equality: 5, justice: 5 } }
@@ -483,7 +483,7 @@
     charLeft: 'determined'
   },
   {
-    speaker: '胡桃',
+    speaker: '洛书',
     text: '为了家园，为了自由，我们必须反抗！就算面对世界上最强大的军队，我们也绝不退缩！',
     scene: '第二幕 · 莱克星顿的枪声',
     bg: 'images/bg/lexington.jpg',
@@ -503,14 +503,14 @@
     category: '历史'
   },
   {
-    speaker: '芙宁娜',
+    speaker: '子衿',
     text: '1775年4月19日，莱克星顿的枪声，标志着美国独立战争正式爆发！这一天，改变了整个世界的格局。',
     scene: '第二幕 · 莱克星顿的枪声',
     bg: 'images/bg/lexington.jpg',
     charLeft: 'serious'
   },
   {
-    speaker: '胡桃',
+    speaker: '洛书',
     text: '这不是叛乱，是人民在捍卫自己的生命权与自由权。当统治者成为压迫者，人民有权推翻它！',
     scene: '第二幕 · 莱克星顿的枪声',
     bg: 'images/bg/lexington.jpg',
@@ -532,7 +532,7 @@
     category: '历史'
   },
   {
-    speaker: '芙宁娜',
+    speaker: '子衿',
     text: '随后，第二届大陆会议组建了大陆军，华盛顿被任命为总司令。一支由民兵组成的军队，即将挑战日不落帝国！',
     scene: '第二幕 · 莱克星顿的枪声',
     bg: 'images/bg/lexington.jpg'
@@ -702,14 +702,14 @@
     charLeft: 'hopeful'
   },
   {
-    speaker: '芙宁娜',
+    speaker: '子衿',
     text: '我起草了《独立宣言》——「人人生而平等，享有生命、自由和追求幸福的权利！」这是不可剥夺的天赋人权！',
     scene: '第三幕 · 独立宣言的光芒',
     bg: 'images/bg/continental_congress.jpg',
     charLeft: 'excited'
   },
   {
-    speaker: '胡桃',
+    speaker: '洛书',
     text: '这是人类历史上，第一次以政治纲领的形式明确天赋人权！每一个字都重如千钧！',
     scene: '第三幕 · 独立宣言的光芒',
     bg: 'images/bg/continental_congress.jpg',
@@ -723,21 +723,21 @@
     category: '历史'
   },
   {
-    speaker: '芙宁娜',
+    speaker: '子衿',
     text: '1776年7月4日，美利坚合众国正式诞生！从这一天起，十三个殖民地成为了一个独立的国家！',
     scene: '第三幕 · 独立宣言的光芒',
     bg: 'images/bg/continental_congress.jpg',
     charLeft: 'excited'
   },
   {
-    speaker: '胡桃',
+    speaker: '洛书',
     text: '宣言里的平等与自由，正是道法核心的公平正义。法治的起点，就是保障每个人的基本权利。',
     scene: '第三幕 · 独立宣言的光芒',
     bg: 'images/bg/continental_congress.jpg',
     charRight: 'normal'
   },
   {
-    speaker: '芙宁娜',
+    speaker: '子衿',
     text: '没错。天赋人权的理念，不仅属于美国，更属于全人类。它宣告了一个新时代的到来。',
     scene: '第三幕 · 独立宣言的光芒',
     bg: 'images/bg/continental_congress.jpg'
@@ -828,9 +828,9 @@
     question: "《独立宣言》说'人人生而平等'，但当时哪些人被排除在'平等'之外？",
     options: [
       { text: "只有英国人被排除在外", correctIndex: 2,
-        wrongFeedback: "胡桃说：'恰恰相反，英国人不是问题——问题出在宣言的签署者自己身上。'" },
+        wrongFeedback: "洛书说：'恰恰相反，英国人不是问题——问题出在宣言的签署者自己身上。'" },
       { text: "没有人被排除，宣言适用于所有人", correctIndex: 2,
-        wrongFeedback: "芙宁娜说：'理想很美好，但现实很骨感。宣言签署时，奴隶、女性、原住民都不在'人人'之中。'" },
+        wrongFeedback: "子衿说：'理想很美好，但现实很骨感。宣言签署时，奴隶、女性、原住民都不在'人人'之中。'" },
       { text: "奴隶、女性、原住民和无产者都被排除在外", correctIndex: 2,
         correctFeedback: "✅ 正确！《独立宣言》的'人人'实际上只指白人男性有产者。杰斐逊谴责奴隶制的段落被删除，女性的权利被忽视。这说明'平等'是一个需要不断扩展的概念。",
         effects: { equality: 10, justice: 5 } }
@@ -880,14 +880,14 @@
     category: '历史'
   },
   {
-    speaker: '芙宁娜',
+    speaker: '子衿',
     text: '1777年，萨拉托加大捷！这是战争的转折点！法国看到我们的决心，开始正式援助美国！',
     scene: '第四幕 · 转折与胜利',
     bg: 'images/bg/battlefield.jpg',
     charLeft: 'excited'
   },
   {
-    speaker: '胡桃',
+    speaker: '洛书',
     text: '军民一心，才能以弱胜强。每一个普通人的勇气，汇聚成了不可阻挡的力量！',
     scene: '第四幕 · 转折与胜利',
     bg: 'images/bg/battlefield.jpg',
@@ -907,7 +907,7 @@
     category: '历史'
   },
   {
-    speaker: '芙宁娜',
+    speaker: '子衿',
     text: '1781年约克镇战役，英军投降！1783年，英国正式承认美国独立。八年的浴血奋战，终于换来了自由！',
     scene: '第四幕 · 转折与胜利',
     bg: 'images/bg/yorktown.jpg',
@@ -1016,21 +1016,21 @@
     charLeft: 'jefferson'
   },
   {
-    speaker: '芙宁娜',
+    speaker: '子衿',
     text: '为了稳定国家，我们制定了1787年宪法，确立三权分立——行政、立法、司法相互制衡，防止任何一方权力过大。',
     scene: '第五幕 · 共和国的建立',
     bg: 'images/bg/constitution_hall.jpg',
     charLeft: 'serious'
   },
   {
-    speaker: '胡桃',
+    speaker: '洛书',
     text: '但是……宪法保留了奴隶制，没有真正实现人人平等。那些被奴役的人，他们的自由在哪里？',
     scene: '第五幕 · 共和国的建立',
     bg: 'images/bg/constitution_hall.jpg',
     charRight: 'solemn'
   },
   {
-    speaker: '芙宁娜',
+    speaker: '子衿',
     text: '这是历史的局限，也是进步中的缺憾。但三权分立的制度设计，为后世法治建设奠定了重要的基础。',
     scene: '第五幕 · 共和国的建立',
     bg: 'images/bg/constitution_hall.jpg',
@@ -1096,9 +1096,9 @@
     question: "三权分立的核心目的是什么？",
     options: [
       { text: "让政府更高效地运作", correctIndex: 2,
-        wrongFeedback: "三权分立反而可能降低效率。芙宁娜说：'分权的目的不是效率，而是安全——防止任何一个人或机构拥有过大的权力。'" },
+        wrongFeedback: "三权分立反而可能降低效率。子衿说：'分权的目的不是效率，而是安全——防止任何一个人或机构拥有过大的权力。'" },
       { text: "让三个部门互相竞争", correctIndex: 2,
-        wrongFeedback: "不是竞争，而是制衡。胡桃说：'制衡是让权力互相监督，就像往生堂的规矩——每个人都要遵守同样的规则。'" },
+        wrongFeedback: "不是竞争，而是制衡。洛书说：'制衡是让权力互相监督，就像星轨书院的规矩——每个人都要遵守同样的规则。'" },
       { text: "通过权力制约和平衡来防止专制、保障自由", correctIndex: 2,
         correctFeedback: "✅ 正确！三权分立的精髓在于'制约与平衡'——每个部门都有权力限制其他部门，没有任何一个部门可以独揽大权。规范国家权力运行以保障公民权利，是法治的核心价值。",
         effects: { rule: 10, justice: 5 } }
@@ -1128,21 +1128,21 @@
     bg: 'images/bg/america_sunset.jpg'
   },
   {
-    speaker: '芙宁娜',
+    speaker: '子衿',
     text: '美国独立战争具有双重性质：它既是一场民族解放战争，推翻了英国的殖民统治；也是一场资产阶级革命，确立了资本主义制度。',
     scene: '第六幕 · 自由星火永不灭',
     bg: 'images/bg/america_sunset.jpg',
     charLeft: 'serious'
   },
   {
-    speaker: '胡桃',
+    speaker: '洛书',
     text: '战争实现了国家独立，却没有完成真正的平等。奴隶制依然存在，印第安人的权利被忽视……这是历史的真实。',
     scene: '第六幕 · 自由星火永不灭',
     bg: 'images/bg/america_sunset.jpg',
     charRight: 'solemn'
   },
   {
-    speaker: '芙宁娜',
+    speaker: '子衿',
     text: '但正是这些不完美，推动着后人不断追求更完善的制度。《独立宣言》中的理想，至今仍在激励着全世界的人民。',
     scene: '第六幕 · 自由星火永不灭',
     bg: 'images/bg/america_sunset.jpg',
@@ -1156,14 +1156,14 @@
     category: '历史'
   },
   {
-    speaker: '胡桃',
+    speaker: '洛书',
     text: '民族独立是国家生存发展的基础。没有独立，就谈不上自由、平等和法治。这是美国独立战争给我们最重要的启示。',
     scene: '第六幕 · 自由星火永不灭',
     bg: 'images/bg/america_sunset.jpg',
     charRight: 'normal'
   },
   {
-    speaker: '芙宁娜',
+    speaker: '子衿',
     text: '自由、平等、正义、法治——这些价值不是某个国家的专利，而是全人类共同的追求。让我们铭记这段历史，珍惜来之不易的权利。',
     scene: '第六幕 · 自由星火永不灭',
     bg: 'images/bg/america_sunset.jpg',
@@ -1203,9 +1203,9 @@
     condition: () => lastChoiceIndex === 0 },
 
   { type: "if_card_used", cardId: "freedom",
-    speaker: "hutao", text: "（举起护摩之杖）自由……在往生堂，灵魂是自由的，不受任何束缚。可人间的不自由，有时候比死亡更让人窒息。" },
+    speaker: "hutao", text: "（举起星轨手札）自由……在星轨书院，灵魂是自由的，不受任何束缚。可人间的不自由，有时候比死亡更让人窒息。" },
   { type: "if_card_used", cardId: "rule_of_law",
-    speaker: "fulina", text: "（若有所思）1787年宪法……用规则来约束权力，而不是用权力来制定规则。这个道理，我在枫丹花了500年才真正理解。" },
+    speaker: "fulina", text: "（若有所思）1787年宪法……用规则来约束权力，而不是用权力来制定规则。这个道理，我在文明长河花了500年才真正理解。" },
 
   {
     type: 'ending_check',
@@ -1216,6 +1216,7 @@
 </script>
 
 <!-- Game Engine -->
+<script src="assets/js/game-hooks.js?v=20260804"></script>
 <script src="engine.js?v=20260526e"></script>
 
 </body>

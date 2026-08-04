@@ -29,6 +29,21 @@ Thumbs.db
 # === 嵌套历史快照目录（不参与历史）===
 game/game/
 
+# === 第三方角色 IP 历史遗留资源（不入仓、不发布，仅本地保留待归档）===
+# 用户可见层已全部原创化为 子衿 / 洛书，以下目录不再被任何页面引用
+th/
+th_hutao/
+yy/
+images/characters/fulina/
+images/characters/hutao/
+images/characters/klee/
+
+# === Ren'Py 遗留管线（Web 版不引用，含第三方角色台词，仅本地保留待归档）===
+options.rpy
+script/
+tools/generate_voice.py
+tools/generate_voice_gptsovits.py
+
 # === OS 临时 ===
 *~
 *.bak_*

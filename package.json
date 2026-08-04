@@ -9,7 +9,7 @@
   "scripts": {
     "build:css": "tailwindcss -i ./styles/input.css -o ./dist/output.css --minify",
     "build": "npm run build:css",
-    "check": "node scripts/validate-content.mjs && node scripts/validate-prompts.mjs && node scripts/validate-events.mjs",
+    "check": "node scripts/validate-content.mjs && node scripts/validate-prompts.mjs && node scripts/validate-events.mjs && node scripts/validate-ip.mjs",
     "test": "node --test",
     "smoke": "node scripts/smoke-pages.mjs",
     "verify": "npm run build && npm run check && npm run test && npm run smoke",

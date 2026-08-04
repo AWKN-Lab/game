@@ -45,7 +45,7 @@
     <section class="tt-section">
       <div class="tt-section-title">
         <div><h2>选择一段历史</h2><p>可先生成导学卡，也可直接进入原有剧情。</p></div>
-        <label class="tt-chip"><input id="trackingToggle" type="checkbox"> 参与匿名产品改进</label>
+        <div class="tt-chip-row"><label class="tt-chip"><input id="trackingToggle" type="checkbox"> 参与匿名产品改进（默认关闭）</label><a class="tt-chip" href="privacy.html" target="_blank" rel="noopener">隐私与数据说明</a></div>
       </div>
       <div id="scriptGrid" class="tt-grid"></div>
     </section>
@@ -92,6 +92,7 @@
   <script src="assets/js/api-client.js"></script>
   <script src="assets/js/identity-client.js"></script>
   <script src="assets/js/event-client.js"></script>
+  <script src="assets/js/privacy-consent.js"></script>
   <script src="assets/js/feedback-client.js"></script>
   <script src="assets/js/shell-runtime.js"></script>
   <script>
@@ -152,6 +153,7 @@
       var toggle = document.getElementById('trackingToggle');
       toggle.checked = TTIdentity.isTrackingEnabled();
       toggle.addEventListener('change', function () { TTIdentity.setTrackingEnabled(toggle.checked); if (!toggle.checked) TTEvents.clearQueue(); });
+      document.addEventListener('tt:tracking-decided', function (event) { toggle.checked = !!(event.detail && event.detail.enabled); });
 
       document.getElementById('feedbackForm').addEventListener('submit', async function (event) {
         event.preventDefault();

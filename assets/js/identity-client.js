@@ -48,9 +48,14 @@
     return path.indexOf('teacher') >= 0 ? 'teacher' : 'student';
   }
 
+  // 面向乡村学校与未成年人：匿名行为采集默认关闭，需用户或教师主动开启。
   function isTrackingEnabled() {
+    return local.getItem(PREFIX + 'data_improvement') === 'true';
+  }
+
+  function hasTrackingDecision() {
     var value = local.getItem(PREFIX + 'data_improvement');
-    return value === null ? true : value === 'true';
+    return value === 'true' || value === 'false';
   }
 
   global.TTIdentity = {
@@ -67,7 +72,14 @@
       local.setItem(PREFIX + 'role', role);
     },
     isTrackingEnabled: isTrackingEnabled,
+    hasTrackingDecision: hasTrackingDecision,
     setTrackingEnabled: function (enabled) { local.setItem(PREFIX + 'data_improvement', String(!!enabled)); },
+    resetTrackingDecision: function () { local.removeItem(PREFIX + 'data_improvement'); },
+    clearLocalData: function () {
+      ['anonymous_id', 'role', 'data_improvement'].forEach(function (key) { local.removeItem(PREFIX + key); });
+      session.removeItem(PREFIX + 'session_id');
+      try { localStorage.removeItem('tt_event_queue_v1'); } catch (error) {}
+    },
     getContext: function () {
       return {
         anonymousId: this.getAnonymousId(),

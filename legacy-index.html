@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="zh"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>The Celestial Scholar - 时空剧场</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg"/>
+<link rel="stylesheet" href="dist/output.css?v=5"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700&amp;family=Manrope:wght@400;500;700&amp;family=Plus+Jakarta+Sans:wght@400;600&amp;display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<script src="https://d3js.org/d3.v7.min.js" defer></script>
+<script src="audio-manager.js?v=20260525c" defer></script>
+<script src="data-store.js" defer></script>
+<script src="points-system.js" defer></script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+.glass-panel {
+            background: rgba(40, 51, 86, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .sigil-button {
+            background: #ff6b35;
+            transition: all 0.2s ease;
+        }
+        .sigil-button:hover {
+            box-shadow: 0 0 15px rgba(255, 107, 53, 0.6);
+            transform: translateY(-2px);
+        }
+        .sigil-button:active {
+            transform: scale(0.9);
+        }
+        button:active {
+            transform: scale(0.9);
+        }
+        .character-portrait {
+            mask-image: linear-gradient(to top, transparent, black 15%);
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-12px); }
+        }
+        .character-float {
+            animation: float 4s ease-in-out infinite;
+        }
+        .character-float-delay {
+            animation: float 4s ease-in-out infinite;
+            animation-delay: -2s;
+        }
+        .ornate-corner {
+            border-top-left-radius: 24px;
+            border-top-right-radius: 4px;
+            border-bottom-right-radius: 4px;
+            border-bottom-left-radius: 4px;
+            position: relative;
+        }
+        .ornate-corner::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 32px;
+            height: 32px;
+            border-top: 2px solid #efbd8a;
+            border-left: 2px solid #efbd8a;
+            border-top-left-radius: 24px;
+        }
+        #login-modal {
+            z-index: 10000;
+            background: rgba(0, 0, 0, 0.7);
+        }
+        #login-modal > .relative {
+            z-index: 1;
+            background: #0f172a;
+            border: 1px solid #334155;
+        }
+        #login-modal input {
+            background: #1e293b;
+            border: 1px solid #475569;
+            color: #fff;
+        }
+        #login-modal input:focus {
+            border-color: #fbbf24;
+            outline: none;
+        }
+        #login-modal label,
+        #login-tip {
+            color: #94a3b8;
+        }
+        #login-modal-title {
+            color: #fbbf24;
+        }
+        #btn-login-submit {
+            background: #f59e0b;
+            color: #0f172a;
+        }
+        #btn-login-submit:hover {
+            background: #fbbf24;
+        }
+        #btn-register-submit {
+            background: #334155;
+            color: #fff;
+        }
+        #btn-register-submit:hover {
+            background: #475569;
+        }
+        #btn-logout {
+            background: #dc2626;
+            color: #fff;
+        }
+        #btn-logout:hover {
+            background: #ef4444;
+        }
+
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body overflow-hidden h-screen select-none">
+<!-- SideNavBar -->
+<aside id="sidebar" class="fixed left-0 top-0 h-full w-16 lg:w-20 z-40 bg-slate-900/40 backdrop-blur-md flex-col items-center py-4 lg:py-6 space-y-2 lg:space-y-4 shadow-2xl shadow-indigo-950/50 pt-14 lg:pt-20 transition-transform duration-300 -translate-x-full lg:translate-x-0">
+<div class="flex flex-col items-center gap-1 lg:gap-2 w-full">
+<button class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 bg-amber-400/20 text-amber-400 border-l-4 border-amber-400 group">
+<span class="material-symbols-outlined text-sm lg:text-base" style="font-variation-settings: 'FILL' 1;">map</span>
+<span class="text-[8px] lg:text-[9px] font-label tracking-tighter">主页</span>
+</button>
+<button onclick="navigateTo('script-select.html')" class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
+<span class="material-symbols-outlined text-sm lg:text-base">auto_stories</span>
+<span class="text-[8px] lg:text-[9px] font-label tracking-tighter">剧本选择</span>
+</button>
+<button onclick="navigateTo('my-learning.html')" class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
+<span class="material-symbols-outlined text-sm lg:text-base">history_edu</span>
+<span class="text-[8px] lg:text-[9px] font-label tracking-tighter">我的学习</span>
+</button>
+<button class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
+<span class="material-symbols-outlined text-sm lg:text-base">edit_note</span>
+<span class="text-[8px] lg:text-[9px] font-label tracking-tighter">错题本</span>
+</button>
+<button onclick="navigateTo('knowledge-base.html')" class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
+<span class="material-symbols-outlined text-sm lg:text-base">database</span>
+<span class="text-[8px] lg:text-[9px] font-label tracking-tighter">知识点库</span>
+</button>
+<button onclick="navigateTo('card-practice.html')" class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
+<span class="material-symbols-outlined text-sm lg:text-base">swords</span>
+<span class="text-[8px] lg:text-[9px] font-label tracking-tighter">每日修行</span>
+</button>
+<button class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
+<span class="material-symbols-outlined text-sm lg:text-base">stars</span>
+<span class="text-[8px] lg:text-[9px] font-label tracking-tighter">成就勋章</span>
+</button>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="relative h-screen w-screen bg-surface-dim lg:pl-[80px] overflow-hidden">
+<!-- SideGradients -->
+<div id="side-gradients" class="absolute inset-0 z-0"></div>
+<!-- Cinematic Background -->
+<div id="cinematic-bg" class="absolute inset-0 z-0">
+<img alt="grand library interior" class="w-full h-full object-cover opacity-60" src="images/bg/grand_library.png" loading="lazy"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-dim/90 via-surface-dim/30 to-transparent"></div>
+</div>
+<!-- Foreground Characters Layer -->
+<div class="absolute inset-0 flex items-center justify-between px-0 md:px-20 z-10 pointer-events-none overflow-visible">
+<!-- 子衿 (Left) -->
+<div id="char-left-wrap" class="relative w-[32%] md:w-[22%] h-[70%] md:h-[95%] flex flex-col justify-end pointer-events-auto group character-float translate-x-[8%] md:translate-x-[12%]">
+<div class="absolute -top-12 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-500 w-48 md:w-64 hidden md:block">
+<div class="glass-panel p-4 rounded-xl border border-secondary/30 relative">
+<p class="text-secondary text-sm italic font-body">“我是子衿，我会带你见证历史的戏剧性！”</p>
+<div class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 glass-panel border-b border-r border-secondary/30 rotate-45"></div>
+</div>
+</div>
+<img alt="子衿 from Genshin Impact" class="w-full h-full object-contain relative z-10" src="images/characters/zijin/portrait.png?v=5" loading="lazy"/>
+<div class="absolute bottom-10 left-1/2 -translate-x-1/2 text-center">
+<div class="bg-secondary/20 backdrop-blur-md px-4 py-1 rounded-full border border-secondary/40 text-secondary text-sm font-label tracking-widest whitespace-nowrap">
+                        <span id="char-left-name">子衿 · 历史扮演者</span>
+                    </div>
+</div>
+</div>
+<!-- 洛书 (Right) -->
+<div id="char-right-wrap" class="relative w-[50%] md:w-[36%] h-[70%] md:h-[95%] flex flex-col justify-end pointer-events-auto group character-float-delay">
+<div class="absolute top-0 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-500 w-48 md:w-64 hidden md:block">
+<div class="glass-panel p-4 rounded-xl border border-tertiary/30 relative">
+<p class="text-tertiary text-sm italic font-body">“我是洛书，我会带你了解生命与历史的意义！”</p>
+<div class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 glass-panel border-b border-r border-tertiary/30 rotate-45"></div>
+</div>
+</div>
+<img alt="洛书 from Genshin Impact" class="w-full h-full object-contain relative z-10" src="images/characters/luoshu/portrait.png" loading="lazy"/>
+<div class="absolute bottom-10 left-1/2 -translate-x-1/2 text-center">
+<div class="bg-tertiary/20 backdrop-blur-md px-4 py-1 rounded-full border border-tertiary/40 text-tertiary text-sm font-label tracking-widest whitespace-nowrap">
+                        <span id="char-right-name">洛书 · 历史见证者</span>
+                    </div>
+</div>
+</div>
+</div>
+<!-- Central UI Layer -->
+<div class="relative z-20 flex flex-col items-center justify-between py-4 sm:py-6 lg:py-8 h-full">
+<!-- Mobile Menu Button -->
+<button id="menu-toggle" class="fixed top-4 left-4 z-50 p-2 rounded-lg bg-slate-900/60 backdrop-blur-md text-white hover:bg-slate-800/80 transition-colors lg:hidden">
+<span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">menu</span>
+</button>
+<!-- Profile/Login Button (Top Right) -->
+<div id="profile-login" class="fixed top-4 right-4 z-50 flex items-center">
+<button id="btn-profile" class="w-8 h-8 rounded-full border border-primary overflow-hidden bg-slate-900/60 backdrop-blur-md hover:border-amber-400 transition-all shadow-lg" title="登录/个人中心">
+<img alt="profile portrait" class="w-full h-full object-cover" src="images/ui/scholar_avatar.png" loading="lazy"/>
+</button>
+</div>
+<!-- Game Logo & Slogan -->
+<div id="title-section" class="text-center mb-3 sm:mb-6 lg:mb-12 mt-12 sm:mt-16 lg:mt-24">
+<h1 id="main-title" class="text-2xl sm:text-4xl md:text-6xl lg:text-8xl font-headline text-transparent bg-clip-text bg-gradient-to-b from-primary to-on-primary-container drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] mb-1 sm:mb-2">时空剧场</h1>
+<div class="flex items-center justify-center gap-2 sm:gap-3 lg:gap-6">
+<div class="h-px w-6 sm:w-8 lg:w-16 bg-gradient-to-r from-transparent to-primary"></div>
+<span id="slogan" class="text-primary-fixed text-[10px] sm:text-xs lg:text-xl tracking-[0.2em] sm:tracking-[0.3em] lg:tracking-[0.5em] font-light">穿越时空，学习历史/道法</span>
+<div class="h-px w-6 sm:w-8 lg:w-16 bg-gradient-to-l from-transparent to-primary"></div>
+</div>
+</div>
+
+<!-- Start Game Button -->
+<div id="action-section" class="flex flex-col items-center gap-2 sm:gap-4 lg:gap-6 mt-auto mb-16 sm:mb-20 lg:mb-24">
+<button id="btn-start" style="width:min(420px,82vw);height:52px;padding:0 26px;border-width:1px;" class="relative rounded-xl flex items-center justify-center gap-2 sm:gap-3 font-headline text-[10px] sm:text-sm tracking-widest shadow-xl bg-gradient-to-b from-[#f5d78e] via-[#e8c35c] to-[#c9a227] text-[#4a3800] shadow-[#f5d78e]/40 border border-[#f5d78e]/80 hover:from-[#ffe4a8] hover:via-[#f5d78e] hover:to-[#d4af37] active:scale-95 transition-all">
+<span id="btn-start-text" class="material-symbols-outlined text-lg sm:text-2xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+<span id="btn-start-label" class="font-bold">开始游戏</span>
+</button>
+<span class="vision-orb-text text-on-surface-variant text-sm font-label">0/5</span>
+</div>
+<!-- Footer -->
+<footer class="absolute bottom-2 sm:bottom-4 lg:bottom-6 left-0 right-0 mx-auto px-4 lg:px-12 flex flex-col items-center gap-1 sm:gap-2 z-30 pointer-events-none text-center">
+<p id="desc-text" class="text-on-surface-variant/70 text-[9px] sm:text-[10px] lg:text-xs leading-relaxed opacity-80 text-center w-full">
+                给亲爱的ENO与GAVIN中考加油！
+            </p>
+<div class="text-on-surface-variant/50 text-[8px] sm:text-[9px] lg:text-[10px] font-label tracking-widest flex items-center justify-center gap-2 sm:gap-4 w-full">
+<span class="h-px w-4 sm:w-8 bg-outline-variant/30"></span>
+                中国初中历史/道法考纲同步 V1.0
+            </div>
+</footer>
+</main>
+<!-- Navigation Script -->
+<script>
+function navigateTo(url) {
+  document.body.style.opacity = '0';
+  document.body.style.transition = 'opacity 0.3s ease';
+  setTimeout(function() { window.location.href = url; }, 220);
+}
+
+function showToast(msg) {
+  var t = document.createElement('div');
+  t.textContent = msg;
+  t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(40,51,86,0.95);color:#dbe1ff;padding:12px 24px;border-radius:8px;font-size:14px;z-index:10001;backdrop-filter:blur(10px);border:1px solid rgba(239,189,138,0.3);';
+  document.body.appendChild(t);
+  setTimeout(function() {
+    t.style.opacity = '0';
+    t.style.transition = 'opacity 0.3s';
+    setTimeout(function() { t.remove(); }, 300);
+  }, 1800);
+}
+
+function simpleHash(str) {
+  var hash = 5381;
+  for (var i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash) + str.charCodeAt(i);
+    hash = hash & hash;
+  }
+  return 'h_' + Math.abs(hash).toString(36);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  var menuToggle = document.getElementById('menu-toggle');
+  var sidebar = document.getElementById('sidebar');
+  if (menuToggle && sidebar) {
+    menuToggle.addEventListener('click', function() {
+      sidebar.classList.toggle('-translate-x-full');
+      sidebar.classList.toggle('translate-x-0');
+    });
+  }
+
+  var startBtn = document.getElementById('btn-start');
+  if (startBtn) {
+    startBtn.addEventListener('click', function() {
+      navigateTo('script-select.html');
+    });
+  }
+
+  document.querySelectorAll('aside button').forEach(function(btn) {
+    var text = btn.textContent;
+    if (text.includes('主页')) btn.addEventListener('click', function() { navigateTo('index.html'); });
+    else if (text.includes('剧本选择')) btn.addEventListener('click', function() { navigateTo('script-select.html'); });
+    else if (text.includes('我的学习')) btn.addEventListener('click', function() { navigateTo('my-learning.html'); });
+    else if (text.includes('知识点库')) btn.addEventListener('click', function() { navigateTo('knowledge-base.html'); });
+    else if (text.includes('错题本')) btn.addEventListener('click', function() { navigateTo('error-log.html'); });
+    else if (text.includes('成就勋章')) btn.addEventListener('click', function() { navigateTo('achievements.html'); });
+  });
+
+  var completedCount = window.DataStore ? ['french_revolution','industrial_revolution','american_revolution','wuxu_reform','xinhai_revolution'].filter(function(id) {
+    return DataStore.isScriptCompleted(id);
+  }).length : 0;
+  var visionEl = document.querySelector('.vision-orb-text');
+  if (visionEl) visionEl.textContent = completedCount + '/5';
+});
+</script>
+
+<!-- Login Modal -->
+<div id="login-modal" style="display:none;z-index:10000;background:rgba(0,0,0,0.7);" class="fixed inset-0 flex items-center justify-center">
+<div id="login-modal-backdrop" class="absolute inset-0" style="z-index:0;"></div>
+<div class="relative rounded-2xl p-6 w-[90%] max-w-sm shadow-2xl" style="z-index:1;background:#0f172a;border:1px solid #334155;">
+<div class="flex justify-between items-center mb-4">
+<h3 class="text-lg font-bold text-amber-400" id="login-modal-title">账号登录 / 注册</h3>
+<button id="login-modal-close" class="text-slate-400 hover:text-white text-2xl leading-none cursor-pointer">&times;</button>
+</div>
+<div id="login-form" class="space-y-3">
+<div>
+<label class="block text-xs text-slate-400 mb-1">邮箱</label>
+<input type="email" id="login-username" autocomplete="off" class="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white text-sm focus:border-amber-400 focus:outline-none" placeholder="请输入邮箱"/>
+</div>
+<div>
+<label class="block text-xs text-slate-400 mb-1">密码</label>
+<input type="password" id="login-password" autocomplete="off" class="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white text-sm focus:border-amber-400 focus:outline-none" placeholder="请输入密码"/>
+</div>
+<div class="flex gap-2 pt-2">
+<button id="btn-login-submit" class="flex-1 py-2 bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold rounded-lg transition-colors cursor-pointer">登录</button>
+<button id="btn-register-submit" class="flex-1 py-2 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-lg transition-colors cursor-pointer">注册</button>
+</div>
+<button id="btn-skip-login" type="button" class="w-full py-2 mt-2 rounded-lg border border-amber-300/30 text-amber-200 hover:bg-amber-300/10 transition-colors cursor-pointer">跳过登录，直接进入</button>
+</div>
+<div id="logout-section" style="display:none;">
+<p class="text-sm text-slate-300 mb-3">欢迎，<span id="login-username-display" class="text-amber-400 font-bold"></span></p>
+<button id="btn-logout" class="w-full py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg transition-colors cursor-pointer">退出登录</button>
+</div>
+<div id="login-tip" class="mt-3 text-xs text-slate-500 text-center">登录后可同步学习进度</div>
+</div>
+</div>
+
+<script>
+// ====================== 登录功能 ======================
+(function() {
+  var loginModal = document.getElementById('login-modal');
+  if (!loginModal) return;
+
+  var loginForm = document.getElementById('login-form');
+  var logoutSection = document.getElementById('logout-section');
+  var loginTitle = document.getElementById('login-modal-title');
+  var usernameInput = document.getElementById('login-username');
+  var passwordInput = document.getElementById('login-password');
+  var usernameDisplay = document.getElementById('login-username-display');
+  var loginTip = document.getElementById('login-tip');
+  var backdrop = document.getElementById('login-modal-backdrop');
+
+  function checkLoginState() {
+    var isLoggedIn = localStorage.getItem('st_logged_in') === 'true';
+    var savedUsername = localStorage.getItem('st_username');
+    if (isLoggedIn && savedUsername) {
+      loginForm.style.display = 'none';
+      logoutSection.style.display = 'block';
+      usernameDisplay.textContent = savedUsername;
+      loginTitle.textContent = '个人中心';
+      loginTip.textContent = '已登录账号';
+    } else {
+      loginForm.style.display = '';
+      logoutSection.style.display = 'none';
+      loginTitle.textContent = '账号登录 / 注册';
+      loginTip.textContent = '登录后可同步学习进度';
+    }
+  }
+
+  function showLoginModal() {
+    checkLoginState();
+    loginModal.style.display = 'flex';
+    usernameInput.value = '';
+    passwordInput.value = '';
+    setTimeout(function() { usernameInput.focus(); }, 100);
+  }
+
+  function hideLoginModal() {
+    loginModal.style.display = 'none';
+  }
+
+  window.showLoginModal = showLoginModal;
+
+  function handleLoginSubmit(isRegister) {
+    var username = usernameInput.value.trim();
+    var password = passwordInput.value.trim();
+    if (!username || !password) {
+      showToast('请输入邮箱和密码');
+      return;
+    }
+    if (isRegister) {
+      var existingPwd = localStorage.getItem('st_pwd_' + username);
+      if (existingPwd) {
+        showToast('该邮箱已注册，请直接登录');
+        return;
+      }
+      var regBtn = document.getElementById('btn-register-submit');
+      regBtn.textContent = '注册中...';
+      regBtn.style.background = '#b45309';
+      localStorage.setItem('st_pwd_' + username, simpleHash(password));
+      localStorage.setItem('st_logged_in', 'true');
+      localStorage.setItem('st_username', username);
+      if (typeof PointsSystem !== 'undefined') {
+        PointsSystem.init(username);
+        PointsSystem.earn('REGISTER', '注册奖励');
+      }
+      checkLoginState();
+      regBtn.textContent = '注册成功 ✓';
+      regBtn.style.background = '#16a34a';
+      setTimeout(function(){ regBtn.textContent = '注册'; regBtn.style.background = ''; }, 2000);
+      showToast('注册成功，已自动登录');
+      setTimeout(function() {
+        hideLoginModal();
+        if (window.__pendingStartGame) navigateTo('script-select.html');
+      }, 800);
+    } else {
+      var storedPwd = localStorage.getItem('st_pwd_' + username);
+      if (!storedPwd) {
+        showToast('账号不存在，请先注册');
+        return;
+      }
+      if (storedPwd !== simpleHash(password)) {
+        showToast('密码错误');
+        return;
+      }
+      localStorage.setItem('st_logged_in', 'true');
+      localStorage.setItem('st_username', username);
+      if (typeof PointsSystem !== 'undefined') {
+        PointsSystem.init(username);
+      }
+      checkLoginState();
+      showToast('登录成功');
+      setTimeout(function() {
+        hideLoginModal();
+        if (window.__pendingStartGame) navigateTo('script-select.html');
+      }, 800);
+    }
+  }
+
+  function handleSkipLogin() {
+    localStorage.setItem('st_guest_mode', 'true');
+    localStorage.removeItem('st_logged_in');
+    localStorage.removeItem('st_username');
+    hideLoginModal();
+    showToast('已使用游客模式进入');
+    navigateTo('script-select.html');
+  }
+
+  function handleLogout() {
+    localStorage.removeItem('st_logged_in');
+    localStorage.removeItem('st_username');
+    checkLoginState();
+    showToast('已退出登录');
+  }
+
+  var btnProfile = document.getElementById('btn-profile');
+  if (btnProfile) btnProfile.addEventListener('click', showLoginModal);
+
+  document.getElementById('login-modal-close').addEventListener('click', hideLoginModal);
+  backdrop.addEventListener('click', hideLoginModal);
+  document.getElementById('btn-login-submit').addEventListener('click', function() { handleLoginSubmit(false); });
+  document.getElementById('btn-register-submit').addEventListener('click', function() { handleLoginSubmit(true); });
+  document.getElementById('btn-skip-login').addEventListener('click', handleSkipLogin);
+  document.getElementById('btn-logout').addEventListener('click', handleLogout);
+  passwordInput.addEventListener('keypress', function(e) { if (e.key === 'Enter') handleLoginSubmit(false); });
+
+  // ESC 关闭
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && loginModal.style.display !== 'none') hideLoginModal();
+  });
+})();
+</script>
+
+</body></html>

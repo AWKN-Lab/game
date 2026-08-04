@@ -1,12 +1,23 @@
 (function (global) {
   'use strict';
 
-  var aliases = {
-    textReplacements: { '芙宁娜': '子衿', '胡桃': '洛书', '枫丹': '文明长河', '往生堂': '星轨书院', '护摩之杖': '星轨手札' }
-  };
+  // 用户可见内容已在源码层原创化（子衿 / 洛书）。
+  // textReplacements 默认为空；如需为旧缓存页面临时兜底，可在部署机放置
+  // data/legacy-text-compat.json（已 gitignore），运行时会合并进来。
+  var aliases = { textReplacements: {} };
 
   fetch('data/character_aliases.json').then(function (response) { return response.json(); }).then(function (value) {
-    aliases = value || aliases;
+    if (value) aliases = value;
+    if (!aliases.textReplacements) aliases.textReplacements = {};
+  }).catch(function () {});
+
+  fetch('data/legacy-text-compat.json').then(function (response) {
+    return response.ok ? response.json() : null;
+  }).then(function (value) {
+    if (!value || !value.textReplacements) return;
+    Object.keys(value.textReplacements).forEach(function (key) {
+      aliases.textReplacements[key] = value.textReplacements[key];
+    });
   }).catch(function () {});
 
   function replaceText(value) {
@@ -27,14 +38,19 @@
     luoshu: avatarData('洛', '洛书 · 道法追问')
   };
 
+  // 已下线的内部角色目录 ID（源码已全部改指 zijin / luoshu，此处仅为旧缓存资源兜底）
+  var LEGACY_ZIJIN_ID = /fulina/;
+  var LEGACY_LUOSHU_ID = /hutao/;
+
   function patchElement(element) {
     if (!element || element.nodeType !== 1) return;
     if (element.tagName === 'IMG') {
       var signal = [element.getAttribute('src'), element.alt, element.title, element.className].join(' ').toLowerCase();
-      if (/fulina|furina|芙宁娜/.test(signal)) {
+      // 旧内部 ID 兜底：缓存页面若仍指向已下线的角色目录，替换为原创占位立绘
+      if (LEGACY_ZIJIN_ID.test(signal)) {
         if (element.src !== avatars.zijin) element.src = avatars.zijin;
         element.alt = '子衿';
-      } else if (/hutao|hu-tao|胡桃/.test(signal)) {
+      } else if (LEGACY_LUOSHU_ID.test(signal)) {
         if (element.src !== avatars.luoshu) element.src = avatars.luoshu;
         element.alt = '洛书';
       }
@@ -97,6 +113,40 @@
     return null;
   }
 
+  // ---- 引擎正式钩子（权威数据源）----------------------------------------
+  var HOOK_BRIDGE = 'tt-game-hooks-v1';
+  // 一旦收到引擎正式钩子，这些事件不再接受 DOM 猜测上报
+  var HOOK_COVERED = {
+    'script.act_enter': true,
+    'script.choice': true,
+    'script.evidence_open': true,
+    'script.knowledge_open': true,
+    'script.card': true,
+    'quiz.answer': true,
+    'script.ending': true,
+    'quiz.complete': true
+  };
+  var hooksActive = false;
+  var activeScriptId = null;
+
+  global.addEventListener('message', function (event) {
+    var data = event.data;
+    if (!data || data.source !== HOOK_BRIDGE || !data.name) return;
+    hooksActive = true;
+    var payload = data.payload || {};
+    if (!payload.scriptId && activeScriptId) payload.scriptId = activeScriptId;
+    if (typeof payload.choiceText === 'string') payload.choiceText = replaceText(payload.choiceText);
+    if (typeof payload.actTitle === 'string') payload.actTitle = replaceText(payload.actTitle);
+    if (typeof payload.actId === 'string') payload.actId = replaceText(payload.actId);
+    if (typeof payload.title === 'string') payload.title = replaceText(payload.title);
+    if (typeof payload.evidenceTitle === 'string') payload.evidenceTitle = replaceText(payload.evidenceTitle);
+    global.TTEvents?.track(data.name, payload);
+  });
+
+  function hooksSuppress(name) {
+    return hooksActive && HOOK_COVERED[name] === true;
+  }
+
   function attach(frame, options) {
     options = options || {};
     if (frame.dataset.ttShellAttached === '1') return;
@@ -107,6 +157,7 @@
         var doc = frame.contentDocument;
         if (!doc || !doc.body || doc.location.href === 'about:blank') return;
         var actualScript = frame.dataset.scriptId || options.scriptId || null;
+        activeScriptId = actualScript;
         patchDocument(doc);
 
         var observer = new MutationObserver(function (records) {
@@ -128,7 +179,10 @@
         observer.observe(doc.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['src', 'alt', 'title'] });
         doc.addEventListener('click', function (event) {
           var classified = classifyClick(event.target, actualScript);
-          if (classified) global.TTEvents?.track(classified.name, classified.payload);
+          if (!classified) return;
+          // 引擎正式钩子已接管的事件类型不再由 DOM 猜测上报（兜底降级）
+          if (hooksSuppress(classified.name)) return;
+          global.TTEvents?.track(classified.name, classified.payload);
         }, true);
         global.TTEvents?.track('script.start', { scriptId: actualScript, mode: 'mvp_shell' });
       } catch (error) {
@@ -140,5 +194,11 @@
     if (frame.contentDocument?.readyState === 'complete') onLoad();
   }
 
-  global.TTShell = { attach: attach, patchDocument: patchDocument, replaceText: replaceText };
+  global.TTShell = {
+    attach: attach,
+    patchDocument: patchDocument,
+    replaceText: replaceText,
+    isHooksActive: function () { return hooksActive; },
+    hookCoverage: function () { return Object.keys(HOOK_COVERED); }
+  };
 })(window);

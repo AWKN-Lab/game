@@ -80,6 +80,58 @@ test('事件、反馈和许愿均可写入', async () => {
   assert.match(wish.body.publicId, /^WISH-/);
 });
 
+test('引擎正式钩子的全部关键事件都能落库', async () => {
+  const actor = 'actor-hooks';
+  const session = 'session-hooks';
+  const scriptId = 'american_revolution';
+  const at = () => new Date().toISOString();
+
+  // 与 engine.js 中 ttHook 发射的事件一一对应
+  const hookEvents = [
+    { name: 'script.act_enter', payload: { scriptId, actId: '第一幕 · 波士顿', actTitle: '第一幕 · 波士顿' } },
+    { name: 'script.choice', payload: { scriptId, nodeId: 'dialog_12', choiceIndex: 1, choiceText: '先听双方陈述', actId: '第一幕 · 波士顿', timed: false } },
+    { name: 'script.choice', payload: { scriptId, nodeId: 'pressure_20', choiceIndex: 0, choiceText: '[超时默认] 保持沉默', actId: '第二幕', timed: true } },
+    { name: 'script.evidence_open', payload: { scriptId, nodeId: 'evidence_31', evidenceId: 'evidence_31', evidenceTitle: '谁先开的枪？' } },
+    { name: 'script.knowledge_open', payload: { scriptId, knowledgeId: 'no_taxation', title: '无代表不纳税' } },
+    { name: 'script.card', payload: { scriptId, cardId: 'card_law', action: 'choose' } },
+    { name: 'quiz.answer', payload: { scriptId, questionId: 'q1', choiceIndex: 2, correct: true, knowledgeId: 'no_taxation' } },
+    { name: 'quiz.answer', payload: { scriptId, questionId: 'evidence_31', choiceIndex: 0, correct: false, knowledgeId: '' } },
+    { name: 'quiz.complete', payload: { scriptId, score: 4, total: 5, pct: 80, learningTier: 'A' } },
+    { name: 'script.ending', payload: { scriptId, endingType: 'historical', learningTier: 'A' } }
+  ];
+
+  const result = await jsonRequest('/api/v1/events/batch', {
+    method: 'POST',
+    body: JSON.stringify({
+      events: hookEvents.map((event, index) => ({
+        eventId: `hook-event-${index}`,
+        name: event.name,
+        occurredAt: at(),
+        anonymousId: actor,
+        sessionId: session,
+        role: 'student',
+        page: '/american_revolution.html',
+        payload: event.payload
+      }))
+    })
+  });
+
+  assert.equal(result.response.status, 202);
+  assert.equal(result.body.accepted, hookEvents.length, '所有正式钩子事件都必须被事件目录接受');
+
+  const rows = db.prepare('SELECT name, payload_json FROM product_events WHERE session_id=? ORDER BY received_at').all(session);
+  assert.equal(rows.length, hookEvents.length);
+
+  const timed = rows.find((row) => row.name === 'script.choice' && JSON.parse(row.payload_json).timed === true);
+  assert.ok(timed, '限时选择必须带 timed=true 落库');
+
+  const wrongAnswer = rows.find((row) => row.name === 'quiz.answer' && JSON.parse(row.payload_json).correct === false);
+  assert.ok(wrongAnswer, '答题对错必须如实落库，而不是靠 DOM 猜测');
+
+  const complete = rows.find((row) => row.name === 'quiz.complete');
+  assert.equal(JSON.parse(complete.payload_json).learningTier, 'A', '学习评级必须落库');
+});
+
 test('管理员登录后可以查看总览', async () => {
   const login = await jsonRequest('/api/v1/admin/auth/login', {
     method: 'POST',

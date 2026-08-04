@@ -17,6 +17,7 @@ const pages = [
   'teacher-guide.html',
   'learning-review.html',
   'wish-pool.html',
+  'privacy.html',
   'admin/login.html',
   'admin/index.html'
 ];

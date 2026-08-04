@@ -10,6 +10,7 @@
     {"name": "script.knowledge_open", "critical": false, "allowedPayloadKeys": ["scriptId", "knowledgeId", "title"]},
     {"name": "script.card", "critical": false, "allowedPayloadKeys": ["scriptId", "cardId", "action"]},
     {"name": "quiz.answer", "critical": true, "allowedPayloadKeys": ["scriptId", "questionId", "choiceIndex", "correct", "knowledgeId"]},
+    {"name": "quiz.complete", "critical": true, "allowedPayloadKeys": ["scriptId", "score", "total", "pct", "learningTier"]},
     {"name": "script.ending", "critical": true, "allowedPayloadKeys": ["scriptId", "endingType", "learningTier"]},
     {"name": "lesson_plan.request", "critical": false, "allowedPayloadKeys": ["scriptId", "duration", "studentLevel", "usageMode"]},
     {"name": "lesson_plan.generated", "critical": true, "allowedPayloadKeys": ["scriptId", "mode", "durationMs", "success"]},

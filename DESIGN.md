@@ -15,7 +15,7 @@ The color palette is anchored in the deep mysteries of the night sky, punctuated
 *   **Surface/Background:** `#041133` (Deep Navy) — The foundation of the "void."
 *   **Primary:** `#efbd8a` (Gold/Bronze) — Used for critical actions and royal accents.
 *   **Secondary:** `#b6c4ff` (Ethereal Blue) — Used for interactive sub-elements.
-*   **Tertiary:** `#ffb2b8` (Furina Pink) / Custom Orange (Hu Tao) — Used for character-specific highlights or milestones.
+*   **Tertiary:** `#ffb2b8`（子衿粉）/ 自定义橙（洛书橙） — Used for character-specific highlights or milestones.
 
 ### The "No-Line" Rule
 Explicitly prohibit 1px solid borders for sectioning. Boundaries must be defined solely through background color shifts or subtle tonal transitions. For instance, a lesson module (using `surface-container-low`) sits directly on the main `surface` background. The change in depth, not a line, creates the separation.
@@ -65,7 +65,7 @@ Depth is achieved by "stacking" the surface-container tiers. Place a `surface-co
 *   **Visual State:** Inputs are `surface-container-lowest` with a bottom-only 1px "Ghost Border." On focus, the border animates to 100% opacity `primary` gold with a subtle bloom effect.
 
 ### Chips (Element Tags)
-*   Selection chips use the `tertiary` (Pink) for Furina-themed content or `error` (Red) for Hu Tao-themed content. They should have a `full` roundedness and a subtle `0.1` opacity glow of their own color.
+*   Selection chips use the `tertiary` (Pink) 用于子衿主题内容 or `error` (Red) 用于洛书主题内容. They should have a `full` roundedness and a subtle `0.1` opacity glow of their own color.
 
 ### Progress Orbs (Custom Component)
 Instead of a flat progress bar, use a circular "Vision" orb that fills with a liquid gradient of `secondary` blue as the student progresses through the lesson.

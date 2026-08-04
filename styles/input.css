@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+@source "../*.html";
+@source "../assets/**/*.js";
+@source "../admin/**/*.html";
+
+:root {
+  color-scheme: dark;
+  --tt-bg: #07111f;
+  --tt-panel: rgba(15, 28, 48, 0.92);
+  --tt-line: rgba(148, 163, 184, 0.22);
+  --tt-text: #eef4ff;
+  --tt-muted: #a9b7cd;
+  --tt-gold: #e9c46a;
+  --tt-cyan: #67e8f9;
+}
+
+html { background: var(--tt-bg); }
+body { min-height: 100vh; }

@@ -47,7 +47,7 @@ export const config = Object.freeze({
   aiEnabled: bool('AI_ENABLED', true),
   aiBaseUrl: (process.env.AI_BASE_URL || 'https://dashscope.aliyuncs.com/compatible-mode/v1').replace(/\/$/, ''),
   aiModel: process.env.AI_MODEL || 'qwen-plus',
-  aiApiKey: process.env.DASHSCOPE_API_KEY || '',
+  aiApiKey: process.env.AI_API_KEY || process.env.DASHSCOPE_API_KEY || '',
   aiTimeoutMs: integer('AI_TIMEOUT_MS', 12000),
   eventTrackingEnabled: bool('EVENT_TRACKING_ENABLED', true),
   wishPoolEnabled: bool('WISH_POOL_ENABLED', true),

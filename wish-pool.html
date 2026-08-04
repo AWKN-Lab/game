@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>许愿池｜时空剧场</title>
+  <link rel="stylesheet" href="assets/css/mvp.css">
+</head>
+<body>
+  <main class="tt-page">
+    <header class="tt-header">
+      <a class="tt-brand" href="ai-mvp.html"><span class="tt-brand-mark">愿</span><span><strong>时空剧场许愿池</strong><span>想先开发哪段历史，想增加什么功能</span></span></a>
+      <nav class="tt-nav"><a href="ai-mvp.html">返回首页</a><a href="teacher-guide.html">教师导学</a><a href="learning-review.html">学习复盘</a></nav>
+    </header>
+
+    <section class="tt-hero">
+      <article class="tt-card">
+        <div class="tt-kicker">用户决定先听见什么</div>
+        <h1 style="font-size:44px">把一句“我希望”<br>送进产品路线图</h1>
+        <p class="tt-lead">可以许愿下一部历史剧本、一个学习功能、一个希望子衿讲清的问题，或一个希望洛书讨论的道法问题。</p>
+      </article>
+      <article class="tt-card">
+        <h2>愿望会怎么走</h2>
+        <div class="tt-chip-row"><span class="tt-chip">待审核</span><span class="tt-chip">已公开</span><span class="tt-chip">调研中</span><span class="tt-chip">已计划</span><span class="tt-chip">开发中</span><span class="tt-chip">已实现</span></div>
+        <p class="tt-muted" style="margin-top:16px">公开前会移除联系方式等个人信息。匿名点亮用于判断需求强度，不做学生画像。</p>
+      </article>
+    </section>
+
+    <section class="tt-grid two">
+      <article class="tt-card">
+        <h2>我要许愿</h2>
+        <form id="wishForm" class="tt-form">
+          <div class="tt-form-row">
+            <div class="tt-field"><label for="wishType">愿望类型</label><select id="wishType" class="tt-select"><option value="script">下一部历史剧本</option><option value="feature">产品功能</option><option value="zijin_question">希望子衿讲清</option><option value="luoshu_question">希望洛书讨论</option></select></div>
+            <div class="tt-field"><label for="grade">年级（可选）</label><select id="grade" class="tt-select"><option value="">不限</option><option>七年级</option><option>八年级</option><option>九年级</option><option>教师</option></select></div>
+          </div>
+          <div class="tt-field"><label for="title">一句话愿望</label><input id="title" class="tt-input" maxlength="120" placeholder="例如：希望先开发鸦片战争" required></div>
+          <div class="tt-field"><label for="reason">为什么想要</label><textarea id="reason" class="tt-textarea" maxlength="1000" placeholder="哪一部分最难学，或者这个功能会帮你解决什么"></textarea></div>
+          <div class="tt-field"><label for="problem">希望解决的问题（可选）</label><textarea id="problem" class="tt-textarea" maxlength="800"></textarea></div>
+          <div class="tt-field"><label for="scriptId">关联现有剧本（可选）</label><select id="scriptId" class="tt-select"><option value="">无</option></select></div>
+          <label class="tt-chip"><input id="allowPublic" type="checkbox" checked> 审核后可以匿名公开</label>
+          <button id="submitButton" class="tt-btn gold" type="submit">提交愿望</button>
+          <div id="submitStatus" class="tt-muted"></div>
+        </form>
+      </article>
+
+      <article class="tt-card">
+        <div class="tt-section-title"><div><h2>公开愿望</h2><p>点亮你也想要的内容。</p></div><select id="statusFilter" class="tt-select" style="width:auto"><option value="">全部公开</option><option value="public">已公开</option><option value="researching">调研中</option><option value="planned">已计划</option><option value="developing">开发中</option><option value="implemented">已实现</option></select></div>
+        <div id="wishList" class="tt-form"><div class="tt-loading"><span class="tt-spinner"></span>正在读取愿望…</div></div>
+      </article>
+    </section>
+    <footer class="tt-footer">请不要在愿望中填写姓名、手机号、学校班级等个人信息。管理员可合并重复愿望，并保留原点亮关系。</footer>
+  </main>
+
+  <script src="script-registry.js"></script>
+  <script src="assets/js/api-client.js"></script>
+  <script src="assets/js/identity-client.js"></script>
+  <script src="assets/js/event-client.js"></script>
+  <script src="assets/js/wish-pool-client.js"></script>
+  <script>
+    (function () {
+      var scriptSelect = document.getElementById('scriptId');
+      Object.keys(SCRIPT_REGISTRY || {}).forEach(function (id) { var option = document.createElement('option'); option.value = id; option.textContent = SCRIPT_REGISTRY[id].name; scriptSelect.appendChild(option); });
+      var voted = JSON.parse(localStorage.getItem('tt_wish_votes') || '{}');
+      function escapeHtml(value) { return String(value || '').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]}); }
+      function statusLabel(status) { return ({public:'已公开',researching:'调研中',planned:'已计划',developing:'开发中',implemented:'已实现',pending_review:'待审核'})[status] || status; }
+      async function load() {
+        var list = document.getElementById('wishList'); list.innerHTML = '<div class="tt-loading"><span class="tt-spinner"></span>正在读取愿望…</div>';
+        try {
+          var response = await TTWishes.list({ status: document.getElementById('statusFilter').value, limit: 50 });
+          var items = response.items || response.data || [];
+          if (!items.length) { list.innerHTML = '<div class="tt-note">还没有公开愿望。你可以成为第一个许愿的人。</div>'; return; }
+          list.innerHTML = '';
+          items.forEach(function (item) {
+            var card = document.createElement('article'); card.className = 'tt-card';
+            var active = !!voted[item.id];
+            card.innerHTML = '<div class="tt-section-title"><div><span class="tt-chip">' + escapeHtml(statusLabel(item.status)) + '</span><h3>' + escapeHtml(item.title) + '</h3></div><button class="tt-btn ' + (active ? 'gold' : 'ghost') + '" data-vote="' + escapeHtml(item.id) + '" data-active="' + (active ? '1' : '0') + '">✦ ' + Number(item.voteCount || 0) + '</button></div><p class="tt-muted">' + escapeHtml(item.reason || item.problem || '') + '</p>' + (item.adminReply ? '<div class="tt-success">产品回复：' + escapeHtml(item.adminReply) + '</div>' : '');
+            list.appendChild(card);
+          });
+        } catch (error) { list.innerHTML = '<div class="tt-alert">暂时无法读取公开愿望：' + escapeHtml(error.message) + '</div>'; }
+      }
+      document.getElementById('statusFilter').addEventListener('change', load);
+      document.getElementById('wishList').addEventListener('click', async function (event) {
+        var button = event.target.closest('[data-vote]'); if (!button) return;
+        var id = button.dataset.vote; var next = button.dataset.active !== '1'; button.disabled = true;
+        try { await TTWishes.vote(id, next); voted[id] = next; if (!next) delete voted[id]; localStorage.setItem('tt_wish_votes', JSON.stringify(voted)); await load(); }
+        catch (error) { button.disabled = false; alert(error.message || '点亮失败'); }
+      });
+      document.getElementById('wishForm').addEventListener('submit', async function (event) {
+        event.preventDefault(); var button = document.getElementById('submitButton'); var status = document.getElementById('submitStatus');
+        button.disabled = true; status.textContent = '正在提交…';
+        try {
+          var response = await TTWishes.submit({ wishType: document.getElementById('wishType').value, title: document.getElementById('title').value, reason: document.getElementById('reason').value, problem: document.getElementById('problem').value, grade: document.getElementById('grade').value, scriptId: scriptSelect.value, allowPublic: document.getElementById('allowPublic').checked });
+          status.textContent = '已经收到，审核编号：' + (response.publicId || response.id || '已记录');
+          event.target.reset(); document.getElementById('allowPublic').checked = true;
+        } catch (error) { status.textContent = error.message || '提交失败'; }
+        finally { button.disabled = false; }
+      });
+      load();
+    })();
+  </script>
+</body>
+</html>

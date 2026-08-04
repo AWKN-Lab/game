@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>学习复盘｜时空剧场</title>
+  <link rel="stylesheet" href="assets/css/mvp.css">
+  <style>@media print{.no-print,.tt-header,.tt-footer,#reviewControls{display:none!important}.tt-page{width:100%;padding:0}.tt-card{box-shadow:none;border:0}.tt-result{display:block!important}}</style>
+</head>
+<body>
+  <main class="tt-page">
+    <header class="tt-header no-print">
+      <a class="tt-brand" href="ai-mvp.html"><span class="tt-brand-mark">复</span><span><strong>我的学习复盘</strong><span>看看哪些已经会，哪些还需要再想一步</span></span></a>
+      <nav class="tt-nav"><a href="ai-mvp.html">返回首页</a><a href="teacher-guide.html">教师导学</a><a href="wish-pool.html">许愿池</a></nav>
+    </header>
+
+    <section class="tt-hero">
+      <article class="tt-card no-print">
+        <div class="tt-kicker">课后收回来</div>
+        <h1 style="font-size:44px">走完一段历史<br>把错误讲明白</h1>
+        <p class="tt-lead">复盘读取当前设备上已经存在的剧情完成、知识测试、错题、知识状态和学习评级。没有数据时不会编造结论。</p>
+        <div id="reviewControls" class="tt-form">
+          <div class="tt-field"><label for="scriptId">选择已学习剧本</label><select id="scriptId" class="tt-select"></select></div>
+          <button id="generateButton" class="tt-btn primary" type="button">生成我的学习复盘</button>
+          <div id="dataPreview" class="tt-note"></div>
+          <div id="status" class="tt-muted"></div>
+        </div>
+      </article>
+      <aside class="tt-card">
+        <div id="emptyState"><h2>复盘会回答五件事</h2><ul class="tt-list"><li>我已经会了什么</li><li>我容易混淆什么</li><li>我为什么会错</li><li>接下来只做哪三件事</li><li>下一站去哪里</li></ul></div>
+        <div id="result" class="tt-result">
+          <div class="tt-section-title"><div><div class="tt-kicker">学习复盘卡</div><h2 id="resultTitle"></h2></div><span id="modeBadge" class="tt-chip"></span></div>
+          <h3>我已经会了</h3><ul id="mastered" class="tt-list"></ul>
+          <h3>我容易混淆</h3><ul id="confusions" class="tt-list"></ul>
+          <h3>我为什么会错</h3><div id="whyWrong" class="tt-note"></div>
+          <h3>接下来只做三件事</h3><ol id="actions" class="tt-list"></ol>
+          <div id="nextScriptBlock" hidden><h3>下一站</h3><div id="nextScript" class="tt-success"></div></div>
+          <div class="tt-actions no-print" style="margin-top:18px"><button class="tt-btn" type="button" onclick="window.print()">打印</button><a id="replayLink" class="tt-btn primary" href="ai-mvp.html">回到对应剧情</a><button id="regenerate" class="tt-btn ghost" type="button">重新生成</button></div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="tt-section tt-card no-print">
+      <h2>当前设备的数据边界</h2>
+      <p class="tt-muted">完整学习进度仍保存在当前浏览器。发送给AI的内容只包含：剧本ID、完成情况、测试百分比、必要的错题摘要、知识点状态和学习评级；不会发送本机密码、邮箱或完整 localStorage。</p>
+    </section>
+    <footer class="tt-footer no-print">复盘用于帮助学生继续学习，不用于给学生贴标签、排名或推断家庭与心理状况。</footer>
+  </main>
+
+  <script src="script-registry.js"></script>
+  <script src="data-store.js"></script>
+  <script src="assets/js/api-client.js"></script>
+  <script src="assets/js/identity-client.js"></script>
+  <script src="assets/js/event-client.js"></script>
+  <script src="assets/js/teaching-rules.js"></script>
+  <script src="assets/js/learning-data-adapter.js"></script>
+  <script src="assets/js/ai-teaching-assistant.js"></script>
+  <script>
+    (function () {
+      TTIdentity.setRole('student');
+      var select = document.getElementById('scriptId');
+      TTLearning.getAvailableScripts().forEach(function (item) {
+        var option = document.createElement('option');
+        option.value = item.id;
+        option.textContent = item.name + (item.hasData ? ' · 有学习记录' : ' · 暂无测试记录');
+        option.dataset.hasData = item.hasData ? '1' : '0';
+        select.appendChild(option);
+      });
+      var requested = new URLSearchParams(location.search).get('script');
+      if (requested && SCRIPT_REGISTRY[requested]) select.value = requested;
+      else {
+        var firstWithData = Array.prototype.find.call(select.options, function (option) { return option.dataset.hasData === '1'; });
+        if (firstWithData) select.value = firstWithData.value;
+      }
+
+      function context() { return TTLearning.getContext(select.value); }
+      function updatePreview() {
+        var data = context();
+        document.getElementById('dataPreview').textContent = data.quizTotal
+          ? '检测到：测试 ' + data.quizCorrect + '/' + data.quizTotal + '，错题 ' + data.wrongAnswers.length + ' 道，学习评级 ' + data.tier + '。'
+          : data.completed
+            ? '检测到剧情完成和结局记录，暂时没有完整测试分数。'
+            : '当前没有足够数据。仍可生成一张“先完成什么”的规则复盘。';
+      }
+      select.addEventListener('change', updatePreview); updatePreview();
+
+      function fillList(element, values, fallback) {
+        element.innerHTML = '';
+        var list = values && values.length ? values : [fallback];
+        list.forEach(function (value) { var li = document.createElement('li'); li.textContent = value; element.appendChild(li); });
+      }
+      function render(review) {
+        document.getElementById('emptyState').hidden = true;
+        document.getElementById('result').classList.add('visible');
+        document.getElementById('resultTitle').textContent = review.title;
+        var badge = document.getElementById('modeBadge'); badge.textContent = review.sourceLabel || review.mode; badge.className = 'tt-chip ' + (review.mode === 'ai' ? 'ai' : 'rule');
+        fillList(document.getElementById('mastered'), review.mastered, '还没有足够数据判断已经掌握的知识点。');
+        fillList(document.getElementById('confusions'), review.confusions, '暂时没有检测到明确混淆点。');
+        document.getElementById('whyWrong').textContent = review.whyWrong;
+        fillList(document.getElementById('actions'), review.actions, '先完成一次知识测试。');
+        var block = document.getElementById('nextScriptBlock');
+        if (review.nextScript) {
+          block.hidden = false;
+          document.getElementById('nextScript').innerHTML = '<strong>' + review.nextScript.name + '</strong><br>' + review.nextScript.reason;
+        } else block.hidden = true;
+        document.getElementById('replayLink').href = 'ai-mvp.html?play=' + select.value;
+        localStorage.setItem('tt_last_learning_review', JSON.stringify({ scriptId: select.value, result: review }));
+      }
+      async function generate() {
+        var button = document.getElementById('generateButton'); var status = document.getElementById('status');
+        button.disabled = true; button.innerHTML = '<span class="tt-loading"><span class="tt-spinner"></span>正在整理真实学习记录…</span>'; status.textContent = '';
+        try { render(await TTAI.generateLearningReview({ scriptId: select.value, learningData: context() })); }
+        catch (error) { status.textContent = error.message || '生成失败'; }
+        finally { button.disabled = false; button.textContent = '生成我的学习复盘'; }
+      }
+      document.getElementById('generateButton').addEventListener('click', generate);
+      document.getElementById('regenerate').addEventListener('click', generate);
+    })();
+  </script>
+</body>
+</html>

@@ -1,5 +1,7 @@
 import crypto from 'node:crypto';
 
+const SCRYPT_PARAMS = Object.freeze({ N: 32768, r: 8, p: 1, maxmem: 64 * 1024 * 1024 });
+
 export function id(prefix = '') {
   return prefix + crypto.randomUUID();
 }
@@ -19,8 +21,8 @@ export function sha256(value) {
 export function hashPassword(password) {
   if (String(password || '').length < 10) throw new Error('管理员密码至少 10 位');
   const salt = crypto.randomBytes(16);
-  const derived = crypto.scryptSync(String(password), salt, 64, { N: 32768, r: 8, p: 1 });
-  return `scrypt$32768$8$1$${salt.toString('base64url')}$${derived.toString('base64url')}`;
+  const derived = crypto.scryptSync(String(password), salt, 64, SCRYPT_PARAMS);
+  return `scrypt$${SCRYPT_PARAMS.N}$${SCRYPT_PARAMS.r}$${SCRYPT_PARAMS.p}$${salt.toString('base64url')}$${derived.toString('base64url')}`;
 }
 
 export function verifyPassword(password, stored) {
@@ -29,7 +31,12 @@ export function verifyPassword(password, stored) {
     if (algorithm !== 'scrypt') return false;
     const salt = Buffer.from(saltValue, 'base64url');
     const expected = Buffer.from(hashValue, 'base64url');
-    const actual = crypto.scryptSync(String(password || ''), salt, expected.length, { N: Number(n), r: Number(r), p: Number(p) });
+    const actual = crypto.scryptSync(String(password || ''), salt, expected.length, {
+      N: Number(n),
+      r: Number(r),
+      p: Number(p),
+      maxmem: SCRYPT_PARAMS.maxmem
+    });
     return actual.length === expected.length && crypto.timingSafeEqual(actual, expected);
   } catch {
     return false;

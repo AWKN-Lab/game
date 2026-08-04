@@ -111,26 +111,43 @@
         grid.appendChild(card);
       });
 
-      grid.addEventListener('click', function (event) {
-        var button = event.target.closest('[data-play]');
-        if (!button) return;
-        current = button.dataset.play;
+      TTShell.attach(frame);
+
+      function openScript(scriptId, smooth) {
+        if (!SCRIPT_REGISTRY[scriptId]) return;
+        current = scriptId;
         var script = SCRIPT_REGISTRY[current];
+        frame.dataset.scriptId = current;
         document.getElementById('playTitle').textContent = script.name + '｜互动体验';
         document.getElementById('guideCurrent').href = 'teacher-guide.html?script=' + current;
         frame.src = script.file + '?mvp_shell=1';
         playSection.hidden = false;
-        playSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (smooth !== false) playSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
         document.getElementById('frameStatus').textContent = '正在载入…';
         TTEvents.track('script.open', { scriptId: current, source: 'ai_mvp' });
+        var url = new URL(location.href);
+        url.searchParams.set('play', current);
+        history.replaceState(null, '', url.pathname + '?' + url.searchParams.toString());
+      }
+
+      grid.addEventListener('click', function (event) {
+        var button = event.target.closest('[data-play]');
+        if (button) openScript(button.dataset.play, true);
       });
 
       frame.addEventListener('load', function () {
-        document.getElementById('frameStatus').textContent = '已载入';
-        if (current) TTShell.attach(frame, { scriptId: current });
+        if (frame.contentWindow && frame.contentWindow.location.href !== 'about:blank') document.getElementById('frameStatus').textContent = '已载入';
       });
       document.getElementById('reloadFrame').addEventListener('click', function () { if (frame.src) frame.contentWindow.location.reload(); });
-      document.getElementById('closeFrame').addEventListener('click', function () { frame.src = 'about:blank'; playSection.hidden = true; });
+      document.getElementById('closeFrame').addEventListener('click', function () {
+        frame.src = 'about:blank';
+        frame.dataset.scriptId = '';
+        current = null;
+        playSection.hidden = true;
+        var url = new URL(location.href);
+        url.searchParams.delete('play');
+        history.replaceState(null, '', url.pathname + (url.searchParams.toString() ? '?' + url.searchParams.toString() : ''));
+      });
 
       var toggle = document.getElementById('trackingToggle');
       toggle.checked = TTIdentity.isTrackingEnabled();
@@ -153,6 +170,9 @@
           document.getElementById('feedbackMessage').value = '';
         } catch (error) { status.textContent = error.message || '提交失败'; }
       });
+
+      var requested = new URLSearchParams(location.search).get('play');
+      if (requested && SCRIPT_REGISTRY[requested]) setTimeout(function () { openScript(requested, false); playSection.scrollIntoView({ block: 'start' }); }, 0);
     })();
   </script>
 </body>

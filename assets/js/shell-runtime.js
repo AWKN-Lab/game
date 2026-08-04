@@ -44,16 +44,22 @@
     });
   }
 
-  function patchDocument(doc) {
-    if (!doc || !doc.body) return;
-    var walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
+  function patchRoot(root, doc) {
+    if (!root || !doc) return;
+    if (root.nodeType === 1) patchElement(root);
+    var walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     var node;
     while ((node = walker.nextNode())) {
       if (node.parentElement && /SCRIPT|STYLE|TEXTAREA/.test(node.parentElement.tagName)) continue;
       var next = replaceText(node.nodeValue);
       if (next !== node.nodeValue) node.nodeValue = next;
     }
-    Array.prototype.forEach.call(doc.querySelectorAll('img,[title],[aria-label],[placeholder],[alt]'), patchElement);
+    if (root.querySelectorAll) Array.prototype.forEach.call(root.querySelectorAll('img,[title],[aria-label],[placeholder],[alt]'), patchElement);
+  }
+
+  function patchDocument(doc) {
+    if (!doc || !doc.body) return;
+    patchRoot(doc.body, doc);
   }
 
   function classifyClick(target, scriptId) {
@@ -83,21 +89,24 @@
 
   function attach(frame, options) {
     options = options || {};
-    var scriptId = options.scriptId || null;
+    if (frame.dataset.ttShellAttached === '1') return;
+    frame.dataset.ttShellAttached = '1';
+
     function onLoad() {
       try {
-        var win = frame.contentWindow;
         var doc = frame.contentDocument;
-        if (!doc || !doc.body) return;
-        var actualScript = scriptId || global.TTEvents?.inferScriptId?.() || null;
+        if (!doc || !doc.body || doc.location.href === 'about:blank') return;
+        var actualScript = frame.dataset.scriptId || options.scriptId || null;
         patchDocument(doc);
+
         var observer = new MutationObserver(function (records) {
           records.forEach(function (record) {
             Array.prototype.forEach.call(record.addedNodes || [], function (node) {
-              if (node.nodeType === 3) node.nodeValue = replaceText(node.nodeValue);
-              else if (node.nodeType === 1) {
-                patchElement(node);
-                patchDocument({ body: node, createTreeWalker: doc.createTreeWalker.bind(doc), querySelectorAll: node.querySelectorAll.bind(node) });
+              if (node.nodeType === 3) {
+                var next = replaceText(node.nodeValue);
+                if (next !== node.nodeValue) node.nodeValue = next;
+              } else if (node.nodeType === 1) {
+                patchRoot(node, doc);
               }
             });
           });
@@ -108,11 +117,11 @@
           if (classified) global.TTEvents?.track(classified.name, classified.payload);
         }, true);
         global.TTEvents?.track('script.start', { scriptId: actualScript, mode: 'mvp_shell' });
-        win.addEventListener('error', function () {});
       } catch (error) {
         console.warn('[MVP Shell] 无法注入兼容层：', error.message);
       }
     }
+
     frame.addEventListener('load', onLoad);
     if (frame.contentDocument?.readyState === 'complete') onLoad();
   }

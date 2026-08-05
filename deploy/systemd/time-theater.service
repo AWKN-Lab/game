@@ -1,23 +1,36 @@
 [Unit]
-Description=Time Theater AI Teaching API
+Description=Time Theater (时空剧场) Game Server
 After=network.target
 
 [Service]
 Type=simple
-User=www
-Group=www
-WorkingDirectory=/www/wwwroot/awkn-lab/game/current
-EnvironmentFile=/www/wwwroot/awkn-lab/game/shared/.env
-ExecStart=/usr/bin/node server/start.js
+WorkingDirectory=/srv/time-theater/current
+# 注意：server/config.js 自带 loadDotEnv() 读取 ROOT_DIR/.env，
+# 因此不要配 EnvironmentFile —— 冗余，且 systemd 会展开值里的 $ 导致密钥被破坏。
+ExecStart=/usr/bin/node /srv/time-theater/current/server/start.js
 Restart=on-failure
-RestartSec=3
-TimeoutStopSec=10
+RestartSec=5
+User=root
+Environment=NODE_ENV=production
+
+# --- 安全加固 ---
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=full
-ReadWritePaths=/www/wwwroot/awkn-lab/game/shared
-StandardOutput=journal
-StandardError=journal
+ProtectHome=true
+ReadWritePaths=/srv/time-theater/data /srv/time-theater/logs
+
+StandardOutput=append:/srv/time-theater/logs/app.log
+StandardError=append:/srv/time-theater/logs/error.log
+LimitNOFILE=65535
 
 [Install]
 WantedBy=multi-user.target
+
+# ---------------------------------------------------------------------------
+# 待办（赛后）：改为非 root 运行
+#   useradd -r -s /sbin/nologin timetheater
+#   chown -R timetheater:timetheater /srv/time-theater
+#   User=timetheater / Group=timetheater
+# 当前用 root 是为赛前快速上线，已通过 NoNewPrivileges + ProtectSystem 缓解。
+# ---------------------------------------------------------------------------

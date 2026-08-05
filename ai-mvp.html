@@ -6,17 +6,60 @@
 <title>时空剧场 AI 导学版</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
 <link rel="stylesheet" href="dist/output.css?v=5"/>
-<link rel="stylesheet" href="assets/css/mvp.css"/>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700&family=Manrope:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;600&display=swap" rel="stylesheet"/>
+<script src="data-store.js"></script>
+<script src="script-registry.js"></script>
+<script src="audio-manager.js?v=20260525c"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&family=Manrope:wght@400;600&family=Plus+Jakarta+Sans:wght@500;700&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <style>
-  body { background-color:#041133; color:#dbe1ff; font-family:'Manrope',sans-serif; }
-  .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; vertical-align:middle; }
-  .glass-card { background:rgba(40,51,86,0.6); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); }
-  .sigil-button { background:linear-gradient(135deg,#efbd8a 0%,#5a3912 100%); transition:all .3s ease; color:#4a3800; font-weight:700; }
-  .sigil-button:hover { box-shadow:0 0 15px rgba(239,189,138,.4); }
-  .ornate-corner { border-radius:4px 24px 4px 4px; }
-  button:active, a:active { transform:scale(0.97); }
+  body {
+    background-color: #041133;
+    color: #dbe1ff;
+    font-family: 'Manrope', sans-serif;
+  }
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    vertical-align: middle;
+  }
+  .glass-card {
+    background: rgba(40, 51, 86, 0.6);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+  .sigil-button {
+    background: linear-gradient(135deg, #efbd8a 0%, #5a3912 100%);
+    transition: all 0.3s ease;
+  }
+  .sigil-button:hover {
+    box-shadow: 0 0 15px rgba(239, 189, 138, 0.4);
+  }
+  .ornate-corner {
+    border-radius: 4px 24px 4px 4px;
+  }
+  .vision-orb-container {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(182, 196, 255, 0.1);
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(182, 196, 255, 0.3);
+  }
+  .vision-orb-fill {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    background: linear-gradient(0deg, #264191 0%, #b6c4ff 100%);
+    transition: height 1s ease-in-out;
+  }
+.mode-btns{display:flex;gap:6px;align-items:center}
+.mode-btn{padding:8px 18px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:4px;border:1px solid transparent}
+.mode-btn:active{transform:scale(.95)}
+.mode-btn.story{background:linear-gradient(135deg,#efbd8a,#d4a574);color:#041133;border-color:rgba(239,189,138,.3)}
+.mode-btn.story:hover{box-shadow:0 0 12px rgba(239,189,138,.5)}
+.script-card{cursor:pointer}
+.script-card button,.script-card a{cursor:pointer}
+button:active { transform: scale(0.9); }
 </style>
 <script>
   window.navigateTo = window.navigateTo || function(url) {
@@ -26,219 +69,422 @@
   };
 </script>
 </head>
-<body class="bg-surface text-on-surface min-h-screen font-body relative overflow-x-hidden">
+<body class="bg-surface text-on-surface selection:bg-primary/30 min-h-screen">
 
-<!-- Cinematic background (reuse game asset) -->
-<div id="cinematic-bg" class="absolute inset-0 z-0">
-  <img alt="grand library interior" class="w-full h-full object-cover opacity-60" src="images/bg/grand_library.png" loading="lazy"/>
-</div>
-
-<!-- Sidebar (Unified with index.html / script-select.html) -->
+<!-- Sidebar (Unified with index.html / script-select.html, AI 导学 highlighted) -->
 <aside id="sidebar" class="fixed left-0 top-0 h-full w-16 lg:w-20 z-40 bg-slate-900/40 backdrop-blur-md flex-col items-center py-4 lg:py-6 space-y-2 lg:space-y-4 shadow-2xl shadow-indigo-950/50 pt-14 lg:pt-20 transition-transform duration-300 -translate-x-full lg:translate-x-0">
-  <div class="flex flex-col items-center gap-1 mb-2">
-    <div class="w-9 h-9 lg:w-11 lg:h-11 rounded-full border-2 border-primary overflow-hidden">
-      <img alt="profile portrait" class="w-full h-full object-cover" src="images/ui/scholar_avatar.png" loading="lazy"/>
-    </div>
-  </div>
-  <div class="flex flex-col items-center gap-1 lg:gap-2 w-full">
-    <button onclick="navigateTo('index.html')" class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
-      <span class="material-symbols-outlined text-sm lg:text-base">map</span>
-      <span class="text-[8px] lg:text-[9px] font-label tracking-tighter">主页</span>
-    </button>
-    <button onclick="navigateTo('script-select.html')" class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
-      <span class="material-symbols-outlined text-sm lg:text-base">auto_stories</span>
-      <span class="text-[8px] lg:text-[9px] font-label tracking-tighter">剧本选择</span>
-    </button>
-    <button onclick="navigateTo('ai-mvp.html')" class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 bg-amber-400/20 text-amber-400 border-l-4 border-amber-400 group">
-      <span class="material-symbols-outlined text-sm lg:text-base" style="font-variation-settings: 'FILL' 1;">school</span>
-      <span class="text-[8px] lg:text-[9px] font-label tracking-tighter">AI 导学</span>
-    </button>
-    <button onclick="navigateTo('my-learning.html')" class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
-      <span class="material-symbols-outlined text-sm lg:text-base">history_edu</span>
-      <span class="text-[8px] lg:text-[9px] font-label tracking-tighter">我的学习</span>
-    </button>
-    <button class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
-      <span class="material-symbols-outlined text-sm lg:text-base">edit_note</span>
-      <span class="text-[8px] lg:text-[9px] font-label tracking-tighter">错题本</span>
-    </button>
-    <button onclick="navigateTo('knowledge-base.html')" class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
-      <span class="material-symbols-outlined text-sm lg:text-base">database</span>
-      <span class="text-[8px] lg:text-[9px] font-label tracking-tighter">知识点库</span>
-    </button>
-    <button onclick="navigateTo('achievements.html')" class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
-      <span class="material-symbols-outlined text-sm lg:text-base">stars</span>
-      <span class="text-[8px] lg:text-[9px] font-label tracking-tighter">成就勋章</span>
-    </button>
-  </div>
+<div class="flex flex-col items-center gap-1 mb-2">
+<div class="w-9 h-9 lg:w-11 lg:h-11 rounded-full border-2 border-primary overflow-hidden">
+<img alt="profile portrait" class="w-full h-full object-cover" src="images/ui/scholar_avatar.png" loading="lazy"/>
+</div>
+</div>
+<div class="flex flex-col items-center gap-1 lg:gap-2 w-full">
+<button onclick="navigateTo('index.html')" class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
+<span class="material-symbols-outlined text-sm lg:text-base">map</span>
+<span class="text-[8px] lg:text-[9px] font-label tracking-tighter">主页</span>
+</button>
+<button onclick="navigateTo('ai-mvp.html')" class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 bg-amber-400/20 text-amber-400 border-l-4 border-amber-400 group">
+<span class="material-symbols-outlined text-sm lg:text-base" style="font-variation-settings: 'FILL' 1;">school</span>
+<span class="text-[8px] lg:text-[9px] font-label tracking-tighter">AI 导学</span>
+</button>
+<button onclick="navigateTo('script-select.html')" class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
+<span class="material-symbols-outlined text-sm lg:text-base">auto_stories</span>
+<span class="text-[8px] lg:text-[9px] font-label tracking-tighter">剧本选择</span>
+</button>
+<button onclick="navigateTo('my-learning.html')" class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
+<span class="material-symbols-outlined text-sm lg:text-base">history_edu</span>
+<span class="text-[8px] lg:text-[9px] font-label tracking-tighter">我的学习</span>
+</button>
+<button class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
+<span class="material-symbols-outlined text-sm lg:text-base">edit_note</span>
+<span class="text-[8px] lg:text-[9px] font-label tracking-tighter">错题本</span>
+</button>
+<button onclick="navigateTo('knowledge-base.html')" class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
+<span class="material-symbols-outlined text-sm lg:text-base">database</span>
+<span class="text-[8px] lg:text-[9px] font-label tracking-tighter">知识点库</span>
+</button>
+<button onclick="navigateTo('achievements.html')" class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
+<span class="material-symbols-outlined text-sm lg:text-base">stars</span>
+<span class="text-[8px] lg:text-[9px] font-label tracking-tighter">成就勋章</span>
+</button>
+</div>
 </aside>
+<!-- Mobile menu toggle -->
 <button id="menu-toggle" class="fixed top-4 left-4 z-50 p-2 rounded-lg bg-slate-900/60 backdrop-blur-md text-white hover:bg-slate-800/80 transition-colors lg:hidden">
-  <span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">menu</span>
+<span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">menu</span>
 </button>
 
-<main class="relative z-10 ml-0 lg:ml-[80px] pt-16 lg:pt-4 pb-12 px-4 md:px-12 min-h-screen">
-  <!-- Header -->
-  <header class="mb-10">
-    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
-      <div>
-        <h1 class="text-3xl md:text-5xl font-headline text-transparent bg-clip-text bg-gradient-to-b from-primary to-on-primary-container drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] mb-2">时空剧场 AI 导学版</h1>
-        <p class="font-body text-on-surface-variant max-w-2xl text-sm md:text-base">
+<!-- Main Content Canvas -->
+<main class="ml-0 lg:ml-[80px] pt-16 lg:pt-4 pb-12 px-4 md:px-12 min-h-screen relative overflow-hidden">
+<!-- Header Section -->
+<header class="mb-12">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div>
+<h2 class="text-4xl md:text-5xl font-headline text-on-surface mb-2">时空剧场 AI 导学版</h2>
+<p class="font-body text-on-surface-variant max-w-2xl">
           在基础剧本之上叠加 AI 教学增强：为教师生成可直接上课的导学卡，为学生生成基于真实学习记录的学习复盘。
         </p>
-      </div>
-      <a href="index.html" class="flex items-center gap-2 glass-card ornate-corner px-4 py-2 rounded-lg text-on-surface text-sm font-label tracking-wide hover:bg-surface-variant/80 transition-all no-print">
-        <span class="material-symbols-outlined text-sm">arrow_back</span> 返回游戏主页
-      </a>
-    </div>
-  </header>
+</div>
+</div>
+</header>
 
-  <!-- Two AI actions (核心功能，C 位) -->
-  <section class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-    <a href="teacher-guide.html" class="group relative overflow-hidden glass-card ornate-corner p-8 md:p-10 flex flex-col gap-4 hover:-translate-y-1 transition-all shadow-2xl">
-      <div class="w-14 h-14 rounded-xl flex items-center justify-center bg-gradient-to-b from-[#f5d78e] via-[#e8c35c] to-[#c9a227] text-[#4a3800] shadow-[#f5d78e]/40">
-        <span class="material-symbols-outlined text-3xl" style="font-variation-settings:'FILL' 1;">auto_stories</span>
-      </div>
-      <h2 class="font-headline text-2xl md:text-3xl text-on-surface">生成教师导学卡</h2>
-      <p class="font-body text-on-surface-variant text-sm leading-relaxed">选剧本、填课时与重点，AI 编排一页能直接上课的导学卡（目标 / 剧情段落 / 暂停提问 / 板书 / 小结 / 作业）。模型不可用时自动降级为规则版。</p>
-      <span class="mt-auto flex items-center gap-1 text-primary font-label text-sm">开始编排 <span class="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span></span>
-    </a>
-    <a href="learning-review.html" class="group relative overflow-hidden glass-card ornate-corner p-8 md:p-10 flex flex-col gap-4 hover:-translate-y-1 transition-all shadow-2xl">
-      <div class="w-14 h-14 rounded-xl flex items-center justify-center bg-gradient-to-b from-[#f5d78e] via-[#e8c35c] to-[#c9a227] text-[#4a3800] shadow-[#f5d78e]/40">
-        <span class="material-symbols-outlined text-3xl" style="font-variation-settings:'FILL' 1;">history_edu</span>
-      </div>
-      <h2 class="font-headline text-2xl md:text-3xl text-on-surface">生成学习复盘</h2>
-      <p class="font-body text-on-surface-variant text-sm leading-relaxed">读取本机真实学习记录（完成度 / 测试分 / 错题 / 评级），AI 生成“已会 / 易混 / 为什么错 / 三件事 / 下一站”。没有数据不会编造结论。</p>
-      <span class="mt-auto flex items-center gap-1 text-primary font-label text-sm">开始复盘 <span class="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span></span>
-    </a>
-  </section>
+<!-- Two AI actions (导学版核心价值，C 位) -->
+<section class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+<a href="teacher-guide.html" class="group relative overflow-hidden glass-card ornate-corner p-8 flex flex-col gap-4 hover:-translate-y-1 transition-all shadow-2xl">
+<div class="w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-b from-[#f5d78e] via-[#e8c35c] to-[#c9a227] text-[#4a3800] shadow-[#f5d78e]/40">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings:'FILL' 1;">auto_stories</span>
+</div>
+<h3 class="font-headline text-2xl text-on-surface">生成教师导学卡</h3>
+<p class="font-body text-on-surface-variant text-sm leading-relaxed">选剧本、填课时与重点，AI 编排一页能直接上课的导学卡（目标 / 剧情段落 / 暂停提问 / 板书 / 小结 / 作业）。模型不可用时自动降级为规则版。</p>
+<span class="mt-auto flex items-center gap-1 text-primary font-label text-sm">开始编排 <span class="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span></span>
+</a>
+<a href="learning-review.html" class="group relative overflow-hidden glass-card ornate-corner p-8 flex flex-col gap-4 hover:-translate-y-1 transition-all shadow-2xl">
+<div class="w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-b from-[#f5d78e] via-[#e8c35c] to-[#c9a227] text-[#4a3800] shadow-[#f5d78e]/40">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings:'FILL' 1;">history_edu</span>
+</div>
+<h3 class="font-headline text-2xl text-on-surface">生成学习复盘</h3>
+<p class="font-body text-on-surface-variant text-sm leading-relaxed">读取本机真实学习记录（完成度 / 测试分 / 错题 / 评级），AI 生成“已会 / 易混 / 为什么错 / 三件事 / 下一站”。没有数据不会编造结论。</p>
+<span class="mt-auto flex items-center gap-1 text-primary font-label text-sm">开始复盘 <span class="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span></span>
+</a>
+</section>
 
-  <!-- Stats strip -->
-  <section class="flex flex-wrap gap-4 mb-12">
-    <div class="glass-card ornate-corner px-5 py-4 flex items-center gap-3 rounded-lg">
-      <span class="material-symbols-outlined text-primary">auto_stories</span>
-      <div><p class="font-headline text-xl text-on-surface leading-none">5</p><p class="text-[10px] font-label text-on-surface-variant uppercase tracking-wider mt-1">历史剧本</p></div>
-    </div>
-    <div class="glass-card ornate-corner px-5 py-4 flex items-center gap-3 rounded-lg">
-      <span class="material-symbols-outlined text-primary">menu_book</span>
-      <div><p class="font-headline text-xl text-on-surface leading-none">64</p><p class="text-[10px] font-label text-on-surface-variant uppercase tracking-wider mt-1">知识点</p></div>
-    </div>
-    <div class="glass-card ornate-corner px-5 py-4 flex items-center gap-3 rounded-lg">
-      <span class="material-symbols-outlined text-primary">smart_toy</span>
-      <div><p class="font-headline text-xl text-on-surface leading-none">2</p><p class="text-[10px] font-label text-on-surface-variant uppercase tracking-wider mt-1">AI 教学增强</p></div>
-    </div>
-    <div class="glass-card ornate-corner px-5 py-4 flex items-center gap-3 rounded-lg">
-      <span class="material-symbols-outlined text-primary">person_off</span>
-      <div><p class="font-headline text-xl text-on-surface leading-none">0</p><p class="text-[10px] font-label text-on-surface-variant uppercase tracking-wider mt-1">注册门槛</p></div>
-    </div>
-  </section>
-
-  <!-- Script library (reuse game's script-select cards + real images) -->
-  <header class="mb-6">
-    <h2 class="text-2xl md:text-3xl font-headline text-on-surface mb-1">剧本库</h2>
-    <p class="font-body text-on-surface-variant text-sm">选择一段历史进入游戏；导学版的能力就建立在这些剧本之上。</p>
-  </header>
-  <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 md:gap-8">
-    <!-- Card 1: 法国大革命 -->
-    <div class="script-card group relative bg-surface-container overflow-hidden ornate-corner shadow-2xl transition-all hover:-translate-y-1" data-category="历史 道法" data-script-id="french_revolution">
-      <div class="h-64 relative">
-        <img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="French Revolution scene" src="images/bg/french_revolution_card.jpg"/>
-        <div class="absolute inset-0 bg-gradient-to-t from-surface-container via-surface-container/20 to-transparent"></div>
-        <div class="absolute top-4 left-4 flex gap-2">
-          <span class="px-3 py-1 rounded-full bg-tertiary/20 backdrop-blur-md text-tertiary text-[10px] font-label uppercase tracking-tighter border border-tertiary/30">历史</span>
-          <span class="px-3 py-1 rounded-full bg-secondary/20 backdrop-blur-md text-secondary text-[10px] font-label uppercase tracking-tighter border border-secondary/30">道法</span>
-        </div>
-        <div class="absolute top-4 right-4 bg-surface-container-highest/80 backdrop-blur-md px-3 py-1 rounded-lg border border-outline-variant/30">
-          <div class="flex items-center gap-1" id="stars-french_revolution"><span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">star</span><span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">star</span><span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">star</span><span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">star</span><span class="material-symbols-outlined text-on-surface-variant text-sm">star</span></div>
-        </div>
-      </div>
-      <div class="p-6 md:p-8 relative">
-        <div class="mb-4"><h3 class="text-2xl md:text-3xl font-headline text-on-surface mb-2">法国大革命</h3><p class="font-body text-on-surface-variant italic">自由、平等、博爱</p></div>
-        <div class="flex items-center gap-4 text-sm text-on-surface-variant mb-6">
-          <div class="flex items-center gap-1.5"><span class="material-symbols-outlined text-xs">menu_book</span><span>16个知识点</span></div>
-          <div class="flex items-center gap-1.5"><span class="material-symbols-outlined text-xs">schedule</span><span>5-8分钟</span></div>
-        </div>
-        <div class="flex items-center justify-between">
-          <div class="flex gap-2"><span class="px-2 py-1 rounded bg-tertiary/10 text-tertiary text-[10px] font-label">启蒙思想</span><span class="px-2 py-1 rounded bg-primary/10 text-primary text-[10px] font-label">人权宣言</span></div>
-          <button class="mode-btn story" onclick="event.stopPropagation(); window.location.href='script-detail.html?script=french_revolution'">开始游戏</button>
-        </div>
-      </div>
-    </div>
-    <!-- Card 2: 工业革命 -->
-    <div class="script-card group relative bg-surface-container overflow-hidden ornate-corner shadow-2xl transition-all hover:-translate-y-1" data-category="历史" data-script-id="industrial_revolution">
-      <div class="h-64 relative">
-        <img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Industrial Revolution scene" src="images/bg/industrial_revolution_card.jpg"/>
-        <div class="absolute inset-0 bg-gradient-to-t from-surface-container via-surface-container/20 to-transparent"></div>
-        <div class="absolute top-4 left-4 flex gap-2"><span class="px-3 py-1 rounded-full bg-tertiary/20 backdrop-blur-md text-tertiary text-[10px] font-label uppercase tracking-tighter border border-tertiary/30">历史</span></div>
-        <div class="absolute top-4 right-4 bg-surface-container-highest/80 backdrop-blur-md px-3 py-1 rounded-lg border border-outline-variant/30"><div class="flex items-center gap-1" id="stars-industrial_revolution"><span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">star</span><span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">star</span><span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">star</span><span class="material-symbols-outlined text-on-surface-variant text-sm">star</span><span class="material-symbols-outlined text-on-surface-variant text-sm">star</span></div></div>
-      </div>
-      <div class="p-6 md:p-8 relative">
-        <div class="mb-4"><h3 class="text-2xl md:text-3xl font-headline text-on-surface mb-2">蒸汽时代</h3><p class="font-body text-on-surface-variant italic">工业革命改变世界</p></div>
-        <div class="flex items-center gap-4 text-sm text-on-surface-variant mb-6"><div class="flex items-center gap-1.5"><span class="material-symbols-outlined text-xs">menu_book</span><span>13个知识点</span></div><div class="flex items-center gap-1.5"><span class="material-symbols-outlined text-xs">schedule</span><span>4-6分钟</span></div></div>
-        <div class="flex items-center justify-between"><div class="flex gap-2"><span class="px-2 py-1 rounded bg-tertiary/10 text-tertiary text-[10px] font-label">技术革新</span><span class="px-2 py-1 rounded bg-primary/10 text-primary text-[10px] font-label">社会变革</span></div><button class="mode-btn story" onclick="event.stopPropagation(); window.location.href='script-detail.html?script=industrial_revolution'">开始游戏</button></div>
-      </div>
-    </div>
-    <!-- Card 3: 美国独立战争 -->
-    <div class="script-card group relative bg-surface-container overflow-hidden ornate-corner shadow-2xl transition-all hover:-translate-y-1" data-category="历史" data-script-id="american_revolution">
-      <div class="h-64 relative">
-        <img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="American Revolution scene" src="images/bg/independence_hall.jpg"/>
-        <div class="absolute inset-0 bg-gradient-to-t from-surface-container via-surface-container/20 to-transparent"></div>
-        <div class="absolute top-4 left-4 flex gap-2"><span class="px-3 py-1 rounded-full bg-tertiary/20 backdrop-blur-md text-tertiary text-[10px] font-label uppercase tracking-tighter border border-tertiary/30">历史</span></div>
-        <div class="absolute top-4 right-4 bg-surface-container-highest/80 backdrop-blur-md px-3 py-1 rounded-lg border border-outline-variant/30"><div class="flex items-center gap-1" id="stars-american_revolution"><span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">star</span><span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">star</span><span class="material-symbols-outlined text-on-surface-variant text-sm">star</span><span class="material-symbols-outlined text-on-surface-variant text-sm">star</span><span class="material-symbols-outlined text-on-surface-variant text-sm">star</span></div></div>
-      </div>
-      <div class="p-6 md:p-8 relative">
-        <div class="mb-4"><h3 class="text-2xl md:text-3xl font-headline text-on-surface mb-2">独立宣言</h3><p class="font-body text-on-surface-variant italic">人人生而平等</p></div>
-        <div class="flex items-center gap-4 text-sm text-on-surface-variant mb-6"><div class="flex items-center gap-1.5"><span class="material-symbols-outlined text-xs">menu_book</span><span>12个知识点</span></div><div class="flex items-center gap-1.5"><span class="material-symbols-outlined text-xs">schedule</span><span>4-6分钟</span></div></div>
-        <div class="flex items-center justify-between"><div class="flex gap-2"><span class="px-2 py-1 rounded bg-tertiary/10 text-tertiary text-[10px] font-label">民主思想</span><span class="px-2 py-1 rounded bg-primary/10 text-primary text-[10px] font-label">独立精神</span></div><button class="mode-btn story" onclick="event.stopPropagation(); window.location.href='script-detail.html?script=american_revolution'">开始游戏</button></div>
-      </div>
-    </div>
-    <!-- Card 4: 戊戌变法 -->
-    <div class="script-card group relative bg-surface-container overflow-hidden ornate-corner shadow-2xl transition-all hover:-translate-y-1" data-category="历史 道法" data-script-id="wuxu_reform">
-      <div class="h-64 relative">
-        <img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Wuxu Reform scene" src="images/bg/wuxu_study.jpg"/>
-        <div class="absolute inset-0 bg-gradient-to-t from-surface-container via-surface-container/20 to-transparent"></div>
-        <div class="absolute top-4 left-4 flex gap-2"><span class="px-3 py-1 rounded-full bg-tertiary/20 backdrop-blur-md text-tertiary text-[10px] font-label uppercase tracking-tighter border border-tertiary/30">历史</span><span class="px-3 py-1 rounded-full bg-secondary/20 backdrop-blur-md text-secondary text-[10px] font-label uppercase tracking-tighter border border-secondary/30">道法</span></div>
-        <div class="absolute top-4 right-4 bg-surface-container-highest/80 backdrop-blur-md px-3 py-1 rounded-lg border border-outline-variant/30"><div class="flex items-center gap-1" id="stars-wuxu_reform"><span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">star</span><span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">star</span><span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">star</span><span class="material-symbols-outlined text-on-surface-variant text-sm">star</span><span class="material-symbols-outlined text-on-surface-variant text-sm">star</span></div></div>
-      </div>
-      <div class="p-6 md:p-8 relative">
-        <div class="mb-4"><h3 class="text-2xl md:text-3xl font-headline text-on-surface mb-2">戊戌变法</h3><p class="font-body text-on-surface-variant italic">变法图强，救亡图存</p></div>
-        <div class="flex items-center gap-4 text-sm text-on-surface-variant mb-6"><div class="flex items-center gap-1.5"><span class="material-symbols-outlined text-xs">menu_book</span><span>14个知识点</span></div><div class="flex items-center gap-1.5"><span class="material-symbols-outlined text-xs">schedule</span><span>5-7分钟</span></div></div>
-        <div class="flex items-center justify-between"><div class="flex gap-2"><span class="px-2 py-1 rounded bg-tertiary/10 text-tertiary text-[10px] font-label">改革思想</span><span class="px-2 py-1 rounded bg-primary/10 text-primary text-[10px] font-label">君主立宪</span></div><button class="mode-btn story" onclick="event.stopPropagation(); window.location.href='script-detail.html?script=wuxu_reform'">开始游戏</button></div>
-      </div>
-    </div>
-    <!-- Card 5: 辛亥革命 -->
-    <div class="script-card group relative bg-surface-container overflow-hidden ornate-corner shadow-2xl transition-all hover:-translate-y-1" data-category="历史 道法" data-script-id="xinhai_revolution">
-      <div class="h-64 relative">
-        <img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Xinhai Revolution scene" src="images/bg/wuchang_1911.jpg"/>
-        <div class="absolute inset-0 bg-gradient-to-t from-surface-container via-surface-container/20 to-transparent"></div>
-        <div class="absolute top-4 left-4 flex gap-2"><span class="px-3 py-1 rounded-full bg-tertiary/20 backdrop-blur-md text-tertiary text-[10px] font-label uppercase tracking-tighter border border-tertiary/30">历史</span><span class="px-3 py-1 rounded-full bg-secondary/20 backdrop-blur-md text-secondary text-[10px] font-label uppercase tracking-tighter border border-secondary/30">道法</span></div>
-        <div class="absolute top-4 right-4 bg-surface-container-highest/80 backdrop-blur-md px-3 py-1 rounded-lg border border-outline-variant/30"><div class="flex items-center gap-1" id="stars-xinhai_revolution"><span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">star</span><span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">star</span><span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">star</span><span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">star</span><span class="material-symbols-outlined text-on-surface-variant text-sm">star</span></div></div>
-      </div>
-      <div class="p-6 md:p-8 relative">
-        <div class="mb-4"><h3 class="text-2xl md:text-3xl font-headline text-on-surface mb-2">辛亥革命</h3><p class="font-body text-on-surface-variant italic">推翻帝制，建立共和</p></div>
-        <div class="flex items-center gap-4 text-sm text-on-surface-variant mb-6"><div class="flex items-center gap-1.5"><span class="material-symbols-outlined text-xs">menu_book</span><span>15个知识点</span></div><div class="flex items-center gap-1.5"><span class="material-symbols-outlined text-xs">schedule</span><span>5-8分钟</span></div></div>
-        <div class="flex items-center justify-between"><div class="flex gap-2"><span class="px-2 py-1 rounded bg-tertiary/10 text-tertiary text-[10px] font-label">革命思想</span><span class="px-2 py-1 rounded bg-primary/10 text-primary text-[10px] font-label">三民主义</span></div><button class="mode-btn story" onclick="event.stopPropagation(); window.location.href='script-detail.html?script=xinhai_revolution'">开始游戏</button></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Feedback / wish -->
-  <section class="mt-12">
-    <div class="glass-card ornate-corner rounded-xl p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-      <div class="flex items-center gap-3">
-        <span class="material-symbols-outlined text-primary text-2xl">feedback</span>
-        <div>
-          <h3 class="font-headline text-xl text-on-surface">想让 AI 导学更好用？</h3>
-          <p class="text-sm text-on-surface-variant font-body">把你的想法投进许愿池，或给我们一点反馈。</p>
-        </div>
-      </div>
-      <a href="wish-pool.html" class="sigil-button ornate-corner px-6 py-3 rounded-lg font-label tracking-wide">前往许愿池</a>
-    </div>
-  </section>
+<!-- Filters Section (同 script-select) -->
+<section class="mb-10 flex flex-wrap gap-2 md:gap-3">
+<button class="px-4 md:px-6 py-2.5 md:py-2 rounded-full font-label text-xs md:text-sm tracking-wide transition-all bg-primary text-on-primary shadow-lg shadow-primary/20">全部</button>
+<button class="px-4 md:px-6 py-2.5 md:py-2 rounded-full font-label text-xs md:text-sm tracking-wide transition-all glass-card text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/80 border border-outline-variant/20">已完成</button>
+<button class="px-4 md:px-6 py-2.5 md:py-2 rounded-full font-label text-xs md:text-sm tracking-wide transition-all glass-card text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/80 border border-outline-variant/20">未完成</button>
+</section>
+<!-- Bento Grid of Scripts (同 script-select，复用真实剧照) -->
+<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 md:gap-8">
+<!-- Card 1: 法国大革命 -->
+<div class="script-card group relative bg-surface-container overflow-hidden ornate-corner shadow-2xl transition-all hover:-translate-y-1" data-category="历史 道法" data-script-id="french_revolution">
+<div class="h-64 relative">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="French Revolution scene" src="images/bg/french_revolution_card.jpg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container via-surface-container/20 to-transparent"></div>
+<div class="absolute top-4 left-4 flex gap-2">
+<span class="px-3 py-1 rounded-full bg-tertiary/20 backdrop-blur-md text-tertiary text-[10px] font-label uppercase tracking-tighter border border-tertiary/30">历史</span>
+<span class="px-3 py-1 rounded-full bg-secondary/20 backdrop-blur-md text-secondary text-[10px] font-label uppercase tracking-tighter border border-secondary/30">道法</span>
+</div>
+<div class="absolute top-4 right-4 bg-surface-container-highest/80 backdrop-blur-md px-3 py-1 rounded-lg border border-outline-variant/30">
+<div class="flex items-center gap-1">
+<div class="flex items-center gap-1" id="stars-french_revolution"><span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-on-surface-variant text-sm">star</span>
+</div></div>
+</div>
+</div>
+<div class="p-6 md:p-8 relative">
+<div class="mb-4">
+<h3 class="text-2xl md:text-3xl font-headline text-on-surface mb-2">法国大革命</h3>
+<p class="font-body text-on-surface-variant italic">自由、平等、博爱</p>
+</div>
+<div class="flex items-center gap-4 text-sm text-on-surface-variant mb-6">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-xs">menu_book</span>
+<span>16个知识点</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-xs">schedule</span>
+<span>5-8分钟</span>
+</div>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex gap-2">
+<span class="px-2 py-1 rounded bg-tertiary/10 text-tertiary text-[10px] font-label">启蒙思想</span>
+<span class="px-2 py-1 rounded bg-primary/10 text-primary text-[10px] font-label">人权宣言</span>
+</div>
+<button class="mode-btn story" onclick="event.stopPropagation(); window.location.href='script-detail.html?script=french_revolution'">开始游戏</button>
+</div>
+</div>
+</div>
+<!-- Card 2: 工业革命 -->
+<div class="script-card group relative bg-surface-container overflow-hidden ornate-corner shadow-2xl transition-all hover:-translate-y-1" data-category="历史" data-script-id="industrial_revolution">
+<div class="h-64 relative">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Industrial Revolution scene" src="images/bg/industrial_revolution_card.jpg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container via-surface-container/20 to-transparent"></div>
+<div class="absolute top-4 left-4 flex gap-2">
+<span class="px-3 py-1 rounded-full bg-tertiary/20 backdrop-blur-md text-tertiary text-[10px] font-label uppercase tracking-tighter border border-tertiary/30">历史</span>
+</div>
+<div class="absolute top-4 right-4 bg-surface-container-highest/80 backdrop-blur-md px-3 py-1 rounded-lg border border-outline-variant/30">
+<div class="flex items-center gap-1">
+<div class="flex items-center gap-1" id="stars-industrial_revolution"><span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-on-surface-variant text-sm">star</span>
+<span class="material-symbols-outlined text-on-surface-variant text-sm">star</span>
+</div></div>
+</div>
+</div>
+<div class="p-6 md:p-8 relative">
+<div class="mb-4">
+<h3 class="text-2xl md:text-3xl font-headline text-on-surface mb-2">蒸汽时代</h3>
+<p class="font-body text-on-surface-variant italic">工业革命改变世界</p>
+</div>
+<div class="flex items-center gap-4 text-sm text-on-surface-variant mb-6">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-xs">menu_book</span>
+<span>13个知识点</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-xs">schedule</span>
+<span>4-6分钟</span>
+</div>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex gap-2">
+<span class="px-2 py-1 rounded bg-tertiary/10 text-tertiary text-[10px] font-label">技术革新</span>
+<span class="px-2 py-1 rounded bg-primary/10 text-primary text-[10px] font-label">社会变革</span>
+</div>
+<button class="mode-btn story" onclick="event.stopPropagation(); window.location.href='script-detail.html?script=industrial_revolution'">开始游戏</button>
+</div>
+</div>
+</div>
+<!-- Card 3: 美国独立战争 -->
+<div class="script-card group relative bg-surface-container overflow-hidden ornate-corner shadow-2xl transition-all hover:-translate-y-1" data-category="历史" data-script-id="american_revolution">
+<div class="h-64 relative">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="American Revolution scene" src="images/bg/independence_hall.jpg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container via-surface-container/20 to-transparent"></div>
+<div class="absolute top-4 left-4 flex gap-2">
+<span class="px-3 py-1 rounded-full bg-tertiary/20 backdrop-blur-md text-tertiary text-[10px] font-label uppercase tracking-tighter border border-tertiary/30">历史</span>
+</div>
+<div class="absolute top-4 right-4 bg-surface-container-highest/80 backdrop-blur-md px-3 py-1 rounded-lg border border-outline-variant/30">
+<div class="flex items-center gap-1">
+<div class="flex items-center gap-1" id="stars-american_revolution"><span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-on-surface-variant text-sm">star</span>
+<span class="material-symbols-outlined text-on-surface-variant text-sm">star</span>
+<span class="material-symbols-outlined text-on-surface-variant text-sm">star</span>
+</div></div>
+</div>
+</div>
+<div class="p-6 md:p-8 relative">
+<div class="mb-4">
+<h3 class="text-2xl md:text-3xl font-headline text-on-surface mb-2">独立宣言</h3>
+<p class="font-body text-on-surface-variant italic">人人生而平等</p>
+</div>
+<div class="flex items-center gap-4 text-sm text-on-surface-variant mb-6">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-xs">menu_book</span>
+<span>12个知识点</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-xs">schedule</span>
+<span>4-6分钟</span>
+</div>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex gap-2">
+<span class="px-2 py-1 rounded bg-tertiary/10 text-tertiary text-[10px] font-label">民主思想</span>
+<span class="px-2 py-1 rounded bg-primary/10 text-primary text-[10px] font-label">独立精神</span>
+</div>
+<button class="mode-btn story" onclick="event.stopPropagation(); window.location.href='script-detail.html?script=american_revolution'">开始游戏</button>
+</div>
+</div>
+</div>
+<!-- Card 4: 戊戌变法 -->
+<div class="script-card group relative bg-surface-container overflow-hidden ornate-corner shadow-2xl transition-all hover:-translate-y-1" data-category="历史 道法" data-script-id="wuxu_reform">
+<div class="h-64 relative">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Wuxu Reform scene" src="images/bg/wuxu_study.jpg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container via-surface-container/20 to-transparent"></div>
+<div class="absolute top-4 left-4 flex gap-2">
+<span class="px-3 py-1 rounded-full bg-tertiary/20 backdrop-blur-md text-tertiary text-[10px] font-label uppercase tracking-tighter border border-tertiary/30">历史</span>
+<span class="px-3 py-1 rounded-full bg-secondary/20 backdrop-blur-md text-secondary text-[10px] font-label uppercase tracking-tighter border border-secondary/30">道法</span>
+</div>
+<div class="absolute top-4 right-4 bg-surface-container-highest/80 backdrop-blur-md px-3 py-1 rounded-lg border border-outline-variant/30">
+<div class="flex items-center gap-1">
+<div class="flex items-center gap-1" id="stars-wuxu_reform"><span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-on-surface-variant text-sm">star</span>
+<span class="material-symbols-outlined text-on-surface-variant text-sm">star</span>
+</div></div>
+</div>
+</div>
+<div class="p-6 md:p-8 relative">
+<div class="mb-4">
+<h3 class="text-2xl md:text-3xl font-headline text-on-surface mb-2">戊戌变法</h3>
+<p class="font-body text-on-surface-variant italic">变法图强，救亡图存</p>
+</div>
+<div class="flex items-center gap-4 text-sm text-on-surface-variant mb-6">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-xs">menu_book</span>
+<span>14个知识点</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-xs">schedule</span>
+<span>5-7分钟</span>
+</div>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex gap-2">
+<span class="px-2 py-1 rounded bg-tertiary/10 text-tertiary text-[10px] font-label">改革思想</span>
+<span class="px-2 py-1 rounded bg-primary/10 text-primary text-[10px] font-label">君主立宪</span>
+</div>
+<button class="mode-btn story" onclick="event.stopPropagation(); window.location.href='script-detail.html?script=wuxu_reform'">开始游戏</button>
+</div>
+</div>
+</div>
+<!-- Card 5: 辛亥革命 -->
+<div class="script-card group relative bg-surface-container overflow-hidden ornate-corner shadow-2xl transition-all hover:-translate-y-1" data-category="历史 道法" data-script-id="xinhai_revolution">
+<div class="h-64 relative">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Xinhai Revolution scene" src="images/bg/wuchang_1911.jpg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container via-surface-container/20 to-transparent"></div>
+<div class="absolute top-4 left-4 flex gap-2">
+<span class="px-3 py-1 rounded-full bg-tertiary/20 backdrop-blur-md text-tertiary text-[10px] font-label uppercase tracking-tighter border border-tertiary/30">历史</span>
+<span class="px-3 py-1 rounded-full bg-secondary/20 backdrop-blur-md text-secondary text-[10px] font-label uppercase tracking-tighter border border-secondary/30">道法</span>
+</div>
+<div class="absolute top-4 right-4 bg-surface-container-highest/80 backdrop-blur-md px-3 py-1 rounded-lg border border-outline-variant/30">
+<div class="flex items-center gap-1">
+<div class="flex items-center gap-1" id="stars-xinhai_revolution"><span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-on-surface-variant text-sm">star</span>
+</div></div>
+</div>
+</div>
+<div class="p-6 md:p-8 relative">
+<div class="mb-4">
+<h3 class="text-2xl md:text-3xl font-headline text-on-surface mb-2">辛亥革命</h3>
+<p class="font-body text-on-surface-variant italic">推翻帝制，建立共和</p>
+</div>
+<div class="flex items-center gap-4 text-sm text-on-surface-variant mb-6">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-xs">menu_book</span>
+<span>15个知识点</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-xs">schedule</span>
+<span>5-8分钟</span>
+</div>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex gap-2">
+<span class="px-2 py-1 rounded bg-tertiary/10 text-tertiary text-[10px] font-label">革命思想</span>
+<span class="px-2 py-1 rounded bg-primary/10 text-primary text-[10px] font-label">三民主义</span>
+</div>
+<button class="mode-btn story" onclick="event.stopPropagation(); window.location.href='script-detail.html?script=xinhai_revolution'">开始游戏</button>
+</div>
+</div>
+</div>
+</section>
 </main>
 
 <script>
+  window.navigateTo = function navigateTo(url) {
+    document.body.style.opacity = '0';
+    document.body.style.transition = 'opacity 0.3s ease';
+    setTimeout(() => { window.location.href = url; }, 300);
+  };
+
+  // 移动端侧边栏切换
   document.getElementById('menu-toggle')?.addEventListener('click', function() {
     document.getElementById('sidebar').classList.toggle('-translate-x-full');
   });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.script-card').forEach(function(card) {
+      card.setAttribute('tabindex', '0');
+      card.setAttribute('role', 'button');
+      card.setAttribute('aria-label', '开始' + (card.querySelector('h3')?.textContent.trim() || '剧本'));
+      card.addEventListener('click', function(event) {
+        if (event.target.closest('button,a')) return;
+        var scriptId = card.getAttribute('data-script-id');
+        if (scriptId) navigateTo('script-detail.html?script=' + encodeURIComponent(scriptId));
+      });
+      card.addEventListener('keydown', function(event) {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        var scriptId = card.getAttribute('data-script-id');
+        if (scriptId) navigateTo('script-detail.html?script=' + encodeURIComponent(scriptId));
+      });
+    });
+
+    // Filter buttons
+    document.querySelectorAll('section button').forEach(btn => {
+      if (!btn.classList.contains('sigil-button')) {
+        btn.addEventListener('click', function() {
+          document.querySelectorAll('section button').forEach(b => {
+            if (!b.classList.contains('sigil-button')) {
+              b.classList.remove('bg-primary', 'text-on-primary', 'shadow-lg', 'shadow-primary/20');
+              b.classList.add('glass-card', 'text-on-surface-variant');
+            }
+          });
+          this.classList.remove('glass-card', 'text-on-surface-variant');
+          this.classList.add('bg-primary', 'text-on-primary', 'shadow-lg', 'shadow-primary/20');
+
+          var filterText = this.textContent.trim();
+          document.querySelectorAll('.script-card').forEach(function(card) {
+            var scriptId = card.getAttribute('data-script-id');
+            if (!scriptId) return;
+            if (filterText === '全部') {
+              card.style.display = '';
+            } else if (filterText === '已完成') {
+              card.style.display = (window.DataStore && DataStore.isScriptCompleted(scriptId)) ? '' : 'none';
+            } else if (filterText === '未完成') {
+              card.style.display = (window.DataStore && DataStore.isScriptCompleted(scriptId)) ? 'none' : '';
+            }
+          });
+        });
+      }
+    });
+
+    // Update progress + 双信息标签
+    try {
+      var completed = window.DataStore ? DataStore.getStoryCompletedScripts() : [];
+      var tierCounts = window.DataStore ? DataStore.getLearningTierCounts() : { master: 0, excellent: 0, completed: 0 };
+      var total = 5;
+      var count = completed.length;
+      var tierLabels = { master: '学霸成就', excellent: '学习标兵', completed: '剧情通关' };
+      var tierColors = { master: '#ffd700', excellent: '#a78bfa', completed: '#60a5fa' };
+
+      document.querySelectorAll('.script-card').forEach(function(card) {
+        var scriptId = card.getAttribute('data-script-id');
+        if (!scriptId) return;
+
+        var isCompleted = window.DataStore ? DataStore.isScriptCompleted(scriptId) : false;
+        var best = window.DataStore ? DataStore.getBestScriptAssessment(scriptId) : null;
+        var tier = best ? best.bestTier : null;
+        var oldBadge = card.querySelector('.dual-info-badge');
+        if (oldBadge) oldBadge.remove();
+
+        var badge = document.createElement('div');
+        badge.className = 'dual-info-badge';
+        badge.style.cssText = 'display:flex;gap:4px;margin-top:8px;flex-wrap:wrap;';
+
+        var storyTag = document.createElement('span');
+        storyTag.style.cssText = 'font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600;';
+        if (isCompleted) {
+          storyTag.style.cssText += 'background:rgba(34,197,94,0.2);color:#22c55e;border:1px solid rgba(34,197,94,0.3);';
+          storyTag.textContent = '已通关';
+        } else {
+          storyTag.style.cssText += 'background:rgba(100,100,120,0.2);color:#666;border:1px solid rgba(100,100,120,0.2);';
+          storyTag.textContent = '未通关';
+        }
+        badge.appendChild(storyTag);
+
+        var learnTag = document.createElement('span');
+        learnTag.style.cssText = 'font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600;';
+        if (tier && tierLabels[tier]) {
+          learnTag.style.cssText += 'background:' + tierColors[tier] + '22;color:' + tierColors[tier] + ';border:1px solid ' + tierColors[tier] + '44;';
+          learnTag.textContent = tierLabels[tier];
+        } else {
+          learnTag.style.cssText += 'background:rgba(100,100,120,0.2);color:#666;border:1px solid rgba(100,100,120,0.2);';
+          learnTag.textContent = '待评级';
+        }
+        badge.appendChild(learnTag);
+
+        var buttonArea = card.querySelector('.flex.items-center.justify-between');
+        if (buttonArea) buttonArea.insertAdjacentElement('afterend', badge);
+        else card.appendChild(badge);
+      });
+    } catch(e) {
+      console.error('双通关状态渲染失败:', e);
+    }
+  });
 </script>
+
 </body>
 </html>

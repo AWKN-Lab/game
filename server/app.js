@@ -174,7 +174,7 @@ async function handleTeaching(request, response, db) {
   const traceId = id('trace_');
   db.prepare(`INSERT INTO ai_runs(id,actor_id,session_id,task,script_id,mode,success,duration_ms,input_summary_json,output_json,error_code,created_at)
     VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`).run(traceId, actorId, sessionId, task, scriptId, result.mode, 1, Date.now() - started, toJson({ scriptId, task }), toJson(result.data), result.errorCode, now());
-  sendJson(response, 200, { success: true, mode: result.mode, data: result.data, traceId, fallbackReason: result.errorCode });
+  sendJson(response, 200, { success: true, mode: result.mode, data: result.data, provider: result.provider, traceId, fallbackReason: result.errorCode });
 }
 
 async function handleFeedbackCreate(request, response, db) {
@@ -392,7 +392,7 @@ export function createApp() {
       if (request.method === 'GET' && url.pathname === '/api/v1/health/live') return sendJson(response, 200, { success: true, status: 'live', time: now() });
       if (request.method === 'GET' && url.pathname === '/api/v1/health/ready') {
         const dbReady = !!db.prepare('SELECT 1 value').get()?.value;
-        return sendJson(response, dbReady ? 200 : 503, { success: dbReady, status: dbReady ? 'ready' : 'not_ready', aiConfigured: !!config.aiApiKey });
+        return sendJson(response, dbReady ? 200 : 503, { success: dbReady, status: dbReady ? 'ready' : 'not_ready', aiConfigured: !!(config.aiApiKey || config.aiFallbackApiKey) });
       }
       if (request.method === 'POST' && url.pathname === '/api/v1/events/batch') return await handleEvents(request, response, db);
       if (request.method === 'POST' && url.pathname === '/api/v1/teaching-assistant') return await handleTeaching(request, response, db);

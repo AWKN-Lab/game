@@ -86,12 +86,47 @@ export function ruleLearningReview(input) {
   };
 }
 
+function stripThink(text) {
+  return String(text || '')
+    .replace(/<think>[\s\S]*?<\/think>/gi, '')
+    .replace(/<thinking>[\s\S]*?<\/thinking>/gi, '');
+}
 function extractJson(content) {
-  const text = String(content || '').trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+  let text = stripThink(content).trim();
+  text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
   const first = text.indexOf('{');
   const last = text.lastIndexOf('}');
   if (first < 0 || last <= first) throw Object.assign(new Error('模型未返回 JSON'), { code: 'AI_INVALID_JSON' });
   return JSON.parse(text.slice(first, last + 1));
+}
+function coerceArray(value) {
+  if (Array.isArray(value)) return value;
+  if (typeof value === 'string') return value.split(/[\n;；。]/).map((s) => s.trim()).filter(Boolean);
+  if (value === null || value === undefined) return [];
+  return [String(value)];
+}
+function normalize(task, value, input) {
+  if (task === 'lesson_plan') {
+    value.objectives = coerceArray(value.objectives);
+    value.recommendedActs = Array.isArray(value.recommendedActs) ? value.recommendedActs : [];
+    value.pauseQuestions = coerceArray(value.pauseQuestions);
+    value.boardOutline = coerceArray(value.boardOutline);
+    if (typeof value.title !== 'string' || !value.title) {
+      value.title = `${scriptNames[input.scriptId] || '导学'}｜导学卡`;
+    }
+  } else {
+    value.mastered = coerceArray(value.mastered).slice(0, 6);
+    value.confusions = coerceArray(value.confusions).slice(0, 6);
+    value.actions = coerceArray(value.actions).slice(0, 3);
+    while (value.actions.length < 3) value.actions.push('重新回顾本课核心知识点，并对照常见误区自查。');
+    if (typeof value.whyWrong !== 'string' || !value.whyWrong) {
+      value.whyWrong = '当前数据还不足以定位具体薄弱点，先补一次完整测试。';
+    }
+    if (typeof value.title !== 'string' || !value.title) {
+      value.title = `${scriptNames[input.scriptId] || '学习'}｜我的学习复盘`;
+    }
+  }
+  return value;
 }
 
 function validate(task, value) {
@@ -102,8 +137,25 @@ function validate(task, value) {
   return typeof value.title === 'string' && Array.isArray(value.mastered) && Array.isArray(value.confusions) && typeof value.whyWrong === 'string' && Array.isArray(value.actions) && value.actions.length === 3;
 }
 
-async function callProvider(task, input) {
-  if (!config.aiEnabled || !config.aiApiKey) throw Object.assign(new Error('AI 未配置'), { code: 'AI_NOT_CONFIGURED' });
+function buildProviders() {
+  const list = [{
+    tag: 'primary',
+    baseUrl: config.aiBaseUrl,
+    model: config.aiModel,
+    apiKey: config.aiApiKey
+  }];
+  if (config.aiFallbackBaseUrl && config.aiFallbackApiKey) {
+    list.push({
+      tag: 'fallback',
+      baseUrl: config.aiFallbackBaseUrl,
+      model: config.aiFallbackModel || config.aiModel,
+      apiKey: config.aiFallbackApiKey
+    });
+  }
+  return list;
+}
+
+async function callOneProvider(provider, task, input) {
   const prompt = task === 'lesson_plan' ? prompts.lessonPlan : prompts.learningReview;
   const trusted = {
     scriptId: input.scriptId,
@@ -120,11 +172,11 @@ async function callProvider(task, input) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), config.aiTimeoutMs);
   try {
-    const response = await fetch(`${config.aiBaseUrl}/chat/completions`, {
+    const response = await fetch(`${provider.baseUrl}/chat/completions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${config.aiApiKey}` },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${provider.apiKey}` },
       body: JSON.stringify({
-        model: config.aiModel,
+        model: provider.model,
         messages: [
           { role: 'system', content: `${prompt.system}\n${prompt.instruction}` },
           { role: 'user', content: JSON.stringify(trusted) }
@@ -135,24 +187,40 @@ async function callProvider(task, input) {
       }),
       signal: controller.signal
     });
-    if (!response.ok) throw Object.assign(new Error(`AI HTTP ${response.status}`), { code: 'AI_HTTP_ERROR' });
+    if (!response.ok) throw Object.assign(new Error(`AI HTTP ${response.status}`), { code: 'AI_HTTP_ERROR', status: response.status });
     const payload = await response.json();
     const content = payload?.choices?.[0]?.message?.content;
     const value = extractJson(content);
-    if (!validate(task, value)) throw Object.assign(new Error('AI 输出结构不完整'), { code: 'AI_SCHEMA_ERROR' });
-    return value;
+    const normalized = normalize(task, value, input);
+    if (!validate(task, normalized)) throw Object.assign(new Error('AI 输出结构不完整'), { code: 'AI_SCHEMA_ERROR' });
+    return { value: normalized, provider: provider.tag };
   } finally {
     clearTimeout(timer);
   }
 }
 
+async function callProvider(task, input) {
+  if (!config.aiEnabled || (!config.aiApiKey && !config.aiFallbackApiKey)) {
+    throw Object.assign(new Error('AI 未配置'), { code: 'AI_NOT_CONFIGURED' });
+  }
+  let lastError;
+  for (const provider of buildProviders()) {
+    try {
+      return await callOneProvider(provider, task, input);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError || Object.assign(new Error('AI 全部失败'), { code: 'AI_FAILED' });
+}
+
 export async function generate(task, input) {
   const fallback = () => task === 'lesson_plan' ? ruleLessonPlan(input) : ruleLearningReview(input);
   try {
-    const data = await callProvider(task, input);
-    return { mode: 'ai', data, errorCode: null };
+    const { value, provider } = await callProvider(task, input);
+    return { mode: 'ai', data: value, provider, errorCode: null };
   } catch (error) {
-    return { mode: 'rule', data: fallback(), errorCode: error.name === 'AbortError' ? 'AI_TIMEOUT' : (error.code || 'AI_FAILED') };
+    return { mode: 'rule', data: fallback(), provider: 'rule', errorCode: error.name === 'AbortError' ? 'AI_TIMEOUT' : (error.code || 'AI_FAILED') };
   }
 }
 

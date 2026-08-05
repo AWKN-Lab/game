@@ -1,181 +1,349 @@
 <!doctype html>
-<html lang="zh-CN">
+<html class="dark" lang="zh-CN">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
   <title>时空剧场 AI 导学版</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
+  <link rel="stylesheet" href="dist/output.css?v=5"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700&family=Manrope:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <link rel="stylesheet" href="assets/css/mvp.css">
 </head>
-<body>
-  <main class="tt-page">
-    <header class="tt-header">
-      <a class="tt-brand" href="ai-mvp.html">
-        <span class="tt-brand-mark">时</span>
-        <span><strong>时空剧场 AI 导学版</strong><span>一部手机，把现成历史剧本带进课堂</span></span>
-      </a>
-      <nav class="tt-nav">
-        <a href="teacher-guide.html">教师导学</a>
-        <a href="learning-review.html">学习复盘</a>
-        <a href="wish-pool.html">许愿池</a>
-        <a href="admin/login.html">管理员</a>
-      </nav>
-    </header>
+<body class="bg-surface text-on-surface selection:bg-primary/30 min-h-screen">
 
-    <section class="tt-hero">
-      <article class="tt-card">
-        <div class="tt-kicker">AI + 已有五部互动历史剧本</div>
-        <h1>先把一堂课<br>真正用起来</h1>
-        <p class="tt-lead">老师从已有剧本生成一张导学卡，学生继续体验原来的剧情和知识测试，结束后再生成一张基于真实数据的学习复盘。</p>
-        <div class="tt-actions">
-          <a class="tt-btn gold" href="teacher-guide.html">生成教师导学卡</a>
-          <a class="tt-btn primary" href="learning-review.html">生成学习复盘</a>
-        </div>
-      </article>
-      <aside class="tt-card">
-        <div class="tt-grid two">
-          <div class="tt-stat"><strong>5</strong><span>现有历史剧本</span></div>
-          <div class="tt-stat"><strong>64</strong><span>注册知识点</span></div>
-          <div class="tt-stat"><strong>0</strong><span>学生注册门槛</span></div>
-          <div class="tt-stat"><strong>2</strong><span>本次核心新增</span></div>
-        </div>
-        <div class="tt-note" style="margin-top:18px">AI 不可用时自动生成规则版导学卡和复盘卡，旧剧本不会被接口故障拖住。</div>
-      </aside>
-    </section>
+<!-- Sidebar（与游戏主页 / script-select 统一） -->
+<aside id="sidebar" class="fixed left-0 top-0 h-full w-16 lg:w-20 z-40 bg-slate-900/40 backdrop-blur-md flex-col items-center py-4 lg:py-6 space-y-2 lg:space-y-4 shadow-2xl shadow-indigo-950/50 pt-14 lg:pt-20 transition-transform duration-300 -translate-x-full lg:translate-x-0">
+  <div class="flex flex-col items-center gap-1 lg:gap-2 w-full">
+    <button onclick="navigateTo('index.html')" class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
+      <span class="material-symbols-outlined text-sm lg:text-base">map</span>
+      <span class="text-[8px] lg:text-[9px] font-label tracking-tighter">主页</span>
+    </button>
+    <button onclick="navigateTo('script-select.html')" class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
+      <span class="material-symbols-outlined text-sm lg:text-base">auto_stories</span>
+      <span class="text-[8px] lg:text-[9px] font-label tracking-tighter">剧本选择</span>
+    </button>
+    <button class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 bg-amber-400/20 text-amber-400 border-l-4 border-amber-400 group">
+      <span class="material-symbols-outlined text-sm lg:text-base" style="font-variation-settings: 'FILL' 1;">school</span>
+      <span class="text-[8px] lg:text-[9px] font-label tracking-tighter">AI 导学</span>
+    </button>
+    <button onclick="navigateTo('my-learning.html')" class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
+      <span class="material-symbols-outlined text-sm lg:text-base">history_edu</span>
+      <span class="text-[8px] lg:text-[9px] font-label tracking-tighter">我的学习</span>
+    </button>
+    <button class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
+      <span class="material-symbols-outlined text-sm lg:text-base">edit_note</span>
+      <span class="text-[8px] lg:text-[9px] font-label tracking-tighter">错题本</span>
+    </button>
+    <button onclick="navigateTo('knowledge-base.html')" class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
+      <span class="material-symbols-outlined text-sm lg:text-base">database</span>
+      <span class="text-[8px] lg:text-[9px] font-label tracking-tighter">知识点库</span>
+    </button>
+    <button onclick="navigateTo('card-practice.html')" class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
+      <span class="material-symbols-outlined text-sm lg:text-base">swords</span>
+      <span class="text-[8px] lg:text-[9px] font-label tracking-tighter">每日修行</span>
+    </button>
+    <button onclick="navigateTo('achievements.html')" class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
+      <span class="material-symbols-outlined text-sm lg:text-base">stars</span>
+      <span class="text-[8px] lg:text-[9px] font-label tracking-tighter">成就勋章</span>
+    </button>
+  </div>
+</aside>
 
-    <section class="tt-section">
-      <div class="tt-section-title">
-        <div><h2>选择一段历史</h2><p>可先生成导学卡，也可直接进入原有剧情。</p></div>
-        <div class="tt-chip-row"><label class="tt-chip"><input id="trackingToggle" type="checkbox"> 参与匿名产品改进（默认关闭）</label><a class="tt-chip" href="privacy.html" target="_blank" rel="noopener">隐私与数据说明</a></div>
+<!-- Mobile menu toggle -->
+<button id="menu-toggle" class="fixed top-4 left-4 z-50 p-2 rounded-lg bg-slate-900/60 backdrop-blur-md text-white hover:bg-slate-800/80 transition-colors lg:hidden">
+  <span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">menu</span>
+</button>
+
+<!-- Cinematic background（复用游戏图书馆背景） -->
+<div class="fixed inset-0 z-0">
+  <img alt="grand library interior" class="w-full h-full object-cover opacity-50" src="images/bg/grand_library.png" loading="lazy"/>
+  <div class="absolute inset-0" style="background:linear-gradient(to top, rgba(4,17,51,0.97), rgba(4,17,51,0.72) 45%, rgba(4,17,51,0.55));"></div>
+</div>
+
+<!-- Main Content Canvas -->
+<main class="relative z-10 lg:pl-[80px] pt-16 lg:pt-8 pb-16 px-4 md:px-12 min-h-screen">
+
+  <!-- Title -->
+  <div class="text-center mt-6 lg:mt-10 mb-2">
+    <h1 class="text-4xl md:text-5xl lg:text-6xl font-headline text-transparent bg-clip-text bg-gradient-to-b from-primary to-on-primary-container drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">时空剧场 AI 导学版</h1>
+    <div class="flex items-center justify-center gap-3 mt-3">
+      <div class="h-px w-10 md:w-16 bg-gradient-to-r from-transparent to-primary"></div>
+      <span class="text-on-surface-variant text-sm tracking-[0.25em] font-light">教师 AI 导学卡 · 学习复盘</span>
+      <div class="h-px w-10 md:w-16 bg-gradient-to-l from-transparent to-primary"></div>
+    </div>
+    <div id="progressPill" class="inline-flex items-center gap-2 mt-4 px-4 py-1.5 rounded-full bg-surface-container/70 border border-outline-variant/30 text-sm text-on-surface-variant">
+      <span class="material-symbols-outlined text-primary text-base">auto_awesome</span>
+      <span>已完成 <span id="doneCount" class="text-primary font-bold">0</span>/5 个剧本</span>
+    </div>
+  </div>
+
+  <!-- Hero -->
+  <section class="mt-10 grid grid-cols-1 lg:grid-cols-5 gap-6">
+    <article class="glass-card rounded-2xl border border-outline-variant/20 p-6 md:p-8 ornate-corner lg:col-span-3">
+      <div class="inline-block px-3 py-1 rounded-full bg-secondary/15 text-secondary text-[11px] font-label uppercase tracking-widest border border-secondary/30 mb-4">AI + 已有五部互动历史剧本</div>
+      <h2 class="text-3xl md:text-4xl font-headline text-on-surface mb-3">先把一堂课<br/>真正用起来</h2>
+      <p class="font-body text-on-surface-variant leading-relaxed mb-6">老师从已有剧本生成一张导学卡，学生继续体验原来的剧情和知识测试，结束后再生成一张基于真实数据的学习复盘。</p>
+      <div class="flex flex-wrap gap-3">
+        <a class="sigil-button rounded-xl px-5 py-3 font-headline text-sm tracking-wide" href="teacher-guide.html">生成教师导学卡</a>
+        <a class="mode-btn story rounded-xl px-5 py-3 font-headline text-sm tracking-wide" href="learning-review.html">生成学习复盘</a>
       </div>
-      <div id="scriptGrid" class="tt-grid"></div>
-    </section>
+    </article>
+    <aside class="glass-card rounded-2xl border border-outline-variant/20 p-6 md:p-8 ornate-corner lg:col-span-2">
+      <div class="grid grid-cols-2 gap-4">
+        <div class="bg-surface-container/60 rounded-xl p-4 text-center"><div class="text-3xl font-headline text-primary">5</div><div class="text-xs text-on-surface-variant mt-1">现有历史剧本</div></div>
+        <div class="bg-surface-container/60 rounded-xl p-4 text-center"><div class="text-3xl font-headline text-primary">64</div><div class="text-xs text-on-surface-variant mt-1">注册知识点</div></div>
+        <div class="bg-surface-container/60 rounded-xl p-4 text-center"><div class="text-3xl font-headline text-primary">0</div><div class="text-xs text-on-surface-variant mt-1">学生注册门槛</div></div>
+        <div class="bg-surface-container/60 rounded-xl p-4 text-center"><div class="text-3xl font-headline text-primary">2</div><div class="text-xs text-on-surface-variant mt-1">本次核心新增</div></div>
+      </div>
+      <p class="text-on-surface-variant text-sm mt-5 leading-relaxed">AI 不可用时自动生成规则版导学卡和复盘卡，旧剧本不会被接口故障拖住。</p>
+    </aside>
+  </section>
 
-    <section id="playSection" class="tt-section" hidden>
-      <div class="tt-section-title">
-        <div><h2 id="playTitle">剧本体验</h2><p>旧剧本在旁路外壳中运行；兼容层负责原创角色替换和匿名互动记录。</p></div>
-        <div class="tt-actions">
-          <a id="guideCurrent" class="tt-btn gold" href="teacher-guide.html">为本剧生成导学卡</a>
-          <button id="closeFrame" class="tt-btn ghost" type="button">关闭</button>
+  <!-- Script grid -->
+  <section class="mt-14">
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
+      <div>
+        <h2 class="text-3xl font-headline text-on-surface">选择一段历史</h2>
+        <p class="font-body text-on-surface-variant mt-1">可先生成导学卡，也可直接进入原有剧情。</p>
+      </div>
+      <div class="flex items-center gap-3 flex-wrap">
+        <label class="flex items-center gap-2 text-sm text-on-surface-variant cursor-pointer select-none">
+          <input id="trackingToggle" type="checkbox" class="accent-primary w-4 h-4"/> 参与匿名产品改进（默认关闭）
+        </label>
+        <a class="text-sm text-secondary hover:underline" href="privacy.html" target="_blank" rel="noopener">隐私与数据说明</a>
+      </div>
+    </div>
+    <div id="scriptGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+  </section>
+
+  <!-- Play (iframe) -->
+  <section id="playSection" class="mt-12" hidden>
+    <div class="glass-card rounded-2xl border border-outline-variant/20 p-5 md:p-6 ornate-corner">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+        <div>
+          <h2 id="playTitle" class="text-2xl font-headline text-on-surface">剧本体验</h2>
+          <p class="font-body text-on-surface-variant text-sm mt-1">旧剧本在旁路外壳中运行；兼容层负责原创角色替换和匿名互动记录。</p>
+        </div>
+        <div class="flex gap-2">
+          <a id="guideCurrent" class="mode-btn story" href="teacher-guide.html">为本剧生成导学卡</a>
+          <button id="closeFrame" class="mode-btn" type="button" style="background:rgba(220,38,38,0.15);color:#fca5a5;border:1px solid rgba(252,165,165,0.3)">关闭</button>
         </div>
       </div>
-      <div class="tt-toolbar">
-        <button id="reloadFrame" class="tt-btn" type="button">重新载入</button>
-        <span id="frameStatus" class="tt-muted">等待加载</span>
+      <div class="flex items-center gap-3 mb-3">
+        <button id="reloadFrame" class="mode-btn" type="button" style="background:rgba(40,51,86,0.6);color:#dbe1ff;border:1px solid rgba(170,190,220,0.2)">重新载入</button>
+        <span id="frameStatus" class="text-on-surface-variant text-sm">等待加载</span>
       </div>
-      <iframe id="gameFrame" class="tt-frame" title="时空剧场互动剧本"></iframe>
-    </section>
+      <iframe id="gameFrame" class="w-full rounded-xl border border-outline-variant/20 bg-surface-container" style="height:70vh;min-height:420px" title="时空剧场互动剧本"></iframe>
+    </div>
+  </section>
 
-    <section class="tt-section tt-grid two">
-      <article class="tt-card">
-        <h2>有问题，直接告诉我们</h2>
-        <p class="tt-muted">反馈会带上当前页面和剧本上下文，不会上传密码、键盘输入过程或完整本机学习档案。</p>
-        <form id="feedbackForm" class="tt-form">
-          <div class="tt-form-row">
-            <div class="tt-field"><label for="feedbackCategory">类型</label><select id="feedbackCategory" class="tt-select"><option value="content">内容问题</option><option value="bug">运行问题</option><option value="learning">学习看不懂</option><option value="suggestion">改进建议</option></select></div>
-            <div class="tt-field"><label for="feedbackRating">体验评分</label><select id="feedbackRating" class="tt-select"><option value="5">5 很顺手</option><option value="4">4 基本好用</option><option value="3">3 还需要改</option><option value="2">2 问题较多</option><option value="1">1 无法使用</option></select></div>
+  <!-- Feedback + Wish pool -->
+  <section class="mt-14 grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <article class="glass-card rounded-2xl border border-outline-variant/20 p-6 md:p-8 ornate-corner">
+      <h2 class="text-2xl font-headline text-on-surface mb-2">有问题，直接告诉我们</h2>
+      <p class="text-on-surface-variant text-sm mb-5">反馈会带上当前页面和剧本上下文，不会上传密码、键盘输入过程或完整本机学习档案。</p>
+      <form id="feedbackForm" class="space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs text-on-surface-variant mb-1">类型</label>
+            <select id="feedbackCategory" class="mvp-input">
+              <option value="content">内容问题</option>
+              <option value="bug">运行问题</option>
+              <option value="learning">学习看不懂</option>
+              <option value="suggestion">改进建议</option>
+            </select>
           </div>
-          <div class="tt-field"><label for="feedbackMessage">具体发生了什么</label><textarea id="feedbackMessage" class="tt-textarea" maxlength="1200" required></textarea></div>
-          <div><button class="tt-btn primary" type="submit">提交反馈</button> <span id="feedbackStatus" class="tt-muted"></span></div>
-        </form>
-      </article>
-      <article class="tt-card">
-        <h2>许愿下一部剧本</h2>
-        <p class="tt-lead" style="font-size:16px">希望先开发哪段历史？哪个功能最需要？许愿进入审核、调研、计划、开发和实现路线图。</p>
-        <a class="tt-btn gold" href="wish-pool.html">进入许愿池</a>
-      </article>
-    </section>
+          <div>
+            <label class="block text-xs text-on-surface-variant mb-1">体验评分</label>
+            <select id="feedbackRating" class="mvp-input">
+              <option value="5">5 很顺手</option>
+              <option value="4">4 基本好用</option>
+              <option value="3">3 还需要改</option>
+              <option value="2">2 问题较多</option>
+              <option value="1">1 无法使用</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs text-on-surface-variant mb-1">具体发生了什么</label>
+          <textarea id="feedbackMessage" class="mvp-input" style="min-height:96px" maxlength="1200" required placeholder="描述你遇到的问题或建议…"></textarea>
+        </div>
+        <div class="flex items-center gap-3">
+          <button class="sigil-button rounded-xl px-5 py-2.5 font-headline text-sm" type="submit">提交反馈</button>
+          <span id="feedbackStatus" class="text-on-surface-variant text-sm"></span>
+        </div>
+      </form>
+    </article>
+    <article class="glass-card rounded-2xl border border-outline-variant/20 p-6 md:p-8 ornate-corner flex flex-col justify-center">
+      <h2 class="text-2xl font-headline text-on-surface mb-2">许愿下一部剧本</h2>
+      <p class="text-on-surface-variant text-sm mb-5">希望先开发哪段历史？哪个功能最需要？许愿进入审核、调研、计划、开发和实现路线图。</p>
+      <a class="sigil-button inline-block rounded-xl px-5 py-3 font-headline text-sm text-center" href="wish-pool.html">进入许愿池</a>
+    </article>
+  </section>
 
-    <footer class="tt-footer">学生与教师默认免注册。完整学习进度保存在当前设备；服务端只接收事件白名单内的匿名互动和用户主动提交内容。</footer>
-  </main>
+  <!-- Footer -->
+  <footer class="mt-14 mb-4 text-center text-on-surface-variant/70 text-xs leading-relaxed">
+    学生与教师默认免注册。完整学习进度保存在当前设备；服务端只接收事件白名单内的匿名互动和用户主动提交内容。
+    <div class="mt-3 flex justify-center flex-wrap gap-x-5 gap-y-2">
+      <a class="hover:text-secondary transition-colors" href="privacy.html" target="_blank" rel="noopener">隐私与数据</a>
+      <a class="hover:text-secondary transition-colors" href="wish-pool.html">许愿池</a>
+      <a class="hover:text-secondary transition-colors" href="admin/login.html">管理员</a>
+      <a class="hover:text-secondary transition-colors" href="index.html">返回主页</a>
+    </div>
+  </footer>
 
-  <script src="script-registry.js"></script>
-  <script src="assets/js/api-client.js"></script>
-  <script src="assets/js/identity-client.js"></script>
-  <script src="assets/js/event-client.js"></script>
-  <script src="assets/js/privacy-consent.js"></script>
-  <script src="assets/js/feedback-client.js"></script>
-  <script src="assets/js/shell-runtime.js"></script>
-  <script>
-    (function () {
-      var grid = document.getElementById('scriptGrid');
-      var frame = document.getElementById('gameFrame');
-      var playSection = document.getElementById('playSection');
-      var current = null;
-      var colors = ['#213d5a','#52382b','#3e3a27','#334f49','#4b334d'];
+</main>
 
-      Object.keys(window.SCRIPT_REGISTRY || {}).forEach(function (id, index) {
-        var script = SCRIPT_REGISTRY[id];
-        var card = document.createElement('article');
-        card.className = 'tt-card tt-script-card';
-        card.style.background = 'linear-gradient(165deg,' + colors[index % colors.length] + ',#091626)';
-        card.innerHTML = '<div class="tt-chip-row"><span class="tt-chip">' + script.era + '</span><span class="tt-chip">' + script.knowledgePoints + ' 个知识点</span></div><h3>' + script.name + '</h3><p>' + script.subtitle + '</p><div class="tt-actions" style="margin-top:16px"><button class="tt-btn primary" data-play="' + id + '">进入剧情</button><a class="tt-btn gold" href="teacher-guide.html?script=' + id + '">导学卡</a></div>';
-        grid.appendChild(card);
+<script src="data-store.js"></script>
+<script src="script-registry.js"></script>
+<script src="assets/js/api-client.js"></script>
+<script src="assets/js/identity-client.js"></script>
+<script src="assets/js/event-client.js"></script>
+<script src="assets/js/privacy-consent.js"></script>
+<script src="assets/js/feedback-client.js"></script>
+<script src="assets/js/shell-runtime.js"></script>
+<script>
+  // 与游戏主页统一的导航
+  function navigateTo(url) {
+    document.body.style.opacity = '0';
+    document.body.style.transition = 'opacity 0.3s ease';
+    setTimeout(function() { window.location.href = url; }, 220);
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    var menuToggle = document.getElementById('menu-toggle');
+    var sidebar = document.getElementById('sidebar');
+    if (menuToggle && sidebar) {
+      menuToggle.addEventListener('click', function() {
+        sidebar.classList.toggle('-translate-x-full');
+        sidebar.classList.toggle('translate-x-0');
       });
+    }
 
-      TTShell.attach(frame);
+    // 侧栏按钮分发（与主页逻辑一致）
+    var dispatch = {
+      '主页': 'index.html',
+      '剧本选择': 'script-select.html',
+      'AI 导学': 'ai-mvp.html',
+      '我的学习': 'my-learning.html',
+      '知识点库': 'knowledge-base.html',
+      '错题本': 'error-log.html',
+      '每日修行': 'card-practice.html',
+      '成就勋章': 'achievements.html'
+    };
+    document.querySelectorAll('aside#sidebar button').forEach(function(btn) {
+      var text = (btn.textContent || '').trim();
+      if (dispatch[text]) btn.addEventListener('click', function() { navigateTo(dispatch[text]); });
+    });
 
-      function openScript(scriptId, smooth) {
-        if (!SCRIPT_REGISTRY[scriptId]) return;
-        current = scriptId;
-        var script = SCRIPT_REGISTRY[current];
-        frame.dataset.scriptId = current;
-        document.getElementById('playTitle').textContent = script.name + '｜互动体验';
-        document.getElementById('guideCurrent').href = 'teacher-guide.html?script=' + current;
-        frame.src = script.file + '?mvp_shell=1';
-        playSection.hidden = false;
-        if (smooth !== false) playSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        document.getElementById('frameStatus').textContent = '正在载入…';
-        TTEvents.track('script.open', { scriptId: current, source: 'ai_mvp' });
-        var url = new URL(location.href);
-        url.searchParams.set('play', current);
-        history.replaceState(null, '', url.pathname + '?' + url.searchParams.toString());
-      }
+    // 进度（复用游戏 DataStore）
+    try {
+      var done = window.DataStore ? (DataStore.getStoryCompletedScripts ? DataStore.getStoryCompletedScripts().length : 0) : 0;
+      var pe = document.getElementById('doneCount');
+      if (pe) pe.textContent = done;
+    } catch (e) {}
+  });
+</script>
 
-      grid.addEventListener('click', function (event) {
-        var button = event.target.closest('[data-play]');
-        if (button) openScript(button.dataset.play, true);
-      });
+<script>
+  (function () {
+    var grid = document.getElementById('scriptGrid');
+    var frame = document.getElementById('gameFrame');
+    var playSection = document.getElementById('playSection');
+    var current = null;
+    var colors = ['#213d5a','#52382b','#3e3a27','#334f49','#4b334d'];
 
-      frame.addEventListener('load', function () {
-        if (frame.contentWindow && frame.contentWindow.location.href !== 'about:blank') document.getElementById('frameStatus').textContent = '已载入';
-      });
-      document.getElementById('reloadFrame').addEventListener('click', function () { if (frame.src) frame.contentWindow.location.reload(); });
-      document.getElementById('closeFrame').addEventListener('click', function () {
-        frame.src = 'about:blank';
-        frame.dataset.scriptId = '';
-        current = null;
-        playSection.hidden = true;
-        var url = new URL(location.href);
-        url.searchParams.delete('play');
-        history.replaceState(null, '', url.pathname + (url.searchParams.toString() ? '?' + url.searchParams.toString() : ''));
-      });
+    Object.keys(window.SCRIPT_REGISTRY || {}).forEach(function (id, index) {
+      var script = SCRIPT_REGISTRY[id];
+      var card = document.createElement('article');
+      card.className = 'script-card group relative bg-surface-container overflow-hidden ornate-corner shadow-2xl transition-all hover:-translate-y-1';
+      var grad = colors[index % colors.length];
+      card.innerHTML =
+        '<div class="h-36 relative" style="background:linear-gradient(165deg,' + grad + ',#091626)">' +
+          '<div class="absolute inset-0 bg-gradient-to-t from-surface-container to-transparent"></div>' +
+          '<div class="absolute top-3 left-3"><span class="px-3 py-1 rounded-full bg-secondary/20 backdrop-blur-md text-secondary text-[10px] font-label uppercase tracking-tighter border border-secondary/30">' + (script.era || '历史') + '</span></div>' +
+        '</div>' +
+        '<div class="p-5 relative">' +
+          '<h3 class="text-xl font-headline text-on-surface mb-1">' + script.name + '</h3>' +
+          '<p class="font-body text-on-surface-variant text-sm mb-3">' + (script.subtitle || '') + '</p>' +
+          '<div class="flex items-center gap-3 text-xs text-on-surface-variant mb-4">' +
+            '<span class="flex items-center gap-1"><span class="material-symbols-outlined text-xs">menu_book</span>' + (script.knowledgePoints || '') + ' 个知识点</span>' +
+          '</div>' +
+          '<div class="flex gap-2">' +
+            '<button class="mode-btn story" data-play="' + id + '">进入剧情</button>' +
+            '<a class="mode-btn" style="background:rgba(40,51,86,.6);color:#dbe1ff;border:1px solid rgba(170,190,220,.2)" href="teacher-guide.html?script=' + id + '">导学卡</a>' +
+          '</div>' +
+        '</div>';
+      grid.appendChild(card);
+    });
 
-      var toggle = document.getElementById('trackingToggle');
-      toggle.checked = TTIdentity.isTrackingEnabled();
-      toggle.addEventListener('change', function () { TTIdentity.setTrackingEnabled(toggle.checked); if (!toggle.checked) TTEvents.clearQueue(); });
-      document.addEventListener('tt:tracking-decided', function (event) { toggle.checked = !!(event.detail && event.detail.enabled); });
+    TTShell.attach(frame);
 
-      document.getElementById('feedbackForm').addEventListener('submit', async function (event) {
-        event.preventDefault();
-        var status = document.getElementById('feedbackStatus');
-        status.textContent = '正在提交…';
-        try {
-          var response = await TTFeedback.submit({
-            category: document.getElementById('feedbackCategory').value,
-            contextType: current ? 'script' : 'page',
-            contextId: current || 'ai-mvp',
-            scriptId: current || '',
-            rating: document.getElementById('feedbackRating').value,
-            message: document.getElementById('feedbackMessage').value
-          });
-          status.textContent = '已收到，编号：' + (response.publicId || response.id || '已记录');
-          document.getElementById('feedbackMessage').value = '';
-        } catch (error) { status.textContent = error.message || '提交失败'; }
-      });
+    function openScript(scriptId, smooth) {
+      if (!SCRIPT_REGISTRY[scriptId]) return;
+      current = scriptId;
+      var script = SCRIPT_REGISTRY[current];
+      frame.dataset.scriptId = current;
+      document.getElementById('playTitle').textContent = script.name + '｜互动体验';
+      document.getElementById('guideCurrent').href = 'teacher-guide.html?script=' + current;
+      frame.src = script.file + '?mvp_shell=1';
+      playSection.hidden = false;
+      if (smooth !== false) playSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document.getElementById('frameStatus').textContent = '正在载入…';
+      TTEvents.track('script.open', { scriptId: current, source: 'ai_mvp' });
+      var url = new URL(location.href);
+      url.searchParams.set('play', current);
+      history.replaceState(null, '', url.pathname + '?' + url.searchParams.toString());
+    }
 
-      var requested = new URLSearchParams(location.search).get('play');
-      if (requested && SCRIPT_REGISTRY[requested]) setTimeout(function () { openScript(requested, false); playSection.scrollIntoView({ block: 'start' }); }, 0);
-    })();
-  </script>
+    grid.addEventListener('click', function (event) {
+      var button = event.target.closest('[data-play]');
+      if (button) openScript(button.dataset.play, true);
+    });
+
+    frame.addEventListener('load', function () {
+      if (frame.contentWindow && frame.contentWindow.location.href !== 'about:blank') document.getElementById('frameStatus').textContent = '已载入';
+    });
+    document.getElementById('reloadFrame').addEventListener('click', function () { if (frame.src) frame.contentWindow.location.reload(); });
+    document.getElementById('closeFrame').addEventListener('click', function () {
+      frame.src = 'about:blank';
+      frame.dataset.scriptId = '';
+      current = null;
+      playSection.hidden = true;
+      var url = new URL(location.href);
+      url.searchParams.delete('play');
+      history.replaceState(null, '', url.pathname + (url.searchParams.toString() ? '?' + url.searchParams.toString() : ''));
+    });
+
+    var toggle = document.getElementById('trackingToggle');
+    toggle.checked = TTIdentity.isTrackingEnabled();
+    toggle.addEventListener('change', function () { TTIdentity.setTrackingEnabled(toggle.checked); if (!toggle.checked) TTEvents.clearQueue(); });
+    document.addEventListener('tt:tracking-decided', function (event) { toggle.checked = !!(event.detail && event.detail.enabled); });
+
+    document.getElementById('feedbackForm').addEventListener('submit', async function (event) {
+      event.preventDefault();
+      var status = document.getElementById('feedbackStatus');
+      status.textContent = '正在提交…';
+      try {
+        var response = await TTFeedback.submit({
+          category: document.getElementById('feedbackCategory').value,
+          contextType: current ? 'script' : 'page',
+          contextId: current || 'ai-mvp',
+          scriptId: current || '',
+          rating: document.getElementById('feedbackRating').value,
+          message: document.getElementById('feedbackMessage').value
+        });
+        status.textContent = '已收到，编号：' + (response.publicId || response.id || '已记录');
+        document.getElementById('feedbackMessage').value = '';
+      } catch (error) { status.textContent = error.message || '提交失败'; }
+    });
+
+    var requested = new URLSearchParams(location.search).get('play');
+    if (requested && SCRIPT_REGISTRY[requested]) setTimeout(function () { openScript(requested, false); playSection.scrollIntoView({ block: 'start' }); }, 0);
+  })();
+</script>
 </body>
 </html>

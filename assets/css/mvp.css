@@ -1,1 +1,82 @@
-:root{color-scheme:dark;--bg:#07111f;--panel:#0e1c30;--panel2:#132640;--line:rgba(170,190,220,.2);--text:#eef4ff;--muted:#9fb0c7;--gold:#e9c46a;--cyan:#67e8f9;--green:#86efac;--danger:#fca5a5;--shadow:0 24px 80px rgba(0,0,0,.35)}*{box-sizing:border-box}html{background:var(--bg)}body{margin:0;min-height:100vh;color:var(--text);font-family:Inter,"Noto Sans SC","Microsoft YaHei",system-ui,sans-serif;background:radial-gradient(circle at 15% 0%,rgba(30,100,160,.22),transparent 35%),radial-gradient(circle at 85% 10%,rgba(180,135,50,.14),transparent 30%),var(--bg)}a{color:inherit}.tt-page{width:min(1180px,calc(100% - 32px));margin:0 auto;padding:28px 0 64px}.tt-header{display:flex;justify-content:space-between;align-items:center;gap:18px;margin-bottom:28px}.tt-brand{display:flex;align-items:center;gap:12px;text-decoration:none}.tt-brand-mark{display:grid;place-items:center;width:42px;height:42px;border:1px solid rgba(233,196,106,.55);border-radius:14px;background:linear-gradient(145deg,rgba(233,196,106,.18),rgba(103,232,249,.08));font-weight:800;color:var(--gold)}.tt-brand strong{display:block;font-size:18px}.tt-brand span{display:block;color:var(--muted);font-size:12px;margin-top:3px}.tt-nav{display:flex;gap:8px;flex-wrap:wrap}.tt-nav a,.tt-btn{appearance:none;border:1px solid var(--line);border-radius:12px;padding:10px 14px;background:rgba(15,31,52,.78);color:var(--text);text-decoration:none;cursor:pointer;font:inherit;transition:.2s}.tt-nav a:hover,.tt-btn:hover{border-color:rgba(103,232,249,.55);transform:translateY(-1px)}.tt-btn.primary{background:linear-gradient(135deg,#1f5d83,#19385c);border-color:rgba(103,232,249,.5)}.tt-btn.gold{background:linear-gradient(135deg,#735d2a,#3f351d);border-color:rgba(233,196,106,.55)}.tt-btn.ghost{background:transparent}.tt-btn.danger{border-color:rgba(252,165,165,.45);color:#ffdada}.tt-btn[disabled]{opacity:.5;cursor:not-allowed;transform:none}.tt-hero{display:grid;grid-template-columns:1.2fr .8fr;gap:24px;align-items:stretch;margin-bottom:26px}.tt-card{border:1px solid var(--line);border-radius:22px;background:linear-gradient(165deg,rgba(18,38,64,.94),rgba(9,23,40,.96));box-shadow:var(--shadow);padding:24px}.tt-hero h1{font-size:clamp(32px,5vw,64px);line-height:1.05;margin:4px 0 16px;letter-spacing:-.03em}.tt-kicker{color:var(--gold);font-size:13px;letter-spacing:.18em;text-transform:uppercase}.tt-lead{font-size:18px;color:#ced9e8;line-height:1.75;margin:0 0 22px}.tt-actions{display:flex;gap:12px;flex-wrap:wrap}.tt-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.tt-grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}.tt-grid.four{grid-template-columns:repeat(4,minmax(0,1fr))}.tt-stat strong{display:block;font-size:30px;color:var(--cyan)}.tt-stat span{color:var(--muted);font-size:13px}.tt-section{margin-top:28px}.tt-section h2{font-size:24px;margin:0 0 14px}.tt-section-title{display:flex;justify-content:space-between;align-items:end;gap:16px;margin-bottom:14px}.tt-section-title p{margin:0;color:var(--muted)}.tt-form{display:grid;gap:16px}.tt-form-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.tt-field{display:grid;gap:7px}.tt-field label{font-size:13px;color:#c6d2e2}.tt-input,.tt-select,.tt-textarea{width:100%;border:1px solid var(--line);border-radius:12px;background:#09182a;color:var(--text);padding:12px 13px;font:inherit;outline:none}.tt-input:focus,.tt-select:focus,.tt-textarea:focus{border-color:rgba(103,232,249,.58);box-shadow:0 0 0 3px rgba(103,232,249,.08)}.tt-textarea{min-height:110px;resize:vertical}.tt-chip-row{display:flex;gap:8px;flex-wrap:wrap}.tt-chip{border:1px solid var(--line);border-radius:999px;padding:6px 10px;color:#c9d4e2;font-size:12px;background:rgba(5,16,30,.5)}.tt-chip.ai{color:var(--cyan);border-color:rgba(103,232,249,.4)}.tt-chip.rule{color:var(--gold);border-color:rgba(233,196,106,.4)}.tt-result{display:none}.tt-result.visible{display:block}.tt-result h3{font-size:22px;margin:0 0 14px}.tt-list{margin:0;padding-left:20px;color:#d9e3ef;line-height:1.8}.tt-list li+li{margin-top:5px}.tt-note{padding:12px 14px;border-left:3px solid var(--gold);background:rgba(233,196,106,.08);border-radius:4px 12px 12px 4px;color:#e5d9b6;line-height:1.7}.tt-alert{border:1px solid rgba(252,165,165,.3);background:rgba(127,29,29,.15);color:#ffd3d3;padding:12px 14px;border-radius:12px}.tt-success{border:1px solid rgba(134,239,172,.3);background:rgba(20,83,45,.16);color:#c9f8d8;padding:12px 14px;border-radius:12px}.tt-muted{color:var(--muted)}.tt-loading{display:inline-flex;align-items:center;gap:8px}.tt-spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.2);border-top-color:var(--cyan);border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}.tt-script-card{position:relative;overflow:hidden;min-height:180px;display:flex;flex-direction:column;justify-content:end}.tt-script-card::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent,rgba(2,10,20,.94));z-index:0}.tt-script-card>*{position:relative;z-index:1}.tt-script-card h3{margin:0 0 8px}.tt-script-card p{margin:0;color:#bbc9da;line-height:1.55}.tt-table-wrap{overflow:auto;border:1px solid var(--line);border-radius:16px}.tt-table{width:100%;border-collapse:collapse;min-width:760px}.tt-table th,.tt-table td{text-align:left;padding:12px;border-bottom:1px solid var(--line);vertical-align:top}.tt-table th{color:#cbd8e8;font-size:12px;background:rgba(5,15,28,.55)}.tt-table td{color:#d8e2ee;font-size:13px}.tt-status{display:inline-block;padding:4px 8px;border-radius:999px;font-size:11px;border:1px solid var(--line)}.tt-frame{width:100%;height:calc(100vh - 150px);min-height:620px;border:1px solid var(--line);border-radius:18px;background:#020812}.tt-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}.tt-toolbar .tt-select{width:auto;min-width:220px}.tt-modal{position:fixed;inset:0;display:none;place-items:center;padding:20px;background:rgba(0,5,12,.76);z-index:1000}.tt-modal.open{display:grid}.tt-modal-panel{width:min(720px,100%);max-height:88vh;overflow:auto;border:1px solid var(--line);border-radius:20px;background:#0c1b2e;padding:22px;box-shadow:var(--shadow)}.tt-footer{margin-top:40px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:12px;line-height:1.7}@media(max-width:880px){.tt-hero,.tt-grid,.tt-grid.two,.tt-grid.four,.tt-form-row{grid-template-columns:1fr}.tt-header{align-items:flex-start;flex-direction:column}.tt-page{width:min(100% - 20px,1180px);padding-top:14px}.tt-card{padding:18px}.tt-frame{height:70vh;min-height:520px}}
+/* 时空剧场 AI 导学版 — 复用游戏主页 / script-select 同款设计语言
+   颜色与组件定义与 script-select.html 的 inline <style> 保持一致，
+   以保证导学版与游戏其他页面视觉统一。 */
+
+:root { color-scheme: dark; }
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background-color: #041133;
+  color: #dbe1ff;
+  font-family: 'Manrope', 'Plus Jakarta Sans', 'Noto Sans SC', sans-serif;
+}
+
+/* Material Symbols 变体（与游戏一致） */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  vertical-align: middle;
+}
+
+/* 毛玻璃面板（与游戏 .glass-card 一致） */
+.glass-card {
+  background: rgba(40, 51, 86, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* 金棕印章按钮（与游戏 .sigil-button 一致） */
+.sigil-button {
+  background: linear-gradient(135deg, #efbd8a 0%, #5a3912 100%);
+  color: #041133;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.sigil-button:hover { box-shadow: 0 0 15px rgba(239, 189, 138, 0.4); transform: translateY(-1px); }
+.sigil-button:active { transform: scale(0.96); }
+
+/* 卷角（与游戏 .ornate-corner 一致） */
+.ornate-corner { border-radius: 4px 24px 4px 4px; }
+
+/* 故事模式按钮（与游戏 .mode-btn.story 一致） */
+.mode-btn {
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 1px solid transparent;
+  text-decoration: none;
+}
+.mode-btn:active { transform: scale(0.95); }
+.mode-btn.story {
+  background: linear-gradient(135deg, #efbd8a, #d4a574);
+  color: #041133;
+  border-color: rgba(239, 189, 138, 0.3);
+}
+.mode-btn.story:hover { box-shadow: 0 0 12px rgba(239, 189, 138, 0.5); }
+
+/* 剧本卡片（与游戏 .script-card 一致） */
+.script-card { cursor: pointer; }
+.script-card button, .script-card a { cursor: pointer; }
+
+button:active { transform: scale(0.9); }
+
+/* 表单输入：复用游戏 surface-container 风格 */
+.mvp-input {
+  width: 100%;
+  background: rgba(19, 38, 64, 0.7);
+  border: 1px solid rgba(170, 190, 220, 0.25);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: #dbe1ff;
+  font-size: 14px;
+  font-family: inherit;
+}
+.mvp-input:focus { outline: none; border-color: #efbd8a; box-shadow: 0 0 0 2px rgba(239, 189, 138, 0.2); }
+.mvp-input::placeholder { color: #8294ad; }

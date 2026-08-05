@@ -1,82 +1,83 @@
-/* 时空剧场 AI 导学版 — 复用游戏主页 / script-select 同款设计语言
-   颜色与组件定义与 script-select.html 的 inline <style> 保持一致，
-   以保证导学版与游戏其他页面视觉统一。 */
-
-:root { color-scheme: dark; }
-* { box-sizing: border-box; }
-html, body { margin: 0; }
+/* 复用 script-select.html 的同一套组件样式，确保导学版剧本卡片与「剧本选择」内容页像素一致 */
 body {
   background-color: #041133;
   color: #dbe1ff;
-  font-family: 'Manrope', 'Plus Jakarta Sans', 'Noto Sans SC', sans-serif;
+  font-family: 'Manrope', sans-serif;
 }
-
-/* Material Symbols 变体（与游戏一致） */
 .material-symbols-outlined {
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
   vertical-align: middle;
 }
-
-/* 毛玻璃面板（与游戏 .glass-card 一致） */
 .glass-card {
   background: rgba(40, 51, 86, 0.6);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
 }
-
-/* 金棕印章按钮（与游戏 .sigil-button 一致） */
 .sigil-button {
   background: linear-gradient(135deg, #efbd8a 0%, #5a3912 100%);
   color: #041133;
-  border: none;
-  cursor: pointer;
   transition: all 0.3s ease;
 }
-.sigil-button:hover { box-shadow: 0 0 15px rgba(239, 189, 138, 0.4); transform: translateY(-1px); }
-.sigil-button:active { transform: scale(0.96); }
-
-/* 卷角（与游戏 .ornate-corner 一致） */
-.ornate-corner { border-radius: 4px 24px 4px 4px; }
-
-/* 故事模式按钮（与游戏 .mode-btn.story 一致） */
+.sigil-button:hover {
+  box-shadow: 0 0 15px rgba(239, 189, 138, 0.4);
+}
+.ornate-corner {
+  border-radius: 4px 24px 4px 4px;
+}
+.vision-orb-container {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(182, 196, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(182, 196, 255, 0.3);
+}
+.vision-orb-fill {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  background: linear-gradient(0deg, #264191 0%, #b6c4ff 100%);
+  transition: height 1s ease-in-out;
+}
+.mode-btns { display: flex; gap: 6px; align-items: center; }
 .mode-btn {
-  padding: 10px 18px;
-  border-radius: 10px;
-  font-size: 13px;
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-size: 12px;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s;
-  display: inline-flex;
+  transition: all .2s;
+  display: flex;
   align-items: center;
-  justify-content: center;
   gap: 4px;
   border: 1px solid transparent;
   text-decoration: none;
 }
-.mode-btn:active { transform: scale(0.95); }
+.mode-btn:active { transform: scale(.95); }
 .mode-btn.story {
   background: linear-gradient(135deg, #efbd8a, #d4a574);
   color: #041133;
-  border-color: rgba(239, 189, 138, 0.3);
+  border-color: rgba(239, 189, 138, .3);
 }
-.mode-btn.story:hover { box-shadow: 0 0 12px rgba(239, 189, 138, 0.5); }
-
-/* 剧本卡片（与游戏 .script-card 一致） */
+.mode-btn.story:hover { box-shadow: 0 0 12px rgba(239, 189, 138, .5); }
+.mode-btn.ghost {
+  background: rgba(40, 51, 86, .6);
+  color: #dbe1ff;
+  border: 1px solid rgba(170, 190, 220, .2);
+}
+.mode-btn.ghost:hover { box-shadow: 0 0 12px rgba(170, 190, 220, .25); }
 .script-card { cursor: pointer; }
 .script-card button, .script-card a { cursor: pointer; }
-
 button:active { transform: scale(0.9); }
-
-/* 表单输入：复用游戏 surface-container 风格 */
 .mvp-input {
   width: 100%;
-  background: rgba(19, 38, 64, 0.7);
-  border: 1px solid rgba(170, 190, 220, 0.25);
-  border-radius: 10px;
+  background: rgba(40, 51, 86, 0.5);
+  border: 1px solid rgba(170, 190, 220, 0.2);
+  border-radius: 8px;
   padding: 10px 12px;
   color: #dbe1ff;
+  font-family: 'Manrope', sans-serif;
   font-size: 14px;
-  font-family: inherit;
 }
-.mvp-input:focus { outline: none; border-color: #efbd8a; box-shadow: 0 0 0 2px rgba(239, 189, 138, 0.2); }
-.mvp-input::placeholder { color: #8294ad; }
+.mvp-input:focus { outline: none; border-color: rgba(239, 189, 138, 0.5); }

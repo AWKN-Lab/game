@@ -1,125 +1,233 @@
 <!doctype html>
-<html lang="zh-CN">
+<html class="dark" lang="zh">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>教师导学卡｜时空剧场</title>
-  <link rel="stylesheet" href="assets/css/mvp.css">
-  <style>@media print{.no-print,.tt-header,.tt-footer,#guideForm{display:none!important}.tt-page{width:100%;padding:0}.tt-card{box-shadow:none;border:0}.tt-result{display:block!important}}</style>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
+  <link rel="stylesheet" href="dist/output.css?v=5"/>
+  <link rel="stylesheet" href="assets/css/mvp.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700&family=Manrope:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;600&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <style>
+    body { background-color:#041133; color:#dbe1ff; font-family:'Manrope',sans-serif; }
+    .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; vertical-align:middle; }
+    .glass-card { background:rgba(40,51,86,0.6); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); }
+    .sigil-button { background:linear-gradient(135deg,#efbd8a 0%,#5a3912 100%); transition:all .3s ease; color:#4a3800; font-weight:700; }
+    .sigil-button:hover { box-shadow:0 0 15px rgba(239,189,138,.4); }
+    .ornate-corner { border-radius:4px 24px 4px 4px; }
+    button:active, a:active { transform:scale(0.97); }
+  </style>
 </head>
-<body>
-  <main class="tt-page">
-    <header class="tt-header no-print">
-      <a class="tt-brand" href="ai-mvp.html"><span class="tt-brand-mark">导</span><span><strong>教师导学卡</strong><span>从现成剧本里整理一堂能直接使用的课</span></span></a>
-      <nav class="tt-nav"><a href="ai-mvp.html">返回首页</a><a href="learning-review.html">学生复盘</a><a href="wish-pool.html">许愿池</a></nav>
-    </header>
+<body class="bg-surface text-on-surface min-h-screen font-body relative overflow-x-hidden">
 
-    <section class="tt-grid two">
-      <article class="tt-card no-print">
-        <div class="tt-kicker">课前两分钟</div>
-        <h1 style="font-size:42px;margin:8px 0 12px">告诉我这堂课<br>怎么上</h1>
-        <p class="tt-lead">选一个现有剧本，填入课堂时间、学生基础和本节重点。系统只从已有剧情和教学元数据里编排。</p>
-        <form id="guideForm" class="tt-form">
-          <div class="tt-field"><label for="scriptId">选择剧本</label><select id="scriptId" class="tt-select" required></select></div>
-          <div class="tt-form-row">
-            <div class="tt-field"><label for="duration">课堂时长</label><select id="duration" class="tt-select"><option value="15">15 分钟</option><option value="20">20 分钟</option><option value="40" selected>40 分钟</option></select></div>
-            <div class="tt-field"><label for="studentLevel">学生基础</label><select id="studentLevel" class="tt-select"><option value="weak">基础薄弱</option><option value="average" selected>基础一般</option><option value="strong">基础较好</option></select></div>
+<!-- Cinematic background (reuse game asset) -->
+<div id="cinematic-bg" class="absolute inset-0 z-0">
+  <img alt="grand library interior" class="w-full h-full object-cover opacity-60" src="images/bg/grand_library.png" loading="lazy"/>
+</div>
+
+<!-- Sidebar (Unified with index.html / script-select.html) -->
+<aside id="sidebar" class="fixed left-0 top-0 h-full w-16 lg:w-20 z-40 bg-slate-900/40 backdrop-blur-md flex-col items-center py-4 lg:py-6 space-y-2 lg:space-y-4 shadow-2xl shadow-indigo-950/50 pt-14 lg:pt-20 transition-transform duration-300 -translate-x-full lg:translate-x-0">
+  <div class="flex flex-col items-center gap-1 mb-2">
+    <div class="w-9 h-9 lg:w-11 lg:h-11 rounded-full border-2 border-primary overflow-hidden">
+      <img alt="profile portrait" class="w-full h-full object-cover" src="images/ui/scholar_avatar.png" loading="lazy"/>
+    </div>
+  </div>
+  <div class="flex flex-col items-center gap-1 lg:gap-2 w-full">
+    <button onclick="navigateTo('index.html')" class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
+      <span class="material-symbols-outlined text-sm lg:text-base">map</span>
+      <span class="text-[8px] lg:text-[9px] font-label tracking-tighter">主页</span>
+    </button>
+    <button onclick="navigateTo('script-select.html')" class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
+      <span class="material-symbols-outlined text-sm lg:text-base">auto_stories</span>
+      <span class="text-[8px] lg:text-[9px] font-label tracking-tighter">剧本选择</span>
+    </button>
+    <button onclick="navigateTo('ai-mvp.html')" class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 bg-amber-400/20 text-amber-400 border-l-4 border-amber-400 group">
+      <span class="material-symbols-outlined text-sm lg:text-base" style="font-variation-settings: 'FILL' 1;">school</span>
+      <span class="text-[8px] lg:text-[9px] font-label tracking-tighter">AI 导学</span>
+    </button>
+    <button onclick="navigateTo('my-learning.html')" class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
+      <span class="material-symbols-outlined text-sm lg:text-base">history_edu</span>
+      <span class="text-[8px] lg:text-[9px] font-label tracking-tighter">我的学习</span>
+    </button>
+    <button class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
+      <span class="material-symbols-outlined text-sm lg:text-base">edit_note</span>
+      <span class="text-[8px] lg:text-[9px] font-label tracking-tighter">错题本</span>
+    </button>
+    <button onclick="navigateTo('knowledge-base.html')" class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
+      <span class="material-symbols-outlined text-sm lg:text-base">database</span>
+      <span class="text-[8px] lg:text-[9px] font-label tracking-tighter">知识点库</span>
+    </button>
+    <button onclick="navigateTo('achievements.html')" class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
+      <span class="material-symbols-outlined text-sm lg:text-base">stars</span>
+      <span class="text-[8px] lg:text-[9px] font-label tracking-tighter">成就勋章</span>
+    </button>
+  </div>
+</aside>
+<button id="menu-toggle" class="fixed top-4 left-4 z-50 p-2 rounded-lg bg-slate-900/60 backdrop-blur-md text-white hover:bg-slate-800/80 transition-colors lg:hidden">
+  <span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">menu</span>
+</button>
+
+<main class="relative z-10 ml-0 lg:ml-[80px] pt-16 lg:pt-4 pb-12 px-4 md:px-12 min-h-screen">
+  <header class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+    <div>
+      <h1 class="text-3xl md:text-5xl font-headline text-transparent bg-clip-text bg-gradient-to-b from-primary to-on-primary-container drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] mb-1">教师导学卡</h1>
+      <p class="font-body text-on-surface-variant text-sm">从现成剧本里整理一堂能直接使用的课。</p>
+    </div>
+    <nav class="flex flex-wrap gap-2 no-print">
+      <a href="ai-mvp.html" class="flex items-center gap-1 glass-card ornate-corner px-3 py-1.5 rounded-lg text-on-surface text-xs font-label"><span class="material-symbols-outlined text-sm">home</span> 导学版首页</a>
+      <a href="learning-review.html" class="flex items-center gap-1 glass-card ornate-corner px-3 py-1.5 rounded-lg text-on-surface text-xs font-label"><span class="material-symbols-outlined text-sm">history_edu</span> 学生复盘</a>
+      <a href="wish-pool.html" class="flex items-center gap-1 glass-card ornate-corner px-3 py-1.5 rounded-lg text-on-surface text-xs font-label"><span class="material-symbols-outlined text-sm">feedback</span> 许愿池</a>
+      <a href="index.html" class="flex items-center gap-1 glass-card ornate-corner px-3 py-1.5 rounded-lg text-on-surface text-xs font-label"><span class="material-symbols-outlined text-sm">arrow_back</span> 游戏主页</a>
+    </nav>
+  </header>
+
+  <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <article class="glass-card ornate-corner rounded-xl p-6 md:p-8 no-print">
+      <p class="text-[10px] font-label uppercase tracking-widest text-secondary mb-1">课前两分钟</p>
+      <h1 class="font-headline text-3xl md:text-4xl text-on-surface mb-2">告诉我这堂课<br>怎么上</h1>
+      <p class="text-sm text-on-surface-variant font-body mb-6">选一个现有剧本，填入课堂时间、学生基础和本节重点。系统只从已有剧情和教学元数据里编排。</p>
+      <form id="guideForm" class="space-y-4">
+        <div>
+          <label for="scriptId" class="block text-xs font-label text-on-surface-variant mb-1">选择剧本</label>
+          <select id="scriptId" class="w-full bg-surface-container border border-outline-variant/30 rounded-lg px-3 py-2 text-sm text-on-surface focus:outline-none focus:border-primary" required></select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="duration" class="block text-xs font-label text-on-surface-variant mb-1">课堂时长</label>
+            <select id="duration" class="w-full bg-surface-container border border-outline-variant/30 rounded-lg px-3 py-2 text-sm text-on-surface focus:outline-none focus:border-primary">
+              <option value="15">15 分钟</option><option value="20">20 分钟</option><option value="40" selected>40 分钟</option>
+            </select>
           </div>
-          <div class="tt-field"><label for="teachingFocus">本节最想讲清什么</label><textarea id="teachingFocus" class="tt-textarea" maxlength="160" placeholder="例如：区分根本原因、导火线和开始标志"></textarea></div>
-          <div class="tt-field"><label for="usageMode">怎么使用</label><select id="usageMode" class="tt-select"><option value="projection">教师投屏讲解</option><option value="self_study">学生自己体验</option></select></div>
-          <button id="generateButton" class="tt-btn gold" type="submit">生成导学卡</button>
-          <div id="formStatus" class="tt-muted"></div>
-        </form>
-      </article>
-
-      <article class="tt-card">
-        <div id="emptyState">
-          <div class="tt-kicker">输出只有一页</div>
-          <h2>生成后会得到</h2>
-          <ul class="tt-list"><li>本节目标</li><li>建议使用的剧情段落</li><li>三个暂停提问</li><li>板书提纲</li><li>课堂小结与课后任务</li></ul>
-          <div class="tt-note" style="margin-top:18px">模型超时、密钥未配置或返回格式异常时，页面会自动显示本地规则版。</div>
+          <div>
+            <label for="studentLevel" class="block text-xs font-label text-on-surface-variant mb-1">学生基础</label>
+            <select id="studentLevel" class="w-full bg-surface-container border border-outline-variant/30 rounded-lg px-3 py-2 text-sm text-on-surface focus:outline-none focus:border-primary">
+              <option value="weak">基础薄弱</option><option value="average" selected>基础一般</option><option value="strong">基础较好</option>
+            </select>
+          </div>
         </div>
-        <div id="result" class="tt-result">
-          <div class="tt-section-title"><div><div class="tt-kicker">课堂导学卡</div><h2 id="resultTitle"></h2></div><span id="modeBadge" class="tt-chip"></span></div>
-          <h3>今天学什么</h3><ol id="objectives" class="tt-list"></ol>
-          <h3>建议看哪几段</h3><div id="acts" class="tt-grid"></div>
-          <h3>讲到这里停一下</h3><ol id="questions" class="tt-list"></ol>
-          <h3>黑板上写什么</h3><div id="board" class="tt-note"></div>
-          <h3>下课前收回来</h3><p id="summary" class="tt-muted"></p>
-          <h3>课后任务</h3><p id="homework" class="tt-muted"></p>
-          <div id="tip" class="tt-success"></div>
-          <div class="tt-actions no-print" style="margin-top:18px"><button class="tt-btn" type="button" onclick="window.print()">打印</button><a id="playLink" class="tt-btn primary" href="ai-mvp.html">进入剧本</a><button id="regenerate" class="tt-btn ghost" type="button">重新生成</button></div>
+        <div>
+          <label for="teachingFocus" class="block text-xs font-label text-on-surface-variant mb-1">本节最想讲清什么</label>
+          <textarea id="teachingFocus" class="w-full bg-surface-container border border-outline-variant/30 rounded-lg px-3 py-2 text-sm text-on-surface focus:outline-none focus:border-primary resize-none" maxlength="160" rows="2" placeholder="例如：区分根本原因、导火线和开始标志"></textarea>
         </div>
-      </article>
-    </section>
-    <footer class="tt-footer no-print">导学卡中的历史信息来自系统已有剧本与教学元数据；使用前由教师做最终确认。</footer>
-  </main>
+        <div>
+          <label for="usageMode" class="block text-xs font-label text-on-surface-variant mb-1">怎么使用</label>
+          <select id="usageMode" class="w-full bg-surface-container border border-outline-variant/30 rounded-lg px-3 py-2 text-sm text-on-surface focus:outline-none focus:border-primary">
+            <option value="projection">教师投屏讲解</option><option value="self_study">学生自己体验</option>
+          </select>
+        </div>
+        <button id="generateButton" class="sigil-button ornate-corner w-full px-4 py-3 rounded-lg font-label tracking-wide" type="submit">生成导学卡</button>
+        <div id="formStatus" class="text-sm text-on-surface-variant font-body"></div>
+      </form>
+    </article>
 
-  <script src="script-registry.js"></script>
-  <script src="assets/js/api-client.js"></script>
-  <script src="assets/js/identity-client.js"></script>
-  <script src="assets/js/event-client.js"></script>
-  <script src="assets/js/privacy-consent.js"></script>
-  <script src="assets/js/teaching-rules.js"></script>
-  <script src="assets/js/ai-teaching-assistant.js"></script>
-  <script>
-    (function () {
-      TTIdentity.setRole('teacher');
-      var select = document.getElementById('scriptId');
-      Object.keys(SCRIPT_REGISTRY || {}).forEach(function (id) {
-        var option = document.createElement('option'); option.value = id; option.textContent = SCRIPT_REGISTRY[id].name; select.appendChild(option);
+    <article class="glass-card ornate-corner rounded-xl p-6 md:p-8">
+      <div id="emptyState">
+        <p class="text-[10px] font-label uppercase tracking-widest text-secondary mb-1">输出只有一页</p>
+        <h2 class="font-headline text-2xl text-on-surface mb-3">生成后会得到</h2>
+        <ul class="tt-list"><li>本节目标</li><li>建议使用的剧情段落</li><li>三个暂停提问</li><li>板书提纲</li><li>课堂小结与课后任务</li></ul>
+        <div class="text-sm text-on-surface-variant font-body bg-surface-container/60 rounded-lg p-3 mt-4">模型超时、密钥未配置或返回格式异常时，页面会自动显示本地规则版。</div>
+      </div>
+      <div id="result" class="tt-result">
+        <div class="flex items-center justify-between mb-3">
+          <div><p class="text-[10px] font-label uppercase tracking-widest text-secondary">课堂导学卡</p><h2 id="resultTitle" class="font-headline text-2xl text-on-surface"></h2></div>
+          <span id="modeBadge" class="tt-chip"></span>
+        </div>
+        <h3 class="font-headline text-lg text-on-surface mt-4">今天学什么</h3><ol id="objectives" class="tt-list"></ol>
+        <h3 class="font-headline text-lg text-on-surface mt-4">建议看哪几段</h3><div id="acts" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2"></div>
+        <h3 class="font-headline text-lg text-on-surface mt-4">讲到这里停一下</h3><ol id="questions" class="tt-list"></ol>
+        <h3 class="font-headline text-lg text-on-surface mt-4">黑板上写什么</h3><div id="board" class="text-sm text-on-surface-variant font-body bg-surface-container/60 rounded-lg p-3"></div>
+        <h3 class="font-headline text-lg text-on-surface mt-4">下课前收回来</h3><p id="summary" class="text-sm text-on-surface-variant font-body"></p>
+        <h3 class="font-headline text-lg text-on-surface mt-4">课后任务</h3><p id="homework" class="text-sm text-on-surface-variant font-body"></p>
+        <div id="tip" class="text-sm text-primary font-body bg-primary/10 rounded-lg p-3 mt-3"></div>
+        <div class="flex flex-wrap gap-3 mt-4 no-print">
+          <button class="glass-card ornate-corner px-4 py-2 rounded-lg text-on-surface text-sm font-label" type="button" onclick="window.print()">打印</button>
+          <a id="playLink" class="sigil-button ornate-corner px-4 py-2 rounded-lg text-sm font-label" href="ai-mvp.html">进入剧本</a>
+          <button id="regenerate" class="glass-card ornate-corner px-4 py-2 rounded-lg text-on-surface text-sm font-label" type="button">重新生成</button>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <footer class="mt-8 text-xs text-on-surface-variant font-body no-print">导学卡中的历史信息来自系统已有剧本与教学元数据；使用前由教师做最终确认。</footer>
+</main>
+
+<script>
+  window.navigateTo = window.navigateTo || function(url) {
+    document.body.style.opacity = '0';
+    document.body.style.transition = 'opacity 0.3s ease';
+    setTimeout(function() { window.location.href = url; }, 300);
+  };
+  document.getElementById('menu-toggle')?.addEventListener('click', function() {
+    document.getElementById('sidebar').classList.toggle('-translate-x-full');
+  });
+</script>
+
+<script src="script-registry.js"></script>
+<script src="assets/js/api-client.js"></script>
+<script src="assets/js/identity-client.js"></script>
+<script src="assets/js/event-client.js"></script>
+<script src="assets/js/privacy-consent.js"></script>
+<script src="assets/js/teaching-rules.js"></script>
+<script src="assets/js/ai-teaching-assistant.js"></script>
+<script>
+  (function () {
+    TTIdentity.setRole('teacher');
+    var select = document.getElementById('scriptId');
+    Object.keys(SCRIPT_REGISTRY || {}).forEach(function (id) {
+      var option = document.createElement('option'); option.value = id; option.textContent = SCRIPT_REGISTRY[id].name; select.appendChild(option);
+    });
+    var requested = new URLSearchParams(location.search).get('script');
+    if (requested && SCRIPT_REGISTRY[requested]) select.value = requested;
+    var saved = JSON.parse(localStorage.getItem('tt_teacher_preferences') || '{}');
+    if (!requested && saved.scriptId && SCRIPT_REGISTRY[saved.scriptId]) select.value = saved.scriptId;
+    if (saved.duration) document.getElementById('duration').value = saved.duration;
+    if (saved.studentLevel) document.getElementById('studentLevel').value = saved.studentLevel;
+    if (saved.usageMode) document.getElementById('usageMode').value = saved.usageMode;
+
+    function fillList(element, values) {
+      element.innerHTML = '';
+      (values || []).forEach(function (value) { var li = document.createElement('li'); li.textContent = value; element.appendChild(li); });
+    }
+    function render(plan) {
+      document.getElementById('emptyState').hidden = true;
+      var result = document.getElementById('result'); result.classList.add('visible');
+      document.getElementById('resultTitle').textContent = plan.title;
+      var badge = document.getElementById('modeBadge'); badge.textContent = plan.sourceLabel || plan.mode; badge.className = 'tt-chip ' + (plan.mode === 'ai' ? 'ai' : 'rule');
+      fillList(document.getElementById('objectives'), plan.objectives);
+      var acts = document.getElementById('acts'); acts.innerHTML = '';
+      (plan.recommendedActs || []).forEach(function (act) {
+        var card = document.createElement('article'); card.className = 'tt-card'; card.innerHTML = '<span class="tt-chip">' + act.minutes + '分钟</span><h3 class="font-headline text-lg text-on-surface mt-1">' + act.title + '</h3><p class="text-sm text-on-surface-variant font-body mt-1">' + act.reason + '</p>'; acts.appendChild(card);
       });
-      var requested = new URLSearchParams(location.search).get('script');
-      if (requested && SCRIPT_REGISTRY[requested]) select.value = requested;
-      var saved = JSON.parse(localStorage.getItem('tt_teacher_preferences') || '{}');
-      if (!requested && saved.scriptId && SCRIPT_REGISTRY[saved.scriptId]) select.value = saved.scriptId;
-      if (saved.duration) document.getElementById('duration').value = saved.duration;
-      if (saved.studentLevel) document.getElementById('studentLevel').value = saved.studentLevel;
-      if (saved.usageMode) document.getElementById('usageMode').value = saved.usageMode;
-
-      function fillList(element, values) {
-        element.innerHTML = '';
-        (values || []).forEach(function (value) { var li = document.createElement('li'); li.textContent = value; element.appendChild(li); });
-      }
-      function render(plan) {
-        document.getElementById('emptyState').hidden = true;
-        var result = document.getElementById('result'); result.classList.add('visible');
-        document.getElementById('resultTitle').textContent = plan.title;
-        var badge = document.getElementById('modeBadge'); badge.textContent = plan.sourceLabel || plan.mode; badge.className = 'tt-chip ' + (plan.mode === 'ai' ? 'ai' : 'rule');
-        fillList(document.getElementById('objectives'), plan.objectives);
-        var acts = document.getElementById('acts'); acts.innerHTML = '';
-        (plan.recommendedActs || []).forEach(function (act) {
-          var card = document.createElement('article'); card.className = 'tt-card'; card.innerHTML = '<span class="tt-chip">' + act.minutes + '分钟</span><h3>' + act.title + '</h3><p class="tt-muted">' + act.reason + '</p>'; acts.appendChild(card);
-        });
-        fillList(document.getElementById('questions'), plan.pauseQuestions);
-        document.getElementById('board').innerHTML = (plan.boardOutline || []).map(function (item) { return '<div>' + item.replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]}) + '</div>'; }).join('');
-        document.getElementById('summary').textContent = plan.summary;
-        document.getElementById('homework').textContent = plan.homework;
-        document.getElementById('tip').textContent = plan.teachingTip || '请结合班级实际做最后调整。';
-        document.getElementById('playLink').href = 'ai-mvp.html?play=' + select.value;
-        localStorage.setItem('tt_last_lesson_plan', JSON.stringify({ input: currentInput(), result: plan }));
-      }
-      function currentInput() {
-        return {
-          scriptId: select.value,
-          duration: Number(document.getElementById('duration').value),
-          studentLevel: document.getElementById('studentLevel').value,
-          teachingFocus: document.getElementById('teachingFocus').value.trim(),
-          usageMode: document.getElementById('usageMode').value
-        };
-      }
-      async function generate() {
-        var input = currentInput();
-        localStorage.setItem('tt_teacher_preferences', JSON.stringify(input));
-        var button = document.getElementById('generateButton'); var status = document.getElementById('formStatus');
-        button.disabled = true; button.innerHTML = '<span class="tt-loading"><span class="tt-spinner"></span>正在整理已有剧本…</span>'; status.textContent = '';
-        try { render(await TTAI.generateLessonPlan(input)); }
-        catch (error) { status.textContent = error.message || '生成失败'; }
-        finally { button.disabled = false; button.textContent = '生成导学卡'; }
-      }
-      document.getElementById('guideForm').addEventListener('submit', function (event) { event.preventDefault(); generate(); });
-      document.getElementById('regenerate').addEventListener('click', generate);
-    })();
-  </script>
+      fillList(document.getElementById('questions'), plan.pauseQuestions);
+      document.getElementById('board').innerHTML = (plan.boardOutline || []).map(function (item) { return '<div>' + item.replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]}) + '</div>'; }).join('');
+      document.getElementById('summary').textContent = plan.summary;
+      document.getElementById('homework').textContent = plan.homework;
+      document.getElementById('tip').textContent = plan.teachingTip || '请结合班级实际做最后调整。';
+      document.getElementById('playLink').href = 'ai-mvp.html?play=' + select.value;
+      localStorage.setItem('tt_last_lesson_plan', JSON.stringify({ input: currentInput(), result: plan }));
+    }
+    function currentInput() {
+      return {
+        scriptId: select.value,
+        duration: Number(document.getElementById('duration').value),
+        studentLevel: document.getElementById('studentLevel').value,
+        teachingFocus: document.getElementById('teachingFocus').value.trim(),
+        usageMode: document.getElementById('usageMode').value
+      };
+    }
+    async function generate() {
+      var input = currentInput();
+      localStorage.setItem('tt_teacher_preferences', JSON.stringify(input));
+      var button = document.getElementById('generateButton'); var status = document.getElementById('formStatus');
+      button.disabled = true; button.innerHTML = '<span class="tt-loading"><span class="tt-spinner"></span>正在整理已有剧本…</span>'; status.textContent = '';
+      try { render(await TTAI.generateLessonPlan(input)); }
+      catch (error) { status.textContent = error.message || '生成失败'; }
+      finally { button.disabled = false; button.textContent = '生成导学卡'; }
+    }
+    document.getElementById('guideForm').addEventListener('submit', function (event) { event.preventDefault(); generate(); });
+    document.getElementById('regenerate').addEventListener('click', generate);
+  })();
+</script>
 </body>
 </html>

@@ -1,122 +1,216 @@
 <!doctype html>
-<html lang="zh-CN">
+<html class="dark" lang="zh">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>学习复盘｜时空剧场</title>
-  <link rel="stylesheet" href="assets/css/mvp.css">
-  <style>@media print{.no-print,.tt-header,.tt-footer,#reviewControls{display:none!important}.tt-page{width:100%;padding:0}.tt-card{box-shadow:none;border:0}.tt-result{display:block!important}}</style>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
+  <link rel="stylesheet" href="dist/output.css?v=5"/>
+  <link rel="stylesheet" href="assets/css/mvp.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700&family=Manrope:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;600&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <style>
+    body { background-color:#041133; color:#dbe1ff; font-family:'Manrope',sans-serif; }
+    .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; vertical-align:middle; }
+    .glass-card { background:rgba(40,51,86,0.6); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); }
+    .sigil-button { background:linear-gradient(135deg,#efbd8a 0%,#5a3912 100%); transition:all .3s ease; color:#4a3800; font-weight:700; }
+    .sigil-button:hover { box-shadow:0 0 15px rgba(239,189,138,.4); }
+    .ornate-corner { border-radius:4px 24px 4px 4px; }
+    button:active, a:active { transform:scale(0.97); }
+  </style>
 </head>
-<body>
-  <main class="tt-page">
-    <header class="tt-header no-print">
-      <a class="tt-brand" href="ai-mvp.html"><span class="tt-brand-mark">复</span><span><strong>我的学习复盘</strong><span>看看哪些已经会，哪些还需要再想一步</span></span></a>
-      <nav class="tt-nav"><a href="ai-mvp.html">返回首页</a><a href="teacher-guide.html">教师导学</a><a href="wish-pool.html">许愿池</a></nav>
-    </header>
+<body class="bg-surface text-on-surface min-h-screen font-body relative overflow-x-hidden">
 
-    <section class="tt-hero">
-      <article class="tt-card no-print">
-        <div class="tt-kicker">课后收回来</div>
-        <h1 style="font-size:44px">走完一段历史<br>把错误讲明白</h1>
-        <p class="tt-lead">复盘读取当前设备上已经存在的剧情完成、知识测试、错题、知识状态和学习评级。没有数据时不会编造结论。</p>
-        <div id="reviewControls" class="tt-form">
-          <div class="tt-field"><label for="scriptId">选择已学习剧本</label><select id="scriptId" class="tt-select"></select></div>
-          <button id="generateButton" class="tt-btn primary" type="button">生成我的学习复盘</button>
-          <div id="dataPreview" class="tt-note"></div>
-          <div id="status" class="tt-muted"></div>
+<!-- Cinematic background (reuse game asset) -->
+<div id="cinematic-bg" class="absolute inset-0 z-0">
+  <img alt="grand library interior" class="w-full h-full object-cover opacity-60" src="images/bg/grand_library.png" loading="lazy"/>
+</div>
+
+<!-- Sidebar (Unified with index.html / script-select.html) -->
+<aside id="sidebar" class="fixed left-0 top-0 h-full w-16 lg:w-20 z-40 bg-slate-900/40 backdrop-blur-md flex-col items-center py-4 lg:py-6 space-y-2 lg:space-y-4 shadow-2xl shadow-indigo-950/50 pt-14 lg:pt-20 transition-transform duration-300 -translate-x-full lg:translate-x-0">
+  <div class="flex flex-col items-center gap-1 mb-2">
+    <div class="w-9 h-9 lg:w-11 lg:h-11 rounded-full border-2 border-primary overflow-hidden">
+      <img alt="profile portrait" class="w-full h-full object-cover" src="images/ui/scholar_avatar.png" loading="lazy"/>
+    </div>
+  </div>
+  <div class="flex flex-col items-center gap-1 lg:gap-2 w-full">
+    <button onclick="navigateTo('index.html')" class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
+      <span class="material-symbols-outlined text-sm lg:text-base">map</span>
+      <span class="text-[8px] lg:text-[9px] font-label tracking-tighter">主页</span>
+    </button>
+    <button onclick="navigateTo('script-select.html')" class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
+      <span class="material-symbols-outlined text-sm lg:text-base">auto_stories</span>
+      <span class="text-[8px] lg:text-[9px] font-label tracking-tighter">剧本选择</span>
+    </button>
+    <button onclick="navigateTo('ai-mvp.html')" class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 bg-amber-400/20 text-amber-400 border-l-4 border-amber-400 group">
+      <span class="material-symbols-outlined text-sm lg:text-base" style="font-variation-settings: 'FILL' 1;">school</span>
+      <span class="text-[8px] lg:text-[9px] font-label tracking-tighter">AI 导学</span>
+    </button>
+    <button onclick="navigateTo('my-learning.html')" class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
+      <span class="material-symbols-outlined text-sm lg:text-base">history_edu</span>
+      <span class="text-[8px] lg:text-[9px] font-label tracking-tighter">我的学习</span>
+    </button>
+    <button class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
+      <span class="material-symbols-outlined text-sm lg:text-base">edit_note</span>
+      <span class="text-[8px] lg:text-[9px] font-label tracking-tighter">错题本</span>
+    </button>
+    <button onclick="navigateTo('knowledge-base.html')" class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
+      <span class="material-symbols-outlined text-sm lg:text-base">database</span>
+      <span class="text-[8px] lg:text-[9px] font-label tracking-tighter">知识点库</span>
+    </button>
+    <button onclick="navigateTo('achievements.html')" class="flex flex-col items-center gap-0.5 w-full py-1.5 lg:py-2 text-slate-400 opacity-70 hover:bg-slate-800/50 hover:opacity-100 transition-all group">
+      <span class="material-symbols-outlined text-sm lg:text-base">stars</span>
+      <span class="text-[8px] lg:text-[9px] font-label tracking-tighter">成就勋章</span>
+    </button>
+  </div>
+</aside>
+<button id="menu-toggle" class="fixed top-4 left-4 z-50 p-2 rounded-lg bg-slate-900/60 backdrop-blur-md text-white hover:bg-slate-800/80 transition-colors lg:hidden">
+  <span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">menu</span>
+</button>
+
+<main class="relative z-10 ml-0 lg:ml-[80px] pt-16 lg:pt-4 pb-12 px-4 md:px-12 min-h-screen">
+  <header class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+    <div>
+      <h1 class="text-3xl md:text-5xl font-headline text-transparent bg-clip-text bg-gradient-to-b from-primary to-on-primary-container drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] mb-1">我的学习复盘</h1>
+      <p class="font-body text-on-surface-variant text-sm">看看哪些已经会，哪些还需要再想一步。</p>
+    </div>
+    <nav class="flex flex-wrap gap-2 no-print">
+      <a href="ai-mvp.html" class="flex items-center gap-1 glass-card ornate-corner px-3 py-1.5 rounded-lg text-on-surface text-xs font-label"><span class="material-symbols-outlined text-sm">home</span> 导学版首页</a>
+      <a href="teacher-guide.html" class="flex items-center gap-1 glass-card ornate-corner px-3 py-1.5 rounded-lg text-on-surface text-xs font-label"><span class="material-symbols-outlined text-sm">auto_stories</span> 教师导学</a>
+      <a href="wish-pool.html" class="flex items-center gap-1 glass-card ornate-corner px-3 py-1.5 rounded-lg text-on-surface text-xs font-label"><span class="material-symbols-outlined text-sm">feedback</span> 许愿池</a>
+      <a href="index.html" class="flex items-center gap-1 glass-card ornate-corner px-3 py-1.5 rounded-lg text-on-surface text-xs font-label"><span class="material-symbols-outlined text-sm">arrow_back</span> 游戏主页</a>
+    </nav>
+  </header>
+
+  <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <article class="glass-card ornate-corner rounded-xl p-6 md:p-8 no-print">
+      <p class="text-[10px] font-label uppercase tracking-widest text-secondary mb-1">课后收回来</p>
+      <h1 class="font-headline text-3xl md:text-4xl text-on-surface mb-2">走完一段历史<br>把错误讲明白</h1>
+      <p class="text-sm text-on-surface-variant font-body mb-6">复盘读取当前设备上已经存在的剧情完成、知识测试、错题、知识状态和学习评级。没有数据时不会编造结论。</p>
+      <div id="reviewControls" class="space-y-4">
+        <div>
+          <label for="scriptId" class="block text-xs font-label text-on-surface-variant mb-1">选择已学习剧本</label>
+          <select id="scriptId" class="w-full bg-surface-container border border-outline-variant/30 rounded-lg px-3 py-2 text-sm text-on-surface focus:outline-none focus:border-primary"></select>
         </div>
-      </article>
-      <aside class="tt-card">
-        <div id="emptyState"><h2>复盘会回答五件事</h2><ul class="tt-list"><li>我已经会了什么</li><li>我容易混淆什么</li><li>我为什么会错</li><li>接下来只做哪三件事</li><li>下一站去哪里</li></ul></div>
-        <div id="result" class="tt-result">
-          <div class="tt-section-title"><div><div class="tt-kicker">学习复盘卡</div><h2 id="resultTitle"></h2></div><span id="modeBadge" class="tt-chip"></span></div>
-          <h3>我已经会了</h3><ul id="mastered" class="tt-list"></ul>
-          <h3>我容易混淆</h3><ul id="confusions" class="tt-list"></ul>
-          <h3>我为什么会错</h3><div id="whyWrong" class="tt-note"></div>
-          <h3>接下来只做三件事</h3><ol id="actions" class="tt-list"></ol>
-          <div id="nextScriptBlock" hidden><h3>下一站</h3><div id="nextScript" class="tt-success"></div></div>
-          <div class="tt-actions no-print" style="margin-top:18px"><button class="tt-btn" type="button" onclick="window.print()">打印</button><a id="replayLink" class="tt-btn primary" href="ai-mvp.html">回到对应剧情</a><button id="regenerate" class="tt-btn ghost" type="button">重新生成</button></div>
+        <button id="generateButton" class="sigil-button ornate-corner w-full px-4 py-3 rounded-lg font-label tracking-wide">生成我的学习复盘</button>
+        <div id="dataPreview" class="text-sm text-on-surface-variant font-body bg-surface-container/60 rounded-lg p-3"></div>
+        <div id="status" class="text-sm text-on-surface-variant font-body"></div>
+      </div>
+    </article>
+
+    <article class="glass-card ornate-corner rounded-xl p-6 md:p-8">
+      <div id="emptyState">
+        <h2 class="font-headline text-2xl text-on-surface mb-3">复盘会回答五件事</h2>
+        <ul class="tt-list"><li>我已经会了什么</li><li>我容易混淆什么</li><li>我为什么会错</li><li>接下来只做哪三件事</li><li>下一站去哪里</li></ul>
+      </div>
+      <div id="result" class="tt-result">
+        <div class="flex items-center justify-between mb-3">
+          <div><p class="text-[10px] font-label uppercase tracking-widest text-secondary">学习复盘卡</p><h2 id="resultTitle" class="font-headline text-2xl text-on-surface"></h2></div>
+          <span id="modeBadge" class="tt-chip"></span>
         </div>
-      </aside>
-    </section>
+        <h3 class="font-headline text-lg text-on-surface mt-4">我已经会了</h3><ul id="mastered" class="tt-list"></ul>
+        <h3 class="font-headline text-lg text-on-surface mt-4">我容易混淆</h3><ul id="confusions" class="tt-list"></ul>
+        <h3 class="font-headline text-lg text-on-surface mt-4">我为什么会错</h3><div id="whyWrong" class="text-sm text-on-surface-variant font-body bg-surface-container/60 rounded-lg p-3"></div>
+        <h3 class="font-headline text-lg text-on-surface mt-4">接下来只做三件事</h3><ol id="actions" class="tt-list"></ol>
+        <div id="nextScriptBlock" hidden><h3 class="font-headline text-lg text-on-surface mt-4">下一站</h3><div id="nextScript" class="text-sm text-primary font-body bg-primary/10 rounded-lg p-3"></div></div>
+        <div class="flex flex-wrap gap-3 mt-4 no-print">
+          <button class="glass-card ornate-corner px-4 py-2 rounded-lg text-on-surface text-sm font-label" type="button" onclick="window.print()">打印</button>
+          <a id="replayLink" class="sigil-button ornate-corner px-4 py-2 rounded-lg text-sm font-label" href="ai-mvp.html">回到对应剧情</a>
+          <button id="regenerate" class="glass-card ornate-corner px-4 py-2 rounded-lg text-on-surface text-sm font-label" type="button">重新生成</button>
+        </div>
+      </div>
+    </article>
+  </section>
 
-    <section class="tt-section tt-card no-print">
-      <h2>当前设备的数据边界</h2>
-      <p class="tt-muted">完整学习进度仍保存在当前浏览器。发送给AI的内容只包含：剧本ID、完成情况、测试百分比、必要的错题摘要、知识点状态和学习评级；不会发送本机密码、邮箱或完整 localStorage。</p>
-    </section>
-    <footer class="tt-footer no-print">复盘用于帮助学生继续学习，不用于给学生贴标签、排名或推断家庭与心理状况。</footer>
-  </main>
+  <section class="glass-card ornate-corner rounded-xl p-6 mt-6">
+    <h2 class="font-headline text-xl text-on-surface mb-2">当前设备的数据边界</h2>
+    <p class="text-sm text-on-surface-variant font-body">完整学习进度仍保存在当前浏览器。发送给 AI 的内容只包含：剧本 ID、完成情况、测试百分比、必要的错题摘要、知识点状态和学习评级；不会发送本机密码、邮箱或完整 localStorage。</p>
+  </section>
 
-  <script src="script-registry.js"></script>
-  <script src="data-store.js"></script>
-  <script src="assets/js/api-client.js"></script>
-  <script src="assets/js/identity-client.js"></script>
-  <script src="assets/js/event-client.js"></script>
-  <script src="assets/js/privacy-consent.js"></script>
-  <script src="assets/js/teaching-rules.js"></script>
-  <script src="assets/js/learning-data-adapter.js"></script>
-  <script src="assets/js/ai-teaching-assistant.js"></script>
-  <script>
-    (function () {
-      TTIdentity.setRole('student');
-      var select = document.getElementById('scriptId');
-      TTLearning.getAvailableScripts().forEach(function (item) {
-        var option = document.createElement('option');
-        option.value = item.id;
-        option.textContent = item.name + (item.hasData ? ' · 有学习记录' : ' · 暂无测试记录');
-        option.dataset.hasData = item.hasData ? '1' : '0';
-        select.appendChild(option);
-      });
-      var requested = new URLSearchParams(location.search).get('script');
-      if (requested && SCRIPT_REGISTRY[requested]) select.value = requested;
-      else {
-        var firstWithData = Array.prototype.find.call(select.options, function (option) { return option.dataset.hasData === '1'; });
-        if (firstWithData) select.value = firstWithData.value;
-      }
+  <footer class="mt-8 text-xs text-on-surface-variant font-body no-print">复盘用于帮助学生继续学习，不用于给学生贴标签、排名或推断家庭与心理状况。</footer>
+</main>
 
-      function context() { return TTLearning.getContext(select.value); }
-      function updatePreview() {
-        var data = context();
-        document.getElementById('dataPreview').textContent = data.quizTotal
-          ? '检测到：测试 ' + data.quizCorrect + '/' + data.quizTotal + '，错题 ' + data.wrongAnswers.length + ' 道，学习评级 ' + data.tier + '。'
-          : data.completed
-            ? '检测到剧情完成和结局记录，暂时没有完整测试分数。'
-            : '当前没有足够数据。仍可生成一张“先完成什么”的规则复盘。';
-      }
-      select.addEventListener('change', updatePreview); updatePreview();
+<script>
+  window.navigateTo = window.navigateTo || function(url) {
+    document.body.style.opacity = '0';
+    document.body.style.transition = 'opacity 0.3s ease';
+    setTimeout(function() { window.location.href = url; }, 300);
+  };
+  document.getElementById('menu-toggle')?.addEventListener('click', function() {
+    document.getElementById('sidebar').classList.toggle('-translate-x-full');
+  });
+</script>
 
-      function fillList(element, values, fallback) {
-        element.innerHTML = '';
-        var list = values && values.length ? values : [fallback];
-        list.forEach(function (value) { var li = document.createElement('li'); li.textContent = value; element.appendChild(li); });
-      }
-      function render(review) {
-        document.getElementById('emptyState').hidden = true;
-        document.getElementById('result').classList.add('visible');
-        document.getElementById('resultTitle').textContent = review.title;
-        var badge = document.getElementById('modeBadge'); badge.textContent = review.sourceLabel || review.mode; badge.className = 'tt-chip ' + (review.mode === 'ai' ? 'ai' : 'rule');
-        fillList(document.getElementById('mastered'), review.mastered, '还没有足够数据判断已经掌握的知识点。');
-        fillList(document.getElementById('confusions'), review.confusions, '暂时没有检测到明确混淆点。');
-        document.getElementById('whyWrong').textContent = review.whyWrong;
-        fillList(document.getElementById('actions'), review.actions, '先完成一次知识测试。');
-        var block = document.getElementById('nextScriptBlock');
-        if (review.nextScript) {
-          block.hidden = false;
-          document.getElementById('nextScript').innerHTML = '<strong>' + review.nextScript.name + '</strong><br>' + review.nextScript.reason;
-        } else block.hidden = true;
-        document.getElementById('replayLink').href = 'ai-mvp.html?play=' + select.value;
-        localStorage.setItem('tt_last_learning_review', JSON.stringify({ scriptId: select.value, result: review }));
-      }
-      async function generate() {
-        var button = document.getElementById('generateButton'); var status = document.getElementById('status');
-        button.disabled = true; button.innerHTML = '<span class="tt-loading"><span class="tt-spinner"></span>正在整理真实学习记录…</span>'; status.textContent = '';
-        try { render(await TTAI.generateLearningReview({ scriptId: select.value, learningData: context() })); }
-        catch (error) { status.textContent = error.message || '生成失败'; }
-        finally { button.disabled = false; button.textContent = '生成我的学习复盘'; }
-      }
-      document.getElementById('generateButton').addEventListener('click', generate);
-      document.getElementById('regenerate').addEventListener('click', generate);
-    })();
-  </script>
+<script src="script-registry.js"></script>
+<script src="data-store.js"></script>
+<script src="assets/js/api-client.js"></script>
+<script src="assets/js/identity-client.js"></script>
+<script src="assets/js/event-client.js"></script>
+<script src="assets/js/privacy-consent.js"></script>
+<script src="assets/js/teaching-rules.js"></script>
+<script src="assets/js/learning-data-adapter.js"></script>
+<script src="assets/js/ai-teaching-assistant.js"></script>
+<script>
+  (function () {
+    TTIdentity.setRole('student');
+    var select = document.getElementById('scriptId');
+    TTLearning.getAvailableScripts().forEach(function (item) {
+      var option = document.createElement('option');
+      option.value = item.id;
+      option.textContent = item.name + (item.hasData ? ' · 有学习记录' : ' · 暂无测试记录');
+      option.dataset.hasData = item.hasData ? '1' : '0';
+      select.appendChild(option);
+    });
+    var requested = new URLSearchParams(location.search).get('script');
+    if (requested && SCRIPT_REGISTRY[requested]) select.value = requested;
+    else {
+      var firstWithData = Array.prototype.find.call(select.options, function (option) { return option.dataset.hasData === '1'; });
+      if (firstWithData) select.value = firstWithData.value;
+    }
+
+    function context() { return TTLearning.getContext(select.value); }
+    function updatePreview() {
+      var data = context();
+      document.getElementById('dataPreview').textContent = data.quizTotal
+        ? '检测到：测试 ' + data.quizCorrect + '/' + data.quizTotal + '，错题 ' + data.wrongAnswers.length + ' 道，学习评级 ' + data.tier + '。'
+        : data.completed
+          ? '检测到剧情完成和结局记录，暂时没有完整测试分数。'
+          : '当前没有足够数据。仍可生成一张“先完成什么”的规则复盘。';
+    }
+    select.addEventListener('change', updatePreview); updatePreview();
+
+    function fillList(element, values, fallback) {
+      element.innerHTML = '';
+      var list = values && values.length ? values : [fallback];
+      list.forEach(function (value) { var li = document.createElement('li'); li.textContent = value; element.appendChild(li); });
+    }
+    function render(review) {
+      document.getElementById('emptyState').hidden = true;
+      document.getElementById('result').classList.add('visible');
+      document.getElementById('resultTitle').textContent = review.title;
+      var badge = document.getElementById('modeBadge'); badge.textContent = review.sourceLabel || review.mode; badge.className = 'tt-chip ' + (review.mode === 'ai' ? 'ai' : 'rule');
+      fillList(document.getElementById('mastered'), review.mastered, '还没有足够数据判断已经掌握的知识点。');
+      fillList(document.getElementById('confusions'), review.confusions, '暂时没有检测到明确混淆点。');
+      document.getElementById('whyWrong').textContent = review.whyWrong;
+      fillList(document.getElementById('actions'), review.actions, '先完成一次知识测试。');
+      var block = document.getElementById('nextScriptBlock');
+      if (review.nextScript) {
+        block.hidden = false;
+        document.getElementById('nextScript').innerHTML = '<strong>' + review.nextScript.name + '</strong><br>' + review.nextScript.reason;
+      } else block.hidden = true;
+      document.getElementById('replayLink').href = 'ai-mvp.html?play=' + select.value;
+      localStorage.setItem('tt_last_learning_review', JSON.stringify({ scriptId: select.value, result: review }));
+    }
+    async function generate() {
+      var button = document.getElementById('generateButton'); var status = document.getElementById('status');
+      button.disabled = true; button.innerHTML = '<span class="tt-loading"><span class="tt-spinner"></span>正在整理真实学习记录…</span>'; status.textContent = '';
+      try { render(await TTAI.generateLearningReview({ scriptId: select.value, learningData: context() })); }
+      catch (error) { status.textContent = error.message || '生成失败'; }
+      finally { button.disabled = false; button.textContent = '生成我的学习复盘'; }
+    }
+    document.getElementById('generateButton').addEventListener('click', generate);
+    document.getElementById('regenerate').addEventListener('click', generate);
+  })();
+</script>
 </body>
 </html>

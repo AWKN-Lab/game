@@ -1,0 +1,86 @@
+{
+  "battleId": "french_revolution",
+  "title": "法国大革命",
+  "totalRounds": 4,
+  "drawPerRound": { "history": 2, "value": 2, "action": 2 },
+  "selectPerRound": { "history": 1, "value": 1, "action": 1 },
+
+  "rounds": [
+    {
+      "round": 1,
+      "phase": "危机酝酿",
+      "year": "1789 春",
+      "description": "财政危机笼罩法国，国王路易十六被迫召开三级会议。第三等级代表要求平等权利，局势一触即发。",
+      "availableHistory": ["H1", "H2", "H3", "H8"]
+    },
+    {
+      "round": 2,
+      "phase": "革命爆发",
+      "year": "1789 夏",
+      "description": "巴黎市民攻占巴士底狱，革命浪潮席卷全国。国民议会通过《人权与公民权利宣言》，旧制度开始瓦解。",
+      "availableHistory": ["H4", "H5", "H6", "H7"]
+    },
+    {
+      "round": 3,
+      "phase": "激进与恐怖",
+      "year": "1793-1794",
+      "description": "雅各宾派掌权，罗伯斯庇尔推行恐怖统治。内部清洗愈演愈烈，革命开始吞噬自己的孩子。",
+      "availableHistory": ["H5", "H7", "H9"]
+    },
+    {
+      "round": 4,
+      "phase": "收场",
+      "year": "1799",
+      "description": "热月政变推翻雅各宾派，但政局依然动荡。年轻将军拿破仑发动雾月政变，大革命走向终结。",
+      "availableHistory": ["H6", "H8", "H9", "H10"]
+    }
+  ],
+
+  "historyCards": {
+    "H1": { "id": "H1", "name": "人民起义", "type": "history", "effects": { "freedom": 15, "equality": 10, "rule": -15, "justice": 5 }, "knowledge": "第三等级觉醒，人民要求平等权利，社会矛盾激化" },
+    "H2": { "id": "H2", "name": "国王征税", "type": "history", "effects": { "freedom": -5, "equality": -10, "rule": 10, "justice": -5 }, "knowledge": "财政危机下国王向第三等级征税，加剧社会不公" },
+    "H3": { "id": "H3", "name": "三等级会议", "type": "history", "effects": { "freedom": 5, "equality": 10, "rule": 5, "justice": 5 }, "knowledge": "1789年三级会议召开，各等级代表齐聚凡尔赛" },
+    "H4": { "id": "H4", "name": "巴士底狱暴动", "type": "history", "effects": { "freedom": 20, "equality": 15, "rule": -20, "justice": 10 }, "knowledge": "1789年7月14日攻占巴士底狱，象征专制统治的崩塌" },
+    "H5": { "id": "H5", "name": "雅各宾派崛起", "type": "history", "effects": { "freedom": 10, "equality": 20, "rule": -15, "justice": -10 }, "knowledge": "激进派掌权，追求绝对平等，但走向极端" },
+    "H6": { "id": "H6", "name": "吉伦特派政策", "type": "history", "effects": { "freedom": 10, "equality": 5, "rule": 10, "justice": 5 }, "knowledge": "温和派主张君主立宪制，渐进式改革" },
+    "H7": { "id": "H7", "name": "人权宣言", "type": "history", "effects": { "freedom": 15, "equality": 15, "rule": 10, "justice": 15 }, "knowledge": "《人权与公民权利宣言》：人生而自由，权利平等" },
+    "H8": { "id": "H8", "name": "路易十六逃亡", "type": "history", "effects": { "freedom": 5, "equality": -5, "rule": -10, "justice": -5 }, "knowledge": "瓦伦逃亡事件，国王试图出逃被捕，王权信用彻底崩塌" },
+    "H9": { "id": "H9", "name": "恐怖统治", "type": "history", "effects": { "freedom": -20, "equality": 10, "rule": -25, "justice": -15 }, "knowledge": "罗伯斯庇尔恐怖统治，约4万人被处决，革命走向极端" },
+    "H10": { "id": "H10", "name": "拿破仑政变", "type": "history", "effects": { "freedom": -10, "equality": -15, "rule": 20, "justice": -10 }, "knowledge": "雾月政变，军人独裁取代革命民主，但建立了现代法律体系" }
+  },
+
+  "valueCards": {
+    "V1": { "id": "V1", "name": "自由", "type": "value", "multiplier": { "freedom": 1.5 }, "description": "自由相关效果 ×1.5", "tip": "放大革命收益，但也放大秩序代价" },
+    "V2": { "id": "V2", "name": "平等", "type": "value", "multiplier": { "equality": 1.5 }, "description": "平等相关效果 ×1.5", "tip": "增强社会公平，适合激进路线" },
+    "V3": { "id": "V3", "name": "法治", "type": "value", "multiplier": { "rule": 1.5 }, "description": "规则相关效果 ×1.5", "tip": "强化制度秩序，适合温和路线" },
+    "V4": { "id": "V4", "name": "责任", "type": "value", "multiplier": { "_negative": 0.5 }, "description": "负面效果 ×0.5", "tip": "减半所有代价，稳健策略" },
+    "V5": { "id": "V5", "name": "稳定", "type": "value", "multiplier": { "_all": 0.7 }, "description": "所有效果 ×0.7", "tip": "收益代价都缩小，求稳不求变" },
+    "V6": { "id": "V6", "name": "公平", "type": "value", "multiplier": { "justice": 1.5 }, "description": "正义相关效果 ×1.5", "tip": "增强正义与公平" },
+    "V7": { "id": "V7", "name": "人道", "type": "value", "multiplier": { "_negative": 0.5, "_negativeBonus": -5 }, "description": "负面效果减半并额外-5", "tip": "减少恐怖统治等极端事件伤害" },
+    "V8": { "id": "V8", "name": "国家利益", "type": "value", "effects": { "rule": 5, "freedom": -5 }, "description": "规则+5 自由-5", "tip": "牺牲自由换秩序" }
+  },
+
+  "actionCards": {
+    "A1": { "id": "A1", "name": "改革", "type": "action", "effects": { "freedom": 5, "equality": 5, "rule": 5, "justice": 0 }, "condition": null, "conditionDesc": null },
+    "A2": { "id": "A2", "name": "谈判", "type": "action", "effects": { "freedom": 5, "equality": 0, "rule": 5, "justice": 5 }, "condition": { "rule": 30 }, "conditionDesc": "需要规则 > 30" },
+    "A3": { "id": "A3", "name": "动员", "type": "action", "effects": { "freedom": 10, "equality": 5, "rule": -10, "justice": 0 }, "condition": { "freedom": 40 }, "conditionDesc": "需要自由 > 40" },
+    "A4": { "id": "A4", "name": "妥协", "type": "action", "effects": { "freedom": 0, "equality": 5, "rule": 5, "justice": -5 }, "condition": null, "conditionDesc": null },
+    "A5": { "id": "A5", "name": "镇压", "type": "action", "effects": { "freedom": -15, "equality": -10, "rule": 15, "justice": -10 }, "condition": { "rule": 50 }, "conditionDesc": "需要规则 > 50" }
+  },
+
+  "npcRules": [
+    { "npcId": "anna", "name": "安娜", "conditions": [{ "check": "freedom", "op": ">", "val": 60, "state": "awakened" }, { "check": "justice", "op": "<", "val": 30, "state": "worried" }] },
+    { "npcId": "pierre", "name": "皮埃尔", "conditions": [{ "check": "freedom", "op": ">", "val": 70, "and": [{ "check": "equality", "op": ">", "val": 60 }], "state": "radical" }, { "check": "rule", "op": "<", "val": 20, "state": "dead" }] },
+    { "npcId": "jacques", "name": "雅克", "conditions": [{ "check": "rule", "op": ">", "val": 60, "state": "order" }, { "check": "freedom", "op": ">", "val": 60, "and": [{ "check": "rule", "op": "<", "val": 40 }], "state": "doubt" }] },
+    { "npcId": "alice", "name": "艾莉丝", "conditions": [{ "check": "rule", "op": "<", "val": 30, "state": "shaken" }, { "check": "freedom", "op": "<", "val": 30, "and": [{ "check": "rule", "op": ">", "val": 60 }], "state": "survived" }] }
+  ],
+
+  "endings": [
+    { "id": "ideal", "title": "自由之光", "conditions": { "freedom": [70, null], "equality": [60, null], "justice": [60, null] }, "description": "走向共和，自由平等博爱", "branchEvent": "ending_ideal" },
+    { "id": "radical", "title": "失控的革命", "conditions": { "freedom": [60, null], "rule": [null, 30] }, "description": "恐怖统治蔓延，社会动荡", "branchEvent": "ending_radical" },
+    { "id": "conservative", "title": "旧梦重温", "conditions": { "rule": [70, null], "freedom": [null, 30] }, "description": "王权复辟，革命成果丧失", "branchEvent": "ending_conservative" },
+    { "id": "dictator", "title": "帝国的黄昏", "conditions": { "rule": [60, null], "equality": [null, 30] }, "description": "拿破仑称帝，民主倒退", "branchEvent": "ending_dictator" },
+    { "id": "balanced", "title": "理性的声音", "conditions": { "_allBetween": [40, 60] }, "description": "温和改革，渐进式进步", "branchEvent": "ending_balanced" },
+    { "id": "collapse", "title": "破碎的巴黎", "conditions": { "_anyBelow": 10 }, "description": "革命失败，社会解体", "branchEvent": "ending_collapse" }
+  ]
+}

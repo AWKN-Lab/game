@@ -152,7 +152,7 @@ window.CardBattleModule = (function() {
   // ---------------------------------------------------------------------------
 
   function _loadBattleData(battleId) {
-    var url = 'game/card-battle/data/' + battleId + '.json';
+    var url = 'card-battle/data/' + battleId + '.json';
     return fetch(url).then(function(res) {
       if (!res.ok) throw new Error('Failed to load: ' + url);
       return res.json();

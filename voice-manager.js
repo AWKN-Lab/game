@@ -29,7 +29,7 @@
     function _loadVoiceIndex(callback) {
         if (_isLoaded) { callback && callback(true); return; }
         var xhr = new XMLHttpRequest();
-        xhr.open('GET', 'game/audio/voice/voice_index.json', true);
+        xhr.open('GET', 'audio/voice/voice_index.json', true);
         xhr.onload = function() {
             if (xhr.status === 200) {
                 try {

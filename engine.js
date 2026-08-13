@@ -208,7 +208,7 @@ function initGameHUD() {
     gameValues = { ...GAME_CONFIG.values };
   }
   valueLabels = { ...GAME_CONFIG.valueLabels };
-  document.getElementById('gameScene').style.backgroundImage = "url('game/images/bg/opera_house.jpg')";
+  document.getElementById('gameScene').style.backgroundImage = "url('images/bg/opera_house.jpg')";
   renderValueHUD();
   showDialogLine();
 
@@ -461,12 +461,12 @@ function showDialogLine() {
     }
     const lCfg = charConfig[leftSpeaker];
     if (lCfg) {
-      setCharSrc('left', `game/images/characters/${lCfg.dir}/${leftExpr}.png`);
+      setCharSrc('left', `images/characters/${lCfg.dir}/${leftExpr}.png`);
       showCharEl('left');
     }
   } else if (line.speaker && charConfig[speakerKey] && (speakerKey === 'fulina' || npcExprToKey[speakerKey] !== undefined)) {
     const cfg = charConfig[speakerKey];
-    setCharSrc('left', `game/images/characters/${cfg.dir}/${cfg.defaultExpr}.png`);
+    setCharSrc('left', `images/characters/${cfg.dir}/${cfg.defaultExpr}.png`);
     showCharEl('left');
   } else {
     hideCharEl('left');
@@ -478,12 +478,12 @@ function showDialogLine() {
     let rightExpr = line.charRight;
     const rCfg = charConfig[rightSpeaker];
     if (rCfg) {
-      setCharSrc('right', `game/images/characters/${rCfg.dir}/${rightExpr}.png`);
+      setCharSrc('right', `images/characters/${rCfg.dir}/${rightExpr}.png`);
       showCharEl('right');
     }
   } else if (line.speaker === 'hutao' && charConfig['hutao']) {
     const cfg = charConfig['hutao'];
-    setCharSrc('right', `game/images/characters/${cfg.dir}/${cfg.defaultExpr}.png`);
+    setCharSrc('right', `images/characters/${cfg.dir}/${cfg.defaultExpr}.png`);
     showCharEl('right');
   } else {
     hideCharEl('right');
@@ -765,15 +765,15 @@ function showEnding() {
   if (allCollected && afterlifeValue >= GAME_CONFIG.endingConditions.afterlifeMinValue) {
     endingType = 'afterlife';
     endingDialog = afterlifeDialog;
-    endBg = 'game/images/bg/ending_afterlife.jpg';
+    endBg = 'images/bg/ending_afterlife.jpg';
   } else if (highCount >= GAME_CONFIG.endingConditions.dramaticMinHighCount) {
     endingType = 'dramatic';
     endingDialog = dramaticDialog;
-    endBg = 'game/images/bg/ending_dramatic.jpg';
+    endBg = 'images/bg/ending_dramatic.jpg';
   } else {
     endingType = 'historical';
     endingDialog = null;
-    endBg = 'game/images/bg/ending_historical.jpg';
+    endBg = 'images/bg/ending_historical.jpg';
   }
 
   window._ttEndingType = endingType;
@@ -1302,7 +1302,7 @@ function openCardModal() {
     item.style.cursor = isUsed ? 'pointer' : 'default';
     item.innerHTML = `
       <div style="margin-bottom:10px;position:relative">
-        <img src="game/images/cards/card_${id}.jpg" style="width:80px;height:110px;object-fit:cover;border-radius:6px;${isUsed ? '' : 'filter:grayscale(100%)'}">
+        <img src="images/cards/card_${id}.jpg" style="width:80px;height:110px;object-fit:cover;border-radius:6px;${isUsed ? '' : 'filter:grayscale(100%)'}">
         ${isUsed ? '<div style="position:absolute;top:-4px;right:-4px;background:#22c55e;color:#fff;font-size:10px;font-weight:bold;padding:1px 6px;border-radius:8px">已获取</div>' : ''}
       </div>
       <div class="card-name" style="${isUsed ? '' : 'color:#666'}">${card.name}</div>
@@ -1325,7 +1325,7 @@ function showCardDetail(cardId) {
   if (!el) return;
   el.innerHTML = `
     <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border:2px solid #6366f1;border-radius:16px;padding:24px;max-width:400px;text-align:center">
-      <div style="margin-bottom:12px"><img src="game/images/cards/card_${cardId}.jpg" style="width:120px;height:168px;object-fit:cover;border-radius:10px;box-shadow:0 4px 16px rgba(99,102,241,0.3)"></div>
+      <div style="margin-bottom:12px"><img src="images/cards/card_${cardId}.jpg" style="width:120px;height:168px;object-fit:cover;border-radius:10px;box-shadow:0 4px 16px rgba(99,102,241,0.3)"></div>
       <div style="font-size:18px;color:#fff;font-weight:bold;margin-bottom:8px">${card.name}</div>
       <div style="font-size:14px;color:#c5c5d3;line-height:1.7;margin-bottom:16px">${card.description}</div>
       <div style="font-size:13px;color:#d4a574;margin-bottom:16px">📖 ${card.knowledge}</div>

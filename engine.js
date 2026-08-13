@@ -301,13 +301,12 @@ function showDialogLine() {
   // 处理条件对话（基于已使用的卡牌）
   if (line.type === 'if_card_used') {
     if (usedCards.has(line.cardId)) {
-      // 卡牌已使用，显示条件对话
-      showDialogLine(); // 递归调用下一个节点
+      // 卡牌已使用：显示条件对话（本节点是普通对话，落到下方渲染）
     } else {
       dialogIndex++; // 跳过条件对话
       showDialogLine(); // 继续下一个
+      return;
     }
-    return;
   }
 
   // 处理收集品
@@ -323,8 +322,12 @@ function showDialogLine() {
     if (!collectedKnowledge.find(k => k.id === line.id)) {
       collectedKnowledge.push({ id: line.id, name: line.name, desc: line.desc, category: line.category });
       showKnowledgeCard(line);
+      dialogIndex++;
+      return;
     }
+    // 已收集：跳过本节点，继续下一个
     dialogIndex++;
+    showDialogLine();
     return;
   }
 
@@ -332,14 +335,24 @@ function showDialogLine() {
   if (line.type === 'collectible_conditional') {
     if (line.condition && line.condition()) {
       showCollectibleNotification(line.name);
+      dialogIndex++;
+      return;
     }
+    // 条件不满足：跳过本节点，继续下一个
     dialogIndex++;
+    showDialogLine();
     return;
   }
 
   // 处理结局判定
   if (line.type === 'ending_check') {
     showEnding();
+    return;
+  }
+
+  // 处理星空抉择（star_choice：星轨选择，含 Text/prompt/choices）
+  if (line.type === 'star_choice') {
+    showStarChoice(line);
     return;
   }
 
@@ -841,7 +854,7 @@ function showEndingDialog(index) {
   nameEl.style.color = line.color;
 
   // ---- 语音播放 ----
-  var voiceSource = endingType || 'dialog';
+  var voiceSource = window._ttEndingType || 'dialog';
   var voiceSpeakerId = 'narrator';
   if (typeof VoiceManager !== 'undefined') {
     voiceSpeakerId = VoiceManager.resolveSpeakerId(line.speaker) || 'narrator';
@@ -1205,6 +1218,87 @@ function advanceDialog() {
   if (dialogIndex < DIALOG_SCRIPT.length) {
     showDialogLine();
   }
+}
+
+// ============================================================
+// 显示星空抉择（star_choice）
+// ============================================================
+function showStarChoice(line) {
+    hideCharEl('left');
+    hideCharEl('right');
+  const panel = document.getElementById('choicePanel');
+  panel.style.display = 'flex';
+  panel.style.pointerEvents = 'auto';
+  panel.innerHTML = '';
+
+  // 显示抉择背景文本（Text 字段，可能多行）
+  const textEl = document.getElementById('dialogText');
+  const starText = [line.Text, line.Text2].filter(Boolean).join('\n\n');
+  textEl.innerHTML = starText.replace(/\n/g, '<br>');
+  document.getElementById('dialogSpeaker').style.display = 'none';
+  document.getElementById('dialogContinue').style.display = 'none';
+
+  if (line.prompt) {
+    const promptEl = document.createElement('div');
+    promptEl.style.cssText = 'width:100%;text-align:center;font-size:16px;color:#fff;background:rgba(0,0,0,0.7);padding:10px 16px;border-radius:8px;margin-bottom:8px;backdrop-filter:blur(4px)';
+    promptEl.textContent = line.prompt;
+    panel.appendChild(promptEl);
+  }
+
+  // 收集知识点
+  if (line.knowledgeIds && Array.isArray(line.knowledgeIds)) {
+    if (!collectedKnowledge) collectedKnowledge = [];
+    line.knowledgeIds.forEach(kid => {
+      if (!collectedKnowledge.find(k => k.id === kid)) {
+        collectedKnowledge.push({ id: kid, name: line.title || '星空抉择', desc: starText.slice(0, 200), category: '抉择' });
+      }
+    });
+  }
+
+  line.choices.forEach((choice, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.textContent = choice.text;
+    btn.style.animation = `slideUp 0.3s ease ${idx * 0.1}s both`;
+    btn.onclick = () => {
+      const allBtns = panel.querySelectorAll('.choice-btn');
+      allBtns.forEach(b => { b.style.pointerEvents = 'none'; });
+
+      btn.style.background = 'rgba(212,165,116,0.25)';
+      btn.style.borderColor = '#d4a574';
+      btn.style.color = '#d4a574';
+      btn.style.boxShadow = '0 0 20px rgba(212,165,116,0.3)';
+      playCorrectSFX();
+
+      lastChoiceIndex = idx;
+      ttHook('script.choice', {
+        nodeId: 'star_' + (line.id || dialogIndex),
+        choiceIndex: idx,
+        choiceText: String(choice.text || '').slice(0, 200),
+        actId: ttCurrentAct(),
+        timed: false
+      });
+      if (choice.effects) {
+        for (const [key, val] of Object.entries(choice.effects)) {
+          updateValue(key, val);
+        }
+      }
+      // NPC 命运变更
+      if (choice.npcFate) {
+        for (const [npcId, newState] of Object.entries(choice.npcFate)) {
+          updateNpcFate(npcId, newState, choice.consequence || '');
+        }
+      }
+      var reflectionContent = choice.consequence || '你的选择已经记录。历史没有标准答案，但每一个选择都值得被思考。';
+      if (choice.examHint) {
+        reflectionContent += '\n\n💡 考点提示：' + choice.examHint;
+      }
+      setTimeout(() => {
+        showReflectionPanel(choice.text, reflectionContent);
+      }, 800);
+    };
+    panel.appendChild(btn);
+  });
 }
 
 // ============================================================

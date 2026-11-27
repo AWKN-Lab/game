@@ -641,3 +641,17 @@ POST /api/admin/wishes/merge
 8. 普通用户无法访问管理员数据；
 9. 事件采集失败不影响剧情和学习；
 10. 系统不采集密码、屏幕录像和无关私人信息。
+
+---
+
+# V2.0 修订｜用户互动与许愿池
+
+## 新增事件
+
+总 PRD 十章新增"AI NPC 对话"事件组（8 个）：`npc_dialogue_started`、`npc_message_sent`、`npc_reply_generated`、`npc_reply_rule_fallback`、`free_input_submitted`、`fact_check_flagged`、`echo_referenced`、`trust_level_changed`。
+
+## 边界
+
+- 自由输入属于用户主动提交文本，保存前过内容安全检查；
+- `fact_check_flagged` 仅教师与管理员可见，不对学生展示判定；
+- 其余采集、匿名与审计规则不变。

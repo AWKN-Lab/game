@@ -144,4 +144,20 @@ test('管理员登录后可以查看总览', async () => {
   assert.ok(dashboard.body.counts.eventsToday >= 1);
   assert.ok(dashboard.body.counts.newFeedback >= 1);
   assert.ok(dashboard.body.counts.pendingWishes >= 1);
+
+  // V1.1 P1 数据分析：漏斗、流失节点、选择分布、错题热力图
+  const analytics = await jsonRequest('/api/v1/admin/analytics', { headers: { Cookie: cookie } });
+  assert.equal(analytics.response.status, 200);
+  assert.equal(analytics.body.success, true);
+  const funnelSteps = analytics.body.funnel.map((item) => item.step);
+  assert.deepEqual(funnelSteps, ['page.view', 'script.start', 'script.ending']);
+  assert.ok(analytics.body.dropoff.some((row) => row.script_id === 'american_revolution' && row.act_id === '第一幕 · 波士顿'), '流失节点应按幕次聚合');
+  assert.ok(analytics.body.dropoff.every((row) => row.startSessions >= 0), '流失节点必须带开演基数以计算留存');
+  const choiceRow = analytics.body.choiceDistribution.find((row) => row.script_id === 'american_revolution' && row.node_id === 'dialog_12');
+  assert.ok(choiceRow && choiceRow.count >= 1, '选择分布应按决策点与选项聚合');
+  const wrongRow = analytics.body.wrongHeatmap.find((row) => row.script_id === 'american_revolution' && row.question_id === 'evidence_31');
+  assert.ok(wrongRow && wrongRow.wrong >= 1 && wrongRow.total >= 1, '错题热力图应统计错误与总答次数');
+
+  const unauthorized = await jsonRequest('/api/v1/admin/analytics');
+  assert.equal(unauthorized.response.status, 401, '数据分析必须登录后才能访问');
 });

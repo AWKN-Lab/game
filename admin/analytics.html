@@ -1,0 +1,60 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>数据分析｜时空剧场</title><link rel="stylesheet" href="admin.css"></head><body data-page="analytics"><div class="admin-shell"><aside class="admin-sidebar"><a class="tt-brand" href="index.html"><span class="tt-brand-mark">管</span><span><strong>管理后台</strong><span>愿望驱动路线图</span></span></a><nav class="admin-menu"><a data-page="dashboard" href="index.html">总览</a><a data-page="interactions" href="interactions.html">用户互动</a><a data-page="analytics" href="analytics.html">数据分析</a><a data-page="feedback" href="feedback.html">用户反馈</a><a data-page="wishes" href="wishes.html">许愿池治理</a><a data-page="roadmap" href="roadmap.html">产品路线图</a><a data-page="audit" href="audit.html">操作审计</a><a href="../ai-mvp.html">返回产品</a></nav></aside><main class="admin-main"><header class="admin-topbar"><div><div class="tt-kicker">ANALYTICS</div><h1>数据分析</h1><p class="tt-muted">全部来自匿名事件：互动漏斗、剧本流失节点、选择分布、错题热力图。不含任何个人身份信息。</p></div><div><span id="adminEmail" class="tt-muted"></span> <button id="logoutButton" class="tt-btn ghost">退出</button></div></header><div id="pageError" class="tt-alert" hidden></div>
+
+<section class="tt-card"><div class="tt-section-title"><h2>互动漏斗</h2><span class="tt-chip">按独立会话去重</span></div><div id="funnelGrid" class="tt-grid four"></div><div id="funnelByScript" style="margin-top:12px"></div></section>
+
+<section class="tt-card"><div class="tt-section-title"><h2>剧本流失节点</h2><span class="tt-chip">各幕到达会话数 · 相对开演留存</span></div><div id="dropoffTable"></div></section>
+
+<section class="tt-card"><div class="tt-section-title"><h2>选择分布</h2><span class="tt-chip">按决策点 × 选项</span></div><div id="choiceTable"></div></section>
+
+<section class="tt-card"><div class="tt-section-title"><h2>错题热力图</h2><span class="tt-chip">按题目 · 错误率</span></div><div id="heatmapTable"></div></section>
+
+</main></div><script src="../assets/js/api-client.js"></script><script>
+(function(){
+  function e(v){return String(v||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]})}
+  function pct(n,d){return d? Math.round(n/d*100)+'%' : '—'}
+  function bar(v,max){var w=max?Math.max(2,Math.round(v/max*100)):0;return '<div style="background:var(--line);border-radius:6px;height:10px;overflow:hidden"><div style="background:var(--accent,#7c6cf6);height:10px;width:'+w+'%"></div></div>'}
+  var stepNames={'page.view':'进入页面','script.start':'开始剧本','script.ending':'到达结局'};
+  async function main(){
+    try{
+      var me=await TTApi.get('/admin/auth/me');
+      document.getElementById('adminEmail').textContent=me.admin.email;
+      document.getElementById('logoutButton').onclick=async function(){await TTApi.post('/admin/auth/logout',{});location.replace('login.html')};
+      var data=await TTApi.get('/admin/analytics');
+
+      // 漏斗
+      var maxSessions=Math.max.apply(null,data.funnel.map(function(f){return f.sessions}).concat([1]));
+      document.getElementById('funnelGrid').innerHTML=data.funnel.map(function(f){
+        return '<div class="tt-card"><div class="tt-kicker">'+e(stepNames[f.step]||f.step)+'</div><h2>'+f.sessions+'</h2>'+bar(f.sessions,maxSessions)+'</div>'}).join('');
+      var byScript={};
+      (data.funnelByScript||[]).forEach(function(row){byScript[row.script_id]=byScript[row.script_id]||{};byScript[row.script_id][row.name]=row.sessions});
+      var scriptRows=Object.keys(byScript).map(function(sid){
+        var s=byScript[sid];var start=s['script.start']||0;
+        return '<tr><td>'+e(sid)+'</td><td>'+(s['page.view']||0)+'</td><td>'+start+'</td><td>'+(s['script.ending']||0)+'（'+pct(s['script.ending']||0,start)+'）</td></tr>'}).join('');
+      document.getElementById('funnelByScript').innerHTML=scriptRows?'<table><thead><tr><th>剧本</th><th>进入</th><th>开演</th><th>结局（完成率）</th></tr></thead><tbody>'+scriptRows+'</tbody></table>':'<p class="tt-muted">暂无分剧本数据</p>';
+
+      // 流失节点
+      var dropRows=(data.dropoff||[]).map(function(row){
+        return '<tr><td>'+e(row.script_id)+'</td><td>'+e(row.act_title||row.act_id)+'</td><td>'+row.sessions+'</td><td>'+pct(row.sessions,row.startSessions)+'</td><td style="min-width:120px">'+bar(row.sessions,row.startSessions)+'</td></tr>'}).join('');
+      document.getElementById('dropoffTable').innerHTML=dropRows?'<table><thead><tr><th>剧本</th><th>幕次</th><th>到达会话</th><th>留存</th><th></th></tr></thead><tbody>'+dropRows+'</tbody></table>':'<p class="tt-muted">暂无数据</p>';
+
+      // 选择分布
+      var maxChoice=Math.max.apply(null,(data.choiceDistribution||[]).map(function(c){return c.count}).concat([1]));
+      var choiceRows=(data.choiceDistribution||[]).map(function(row){
+        return '<tr><td>'+e(row.script_id)+'</td><td>'+e(row.node_id)+'</td><td>选项 '+e(row.choice_index)+'</td><td>'+e(String(row.choice_text||'').slice(0,40))+'</td><td>'+row.count+'</td><td style="min-width:120px">'+bar(row.count,maxChoice)+'</td></tr>'}).join('');
+      document.getElementById('choiceTable').innerHTML=choiceRows?'<table><thead><tr><th>剧本</th><th>决策点</th><th></th><th>选项内容</th><th>次数</th><th></th></tr></thead><tbody>'+choiceRows+'</tbody></table>':'<p class="tt-muted">暂无数据</p>';
+
+      // 错题热力图
+      var heatRows=(data.wrongHeatmap||[]).map(function(row){
+        var rate=row.total?row.wrong/row.total:0;
+        var color=rate>=0.5?'#ef4444':(rate>=0.3?'#f59e0b':'#22c55e');
+        return '<tr><td>'+e(row.script_id)+'</td><td>'+e(row.question_id)+'</td><td>'+e(row.knowledge_id||'—')+'</td><td>'+row.wrong+'/'+row.total+'</td><td><span class="tt-chip" style="background:'+color+'22;color:'+color+'">'+Math.round(rate*100)+'%</span></td></tr>'}).join('');
+      document.getElementById('heatmapTable').innerHTML=heatRows?'<table><thead><tr><th>剧本</th><th>题目</th><th>知识点</th><th>错误/总答</th><th>错误率</th></tr></thead><tbody>'+heatRows+'</tbody></table>':'<p class="tt-muted">暂无数据</p>';
+    }catch(error){
+      document.getElementById('pageError').hidden=false;
+      document.getElementById('pageError').textContent=error.message||'加载失败';
+      if(error.status===401)location.replace('login.html');
+    }
+  }
+  main();
+})();
+</script></body></html>

@@ -500,6 +500,45 @@ function handleAdminAudit(url, response, db) {
   sendJson(response, 200, { success: true, items: rows });
 }
 
+// V1.1 P1 数据分析：互动漏斗、剧本流失节点、选择分布、错题热力图（全部来自匿名事件表）
+function handleAdminAnalytics(url, response, db) {
+  const funnelSteps = ['page.view', 'script.start', 'script.ending'];
+  const funnel = funnelSteps.map((name) => ({
+    step: name,
+    sessions: db.prepare('SELECT COUNT(DISTINCT COALESCE(session_id, actor_id)) count FROM product_events WHERE name=?').get(name).count
+  }));
+  const funnelByScript = db.prepare(`SELECT json_extract(payload_json,'$.scriptId') script_id, name, COUNT(DISTINCT COALESCE(session_id, actor_id)) sessions
+    FROM product_events WHERE name IN ('page.view','script.start','script.ending') AND json_extract(payload_json,'$.scriptId') IS NOT NULL
+    GROUP BY script_id, name`).all();
+
+  const startSessions = new Map(db.prepare("SELECT json_extract(payload_json,'$.scriptId') script_id, COUNT(DISTINCT COALESCE(session_id, actor_id)) sessions FROM product_events WHERE name='script.start' GROUP BY script_id").all().map((row) => [row.script_id, row.sessions]));
+  const dropoff = db.prepare(`SELECT json_extract(payload_json,'$.scriptId') script_id,
+      json_extract(payload_json,'$.actId') act_id,
+      MAX(json_extract(payload_json,'$.actTitle')) act_title,
+      COUNT(DISTINCT COALESCE(session_id, actor_id)) sessions
+    FROM product_events WHERE name='script.act_enter' AND json_extract(payload_json,'$.scriptId') IS NOT NULL
+    GROUP BY script_id, act_id ORDER BY script_id, sessions DESC`).all()
+    .map((row) => ({ ...row, startSessions: startSessions.get(row.script_id) || 0 }));
+
+  const choiceDistribution = db.prepare(`SELECT json_extract(payload_json,'$.scriptId') script_id,
+      json_extract(payload_json,'$.nodeId') node_id,
+      json_extract(payload_json,'$.choiceIndex') choice_index,
+      MAX(json_extract(payload_json,'$.choiceText')) choice_text,
+      COUNT(*) count
+    FROM product_events WHERE name='script.choice' AND json_extract(payload_json,'$.scriptId') IS NOT NULL
+    GROUP BY script_id, node_id, choice_index ORDER BY count DESC LIMIT 200`).all();
+
+  const wrongHeatmap = db.prepare(`SELECT json_extract(payload_json,'$.scriptId') script_id,
+      json_extract(payload_json,'$.questionId') question_id,
+      MAX(json_extract(payload_json,'$.knowledgeId')) knowledge_id,
+      SUM(CASE WHEN json_extract(payload_json,'$.correct')=0 THEN 1 ELSE 0 END) wrong,
+      COUNT(*) total
+    FROM product_events WHERE name='quiz.answer' AND json_extract(payload_json,'$.scriptId') IS NOT NULL
+    GROUP BY script_id, question_id ORDER BY wrong DESC, total DESC LIMIT 200`).all();
+
+  sendJson(response, 200, { success: true, funnel, funnelByScript, dropoff, choiceDistribution, wrongHeatmap });
+}
+
 function serveStatic(url, response) {
   let pathname = decodeURIComponent(url.pathname);
   if (pathname === '/') pathname = '/index.html';
@@ -578,6 +617,7 @@ export function createApp() {
         const adminWishMatch = url.pathname.match(/^\/api\/v1\/admin\/wishes\/([^/]+)$/);
         if (request.method === 'PATCH' && adminWishMatch) return await handleAdminWishUpdate(request, response, db, admin, adminWishMatch[1]);
         if (request.method === 'GET' && url.pathname === '/api/v1/admin/audit') return handleAdminAudit(url, response, db);
+        if (request.method === 'GET' && url.pathname === '/api/v1/admin/analytics') return handleAdminAnalytics(url, response, db);
       }
 
       return sendError(response, 404, 'ROUTE_NOT_FOUND', '接口不存在');

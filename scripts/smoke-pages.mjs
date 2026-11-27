@@ -21,7 +21,8 @@ const pages = [
   'wish-pool.html',
   'privacy.html',
   'admin/login.html',
-  'admin/index.html'
+  'admin/index.html',
+  'admin/analytics.html'
 ];
 const errors = [];
 

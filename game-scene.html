@@ -96,6 +96,14 @@
         marie_royal: { name: '玛丽（王后）', color: '#9932cc', file: 'images/characters/npc/marie_royal.png' }
       },
       speakerNameToKey: null,
+      echoNpcNames: { npc_lucien: '吕西安' },
+      echoActTitles: { act_1: '旧制度危机', act_2: '攻占巴士底狱', act_3: '人权宣言', act_4: '共和国与恐怖统治', act_5: '拿破仑时代' },
+      echoAnchors: [
+        { id: 'echo_fr_act3', npcId: 'npc_lucien', echoActId: 'act_3', refersToActId: 'act_1', refersToActTitle: '旧制度危机',
+          ruleTemplate: '还记得吗，在{actTitle}的时候，你说过「{choiceText}」。这话我排过版——如今印出来再看，字还是那些字，味道不一样了。' },
+        { id: 'echo_fr_act4', npcId: 'npc_lucien', echoActId: 'act_4', refersToActId: 'act_2', refersToActTitle: '攻占巴士底狱',
+          ruleTemplate: '{actTitle}那会儿，你讲过「{choiceText}」。我把这句话和后来的日子排在一起想了想——你当时是认真的吗？' }
+      ],
       sceneBGM: {
         '第一幕 · 凡尔赛宫': AudioManager.BGM.VERSAILLES,
         '第二幕 · 巴士底狱': AudioManager.BGM.BASTILLE,
@@ -290,7 +298,7 @@
         Text2: '当制度本身成为不公正的来源时，改革还是革命，哪个才是更负责任的选择？特权阶层也有他们的历史理由——秩序、传统、对社会稳定的贡献。',
         prompt: '作为第三等级代表，面对特权阶级的拒绝，你会如何选择？',
         choices: [
-          { text: '坚持按人头投票，要求平等代表权', valueTag: 'equality', effects: { equality: 10, freedom: 5, rule: -5 },
+          { text: '坚持按人头投票，要求平等代表权', valueTag: 'equality', effects: { equality: 10, freedom: 5, rule: -5 }, trust: { npc_lucien: 1 },
             npcFate: { robespierre: 'awakened', louis: 'worried' },
             consequence: '第三等级的勇气点燃了全国的热情，但贵族阶层开始警惕。', examHint: '公平不是平均，但制度公平是社会正义的基础。' },
           { text: '寻求妥协，接受双倍代表权的折中方案', valueTag: 'rule', effects: { rule: 10, justice: 5, freedom: -5 },
@@ -335,7 +343,7 @@
         Text2: '暴力反抗虽然有其历史正当性，但它也可能打开潘多拉魔盒。当法律无法保护人民时，人民有权反抗——但谁来定义"无法保护"的边界？',
         prompt: '面对失控的愤怒人群，你会如何选择？',
         choices: [
-          { text: '支持攻占巴士底狱，打破旧制度的枷锁', valueTag: 'freedom', effects: { freedom: 10, rule: -8, justice: 5 },
+          { text: '支持攻占巴士底狱，打破旧制度的枷锁', valueTag: 'freedom', effects: { freedom: 10, rule: -8, justice: 5 }, trust: { npc_lucien: 1 },
             npcFate: { napoleon: 'inspired', marie: 'terrified', anna: 'displaced' },
             consequence: '革命热情被彻底点燃。但在混乱中，巴士底狱旁边面包店老板安娜家的店铺被人潮撞毁了。安娜抱着最小的孩子，站在废墟前，说不出话。', examHint: '自由不是为所欲为。法治标定自由边界，也保障自由实现。' },
           { text: '呼吁建立国民自卫军，将暴力纳入制度框架', valueTag: 'rule', effects: { rule: 10, freedom: 5, responsibility: 5 },
@@ -429,7 +437,7 @@
         Text2: '权利宣言是伟大的，但权利需要制度保障才能落地。没有法治框架的自由只是口号，没有责任约束的平等可能变成暴政。',
         prompt: '在制定具体法律时，你会优先保障什么？',
         choices: [
-          { text: '优先保障个人自由和财产权', valueTag: 'freedom', effects: { freedom: 10, equality: -5, rule: 5 },
+          { text: '优先保障个人自由和财产权', valueTag: 'freedom', effects: { freedom: 10, equality: -5, rule: 5 }, trust: { npc_lucien: 1 },
             npcFate: { napoleon: 'approving', robespierre: 'skeptical' },
             consequence: '自由经济激发了创造力，但贫富差距开始扩大。', examHint: '自由的边界是不侵犯他人自由。财产权是自由的基础，但不是自由的全部。' },
           { text: '优先保障社会平等和公共福利', valueTag: 'equality', effects: { equality: 10, freedom: -5, justice: 5 },
@@ -505,10 +513,10 @@
         Text2: '这是政治哲学中最深刻的困境之一：为了实现正义的目标，是否可以采用不正义的手段？如果目的可以证明手段的正当性，那么任何暴行都可以找到"正义"的理由。',
         prompt: '面对恐怖统治的扩大，你会如何选择？',
         choices: [
-          { text: '支持继续镇压，革命需要铁腕保护', valueTag: 'justice', effects: { justice: 10, life: -10, rule: -5 },
+          { text: '支持继续镇压，革命需要铁腕保护', valueTag: 'justice', effects: { justice: 10, life: -10, rule: -5 }, trust: { npc_lucien: -1 },
             npcFate: { robespierre: 'determined', louis: 'dead' },
             consequence: '短期内压制了反对声音，但人心开始背离革命。', examHint: '正义需要程序保障。没有法治约束的"正义"最终会变成新的不正义。生命权是一切权利的前提。' },
-          { text: '反对恐怖扩大化，呼吁恢复法治', valueTag: 'life', effects: { life: 10, rule: 5, justice: -5 },
+          { text: '反对恐怖扩大化，呼吁恢复法治', valueTag: 'life', effects: { life: 10, rule: 5, justice: -5 }, trust: { npc_lucien: 1 },
             npcFate: { robespierre: 'isolated', napoleon: 'watching' },
             consequence: '呼吁得到了响应，但也被视为"革命的背叛者"。', examHint: '生命权是不可剥夺的基本权利。法治社会中，任何人未经公正审判不受处罚。' }
         ]
@@ -556,10 +564,11 @@
         Text2: '革命的热情终会退去，但制度可以长久存续。法典的价值在于：它把抽象的理念变成了可操作的具体规则。然而，法典也有其局限性——它在保障平等的同时，也限制了某些自由。',
         prompt: '革命成果制度化，你最看重什么？',
         choices: [
-          { text: '完善法律体系，让法治成为革命遗产', valueTag: 'rule', effects: { rule: 10, justice: 5, freedom: 5 },
+          { text: '完善法律体系，让法治成为革命遗产', valueTag: 'rule', effects: { rule: 10, justice: 5, freedom: 5 }, trust: { npc_lucien: 1 },
             npcFate: { napoleon: 'proud', robespierre: 'vindicated' },
             consequence: '法典成为欧洲大陆的法治标杆，革命成果得以制度化传承。', examHint: '法治是治国理政的基本方式。良法善治需要科学立法、严格执法、公正司法、全民守法。' },
           { text: '推动民主宪政，让人民持续参与治理', valueTag: 'freedom', effects: { freedom: 10, equality: 5, responsibility: 5 },
+            minTrust: { npcId: 'npc_lucien', value: 2, refuseText: '吕西安合上了排版盒：「民主宪政不是一句话。你得先让排字工人相信，你说过的话算数。等你证明了自己，我的铅字随时为你排。」' },
             npcFate: { napoleon: 'cautious', louis: 'philosophical' },
             consequence: '民主制度逐步建立，但拿破仑最终选择称帝，民主进程被打断。', examHint: '民主是法治的基础，法治是民主的保障。人民当家作主需要制度化的参与渠道。' }
         ]
@@ -624,7 +633,8 @@
 
 <!-- Game Engine -->
 <script src="assets/js/game-hooks.js?v=20260804"></script>
-<script src="engine.js?v=20260526e">
+<script src="engine.js?v=20260526e"></script>
+<script type="module" src="assets/js/npc-presence.js"></script>
 <script src="fireworks.js"></script>
 <script src="card-battle/card-battle.js"></script>
 <script src="card-battle/card-battle-ui.js"></script>

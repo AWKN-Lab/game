@@ -97,7 +97,167 @@
           "npcId": "npc_captain_miller",
           "echoActId": "act_3",
           "refersToActId": "act_1",
-          "ruleTemplate": "在{actTitle}的时候，你说过「{choiceText}」。行军路上我翻来覆去想这句话——像个当兵的说的。"
+          "ruleTemplate": "在{actTitle}的时候，你说过「{choiceText}」。行军路上我翻来覆去想这句话——像个当兵的说的。",
+          "refersToActTitle": "波士顿的怒火"
+        }
+      ],
+      "consequences": [
+        {
+          "actId": "act_1",
+          "kind": "key_choice",
+          "nodeType": "choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "freedom",
+                "justice"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_1",
+          "kind": "key_choice",
+          "nodeType": "pressure_choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "freedom",
+                "equality",
+                "justice",
+                "rule"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_2",
+          "kind": "key_choice",
+          "nodeType": "choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "freedom",
+                "justice",
+                "rule"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_2",
+          "kind": "key_choice",
+          "nodeType": "pressure_choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "justice",
+                "freedom",
+                "equality",
+                "rule"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_3",
+          "kind": "key_choice",
+          "nodeType": "choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "rule",
+                "freedom",
+                "equality",
+                "justice"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_3",
+          "kind": "key_choice",
+          "nodeType": "pressure_choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "freedom",
+                "justice",
+                "rule"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_4",
+          "kind": "key_choice",
+          "nodeType": "choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "justice",
+                "freedom"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_4",
+          "kind": "key_choice",
+          "nodeType": "pressure_choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "justice",
+                "rule",
+                "equality"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_5",
+          "kind": "key_choice",
+          "nodeType": "choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "rule",
+                "freedom",
+                "justice"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_6",
+          "kind": "key_choice",
+          "nodeType": "choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "justice",
+                "freedom",
+                "equality"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_3",
+          "kind": "echo",
+          "anchorId": "echo_us_act3",
+          "refersToActId": "act_1"
         }
       ]
     },
@@ -190,14 +350,419 @@
           "npcId": "npc_lucien",
           "echoActId": "act_3",
           "refersToActId": "act_1",
-          "ruleTemplate": "还记得吗，在{actTitle}的时候，你说过「{choiceText}」。这话我排过版——如今印出来再看，字还是那些字，味道不一样了。"
+          "ruleTemplate": "还记得吗，在{actTitle}的时候，你说过「{choiceText}」。这话我排过版——如今印出来再看，字还是那些字，味道不一样了。",
+          "refersToActTitle": "旧制度危机"
         },
         {
           "id": "echo_fr_act4",
           "npcId": "npc_lucien",
           "echoActId": "act_4",
           "refersToActId": "act_2",
-          "ruleTemplate": "{actTitle}那会儿，你讲过「{choiceText}」。我把这句话和后来的日子排在一起想了想——你当时是认真的吗？"
+          "ruleTemplate": "{actTitle}那会儿，你讲过「{choiceText}」。我把这句话和后来的日子排在一起想了想——你当时是认真的吗？",
+          "refersToActTitle": "攻占巴士底狱"
+        }
+      ],
+      "consequences": [
+        {
+          "actId": "act_1",
+          "kind": "key_choice",
+          "nodeType": "choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "equality",
+                "freedom",
+                "rule",
+                "justice"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_1",
+          "kind": "key_choice",
+          "nodeType": "pressure_choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "justice",
+                "equality",
+                "freedom",
+                "rule"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_1",
+          "kind": "key_choice",
+          "nodeType": "star_choice",
+          "nodeId": "fr_star_001",
+          "consequences": [
+            {
+              "type": "npc_fate",
+              "npcId": "robespierre",
+              "states": [
+                "awakened",
+                "disappointed"
+              ]
+            },
+            {
+              "type": "npc_fate",
+              "npcId": "louis",
+              "states": [
+                "worried",
+                "relieved"
+              ]
+            },
+            {
+              "type": "resource",
+              "values": [
+                "equality",
+                "freedom",
+                "rule",
+                "justice"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_2",
+          "kind": "key_choice",
+          "nodeType": "pressure_choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "freedom",
+                "justice",
+                "rule"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_2",
+          "kind": "key_choice",
+          "nodeType": "choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "freedom",
+                "justice",
+                "rule",
+                "equality"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_2",
+          "kind": "key_choice",
+          "nodeType": "star_choice",
+          "nodeId": "fr_star_002",
+          "consequences": [
+            {
+              "type": "npc_fate",
+              "npcId": "napoleon",
+              "states": [
+                "inspired",
+                "impressed"
+              ]
+            },
+            {
+              "type": "npc_fate",
+              "npcId": "marie",
+              "states": [
+                "terrified"
+              ]
+            },
+            {
+              "type": "npc_fate",
+              "npcId": "anna",
+              "states": [
+                "displaced",
+                "saved"
+              ]
+            },
+            {
+              "type": "npc_fate",
+              "npcId": "louis",
+              "states": [
+                "hopeful"
+              ]
+            },
+            {
+              "type": "npc_fate",
+              "npcId": "pierre",
+              "states": [
+                "betrayed",
+                "confused"
+              ]
+            },
+            {
+              "type": "resource",
+              "values": [
+                "freedom",
+                "rule",
+                "justice",
+                "responsibility",
+                "life"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_3",
+          "kind": "key_choice",
+          "nodeType": "pressure_choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "equality",
+                "freedom",
+                "rule",
+                "justice"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_3",
+          "kind": "key_choice",
+          "nodeType": "pressure_choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "justice",
+                "freedom",
+                "rule",
+                "equality"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_3",
+          "kind": "key_choice",
+          "nodeType": "choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "equality",
+                "freedom",
+                "rule",
+                "justice"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_3",
+          "kind": "key_choice",
+          "nodeType": "star_choice",
+          "nodeId": "fr_star_003",
+          "consequences": [
+            {
+              "type": "npc_fate",
+              "npcId": "napoleon",
+              "states": [
+                "approving",
+                "cautious"
+              ]
+            },
+            {
+              "type": "npc_fate",
+              "npcId": "robespierre",
+              "states": [
+                "skeptical",
+                "approving"
+              ]
+            },
+            {
+              "type": "resource",
+              "values": [
+                "freedom",
+                "equality",
+                "rule",
+                "justice"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_4",
+          "kind": "key_choice",
+          "nodeType": "pressure_choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "justice",
+                "freedom",
+                "rule"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_4",
+          "kind": "key_choice",
+          "nodeType": "choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "freedom",
+                "rule",
+                "justice",
+                "equality"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_4",
+          "kind": "key_choice",
+          "nodeType": "star_choice",
+          "nodeId": "fr_star_004",
+          "consequences": [
+            {
+              "type": "npc_fate",
+              "npcId": "robespierre",
+              "states": [
+                "determined",
+                "isolated"
+              ]
+            },
+            {
+              "type": "npc_fate",
+              "npcId": "louis",
+              "states": [
+                "dead"
+              ]
+            },
+            {
+              "type": "npc_fate",
+              "npcId": "napoleon",
+              "states": [
+                "watching"
+              ]
+            },
+            {
+              "type": "resource",
+              "values": [
+                "justice",
+                "life",
+                "rule"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_5",
+          "kind": "key_choice",
+          "nodeType": "pressure_choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "freedom",
+                "justice",
+                "rule"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_5",
+          "kind": "key_choice",
+          "nodeType": "choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "equality",
+                "rule",
+                "freedom",
+                "justice"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_5",
+          "kind": "key_choice",
+          "nodeType": "star_choice",
+          "nodeId": "fr_star_005",
+          "consequences": [
+            {
+              "type": "npc_fate",
+              "npcId": "napoleon",
+              "states": [
+                "proud",
+                "cautious"
+              ]
+            },
+            {
+              "type": "npc_fate",
+              "npcId": "robespierre",
+              "states": [
+                "vindicated"
+              ]
+            },
+            {
+              "type": "npc_fate",
+              "npcId": "louis",
+              "states": [
+                "philosophical"
+              ]
+            },
+            {
+              "type": "resource",
+              "values": [
+                "rule",
+                "justice",
+                "freedom",
+                "equality",
+                "responsibility"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_5",
+          "kind": "key_choice",
+          "nodeType": "choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "rule",
+                "justice",
+                "equality",
+                "freedom"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_3",
+          "kind": "echo",
+          "anchorId": "echo_fr_act3",
+          "refersToActId": "act_1"
+        },
+        {
+          "actId": "act_4",
+          "kind": "echo",
+          "anchorId": "echo_fr_act4",
+          "refersToActId": "act_2"
         }
       ]
     },
@@ -288,7 +853,159 @@
           "npcId": "npc_tom",
           "echoActId": "act_3",
           "refersToActId": "act_1",
-          "ruleTemplate": "你之前在{actTitle}说过「{choiceText}」。我记着呢——厂里没人听我把话说完，你是头一个。"
+          "ruleTemplate": "你之前在{actTitle}说过「{choiceText}」。我记着呢——厂里没人听我把话说完，你是头一个。",
+          "refersToActTitle": "纺织机器"
+        }
+      ],
+      "consequences": [
+        {
+          "actId": "act_1",
+          "kind": "key_choice",
+          "nodeType": "pressure_choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "justice",
+                "responsibility",
+                "labor",
+                "life"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_2",
+          "kind": "key_choice",
+          "nodeType": "choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "labor",
+                "justice",
+                "responsibility",
+                "life"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_3",
+          "kind": "key_choice",
+          "nodeType": "pressure_choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "justice",
+                "life",
+                "responsibility"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_4",
+          "kind": "key_choice",
+          "nodeType": "choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "labor",
+                "justice",
+                "responsibility",
+                "life"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_4",
+          "kind": "key_choice",
+          "nodeType": "pressure_choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "justice",
+                "life",
+                "responsibility",
+                "labor"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_5",
+          "kind": "key_choice",
+          "nodeType": "choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "labor",
+                "justice",
+                "responsibility",
+                "life"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_5",
+          "kind": "key_choice",
+          "nodeType": "choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "labor",
+                "justice",
+                "responsibility",
+                "life"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_5",
+          "kind": "key_choice",
+          "nodeType": "choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "labor",
+                "justice",
+                "responsibility",
+                "life"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_5",
+          "kind": "key_choice",
+          "nodeType": "pressure_choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "justice",
+                "life",
+                "responsibility",
+                "labor"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_3",
+          "kind": "echo",
+          "anchorId": "echo_in_act3",
+          "refersToActId": "act_1"
         }
       ]
     },
@@ -379,7 +1096,151 @@
           "npcId": "npc_shen_yanqiu",
           "echoActId": "act_3",
           "refersToActId": "act_1",
-          "ruleTemplate": "那日{actTitle}，你说过一句「{choiceText}」。老朽记到了今天——读书人的话，有人记得，就不算白说。"
+          "ruleTemplate": "那日{actTitle}，你说过一句「{choiceText}」。老朽记到了今天——读书人的话，有人记得，就不算白说。",
+          "refersToActTitle": "甲午危机"
+        }
+      ],
+      "consequences": [
+        {
+          "actId": "act_1",
+          "kind": "key_choice",
+          "nodeType": "choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "reform",
+                "patriotism"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_1",
+          "kind": "key_choice",
+          "nodeType": "pressure_choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "justice",
+                "patriotism",
+                "rule"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_2",
+          "kind": "key_choice",
+          "nodeType": "choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "rule",
+                "reform",
+                "responsibility"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_2",
+          "kind": "key_choice",
+          "nodeType": "pressure_choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "reform",
+                "justice",
+                "rule"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_3",
+          "kind": "key_choice",
+          "nodeType": "choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "patriotism",
+                "responsibility",
+                "reform"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_3",
+          "kind": "key_choice",
+          "nodeType": "pressure_choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "justice",
+                "reform",
+                "rule"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_3",
+          "kind": "key_choice",
+          "nodeType": "pressure_choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "justice",
+                "patriotism",
+                "rule",
+                "reform"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_4",
+          "kind": "key_choice",
+          "nodeType": "choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "reform",
+                "rule"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_4",
+          "kind": "key_choice",
+          "nodeType": "choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "rule",
+                "reform",
+                "patriotism",
+                "responsibility"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_3",
+          "kind": "echo",
+          "anchorId": "echo_wx_act3",
+          "refersToActId": "act_1"
         }
       ]
     },
@@ -469,7 +1330,88 @@
           "npcId": "npc_lin_wenqing",
           "echoActId": "act_3",
           "refersToActId": "act_1",
-          "ruleTemplate": "{actTitle}那时你说过「{choiceText}」。做报馆这一行的，最知道一句话能活多久——你那句，还活着。"
+          "ruleTemplate": "{actTitle}那时你说过「{choiceText}」。做报馆这一行的，最知道一句话能活多久——你那句，还活着。",
+          "refersToActTitle": "革命思想"
+        }
+      ],
+      "consequences": [
+        {
+          "actId": "act_1",
+          "kind": "key_choice",
+          "nodeType": "choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "patriotism"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_1",
+          "kind": "key_choice",
+          "nodeType": "pressure_choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "democracy",
+                "justice",
+                "rule"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_3",
+          "kind": "key_choice",
+          "nodeType": "choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "democracy",
+                "rule"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_3",
+          "kind": "key_choice",
+          "nodeType": "pressure_choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "justice",
+                "democracy",
+                "rule"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_4",
+          "kind": "key_choice",
+          "nodeType": "pressure_choice",
+          "consequences": [
+            {
+              "type": "resource",
+              "values": [
+                "justice",
+                "democracy",
+                "rule"
+              ]
+            }
+          ]
+        },
+        {
+          "actId": "act_3",
+          "kind": "echo",
+          "anchorId": "echo_xh_act3",
+          "refersToActId": "act_1"
         }
       ]
     }

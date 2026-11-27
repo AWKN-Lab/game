@@ -101,6 +101,12 @@
         '梁启超': 'liangqichao', '谭嗣同': 'tansitong',
         '慈禧太后': 'cixi'
       },
+      echoNpcNames: { npc_shen_yanqiu: '沈砚秋' },
+      echoActTitles: { act_1: '甲午战败，公车上书', act_2: '百日维新', act_3: '戊戌政变', act_4: '变法的失败与反思', act_5: '维新精神永存' },
+      echoAnchors: [
+        { id: 'echo_wx_act3', npcId: 'npc_shen_yanqiu', echoActId: 'act_3', refersToActId: 'act_1', refersToActTitle: '甲午战败，公车上书',
+          ruleTemplate: '那日{actTitle}，你说过一句「{choiceText}」。老朽记到了今天——读书人的话，有人记得，就不算白说。' }
+      ],
       sceneBGM: {
         '时空剧场': AudioManager.BGM.WUXU_THEATER,
         '第一幕 · 甲午战败，公车上书': AudioManager.BGM.WUXU_CRISIS,
@@ -351,10 +357,10 @@
     urgentText: "康有为正在征集签名，但你知道签了名就等于公开对抗朝廷——",
     timeoutText: "你犹豫了太久。当康有为收齐签名时，你的名字不在上面。后来你听说，签名的举人都被朝廷盯上了。",
     choices: [
-      { text: "毫不犹豫地签上自己的名字", effects: { justice: 15, patriotism: 5 } },
+      { text: "毫不犹豫地签上自己的名字", effects: { justice: 15, patriotism: 5 }, trust: { npc_shen_yanqiu: 1 } },
       { text: "签上名字，但要求康有为措辞更温和", effects: { rule: 10, justice: 5 } },
-      { text: "支持但不签名——你还有家人要保护", effects: { rule: 5 } },
-      { text: "劝康有为放弃上书，太危险了", effects: {} }
+      { text: "支持但不签名——你还有家人要保护", effects: { rule: 5 }, trust: { npc_shen_yanqiu: -1 } },
+      { text: "劝康有为放弃上书，太危险了", effects: {}, trust: { npc_shen_yanqiu: -1 } }
     ]
   },
 
@@ -557,10 +563,10 @@
     urgentText: "慈禧太后的亲信在朝堂上公开反对变法。光绪帝看向你，等你一句话——",
     timeoutText: "你没有说话。慈禧的亲信们更加嚣张了，变法的阻力越来越大。",
     choices: [
-      { text: "支持光绪帝，公开驳斥保守派", effects: { reform: 15, justice: 5 } },
+      { text: "支持光绪帝，公开驳斥保守派", effects: { reform: 15, justice: 5 }, trust: { npc_shen_yanqiu: 1 } },
       { text: "建议光绪帝循序渐进，先从教育改革开始", effects: { rule: 15 } },
       { text: "提醒光绪帝注意安全，慈禧不会坐视不管", effects: { justice: 10 } },
-      { text: "保持沉默，朝堂之争不是你能参与的", effects: {} }
+      { text: "保持沉默，朝堂之争不是你能参与的", effects: {}, trust: { npc_shen_yanqiu: -1 } }
     ]
   },
 
@@ -695,10 +701,11 @@
     urgentText: "消息传来：慈禧发动政变了！谭嗣同还在城里，你有机会给他送信——",
     timeoutText: "你犹豫了太久。等你赶到谭嗣同住处时，他已经被捕了。他平静地对你说：'我知道会有这一天。'",
     choices: [
-      { text: "冒死给谭嗣同送信，让他赶紧逃跑", effects: { justice: 15 } },
-      { text: "安排人秘密护送谭嗣同出城", effects: { reform: 10, justice: 10 } },
+      { text: "冒死给谭嗣同送信，让他赶紧逃跑", effects: { justice: 15 }, trust: { npc_shen_yanqiu: 1 },
+        minTrust: { npcId: 'npc_shen_yanqiu', value: 2, refuseText: '沈砚秋按住了你的手，摇头道：「太险了。这一趟让我的人去——你的命，还得留着看变法成不成的那天。」' } },
+      { text: "安排人秘密护送谭嗣同出城", effects: { reform: 10, justice: 10 }, trust: { npc_shen_yanqiu: 1 } },
       { text: "谭嗣同有自己的选择，尊重他的决定", effects: { rule: 5, justice: 5 } },
-      { text: "先保护自己——你已经帮不了他了", effects: {} }
+      { text: "先保护自己——你已经帮不了他了", effects: {}, trust: { npc_shen_yanqiu: -1 } }
     ]
   },
 
@@ -710,10 +717,10 @@
     urgentText: "谭嗣同拒绝了逃跑的机会。他说：'各国变法，无不从流血而成。'他看向你——",
     timeoutText: "你没有回应。谭嗣同独自走向了刑场。后来你才知道，他在狱中写下了那首绝命诗。",
     choices: [
-      { text: "陪他到最后——有些事情值得用生命去守护", effects: { justice: 15, patriotism: 10 } },
+      { text: "陪他到最后——有些事情值得用生命去守护", effects: { justice: 15, patriotism: 10 }, trust: { npc_shen_yanqiu: 1 } },
       { text: "尊重他的选择，但请他留下遗言", effects: { justice: 10, rule: 5 } },
       { text: "再次劝他逃跑——活着才能继续变法的事业", effects: { reform: 10 } },
-      { text: "沉默——你已经说不出话了", effects: {} }
+      { text: "沉默——你已经说不出话了", effects: {}, trust: { npc_shen_yanqiu: -1 } }
     ]
   },
 
@@ -935,6 +942,7 @@
 <!-- Game Engine -->
 <script src="assets/js/game-hooks.js?v=20260804"></script>
 <script src="engine.js?v=20260526e"></script>
+<script type="module" src="assets/js/npc-presence.js"></script>
 
 </body>
 </html>

@@ -100,6 +100,12 @@
         '孙中山': 'sun_yat_sen', '袁世凯': 'yuan_shikai',
         '起义士兵': 'soldier', '进步学生': 'student', '革命先烈': 'martyr_ghost'
       },
+      echoNpcNames: { npc_lin_wenqing: '林文清' },
+      echoActTitles: { act_1: '山河破碎，革命酝酿', act_2: '武昌枪声，全国响应', act_3: '民国诞生，共和初现', act_4: '革命果实，被人窃取', act_5: '历史结局' },
+      echoAnchors: [
+        { id: 'echo_xh_act3', npcId: 'npc_lin_wenqing', echoActId: 'act_3', refersToActId: 'act_1', refersToActTitle: '山河破碎，革命酝酿',
+          ruleTemplate: '{actTitle}那时你说过「{choiceText}」。做报馆这一行的，最知道一句话能活多久——你那句，还活着。' }
+      ],
       sceneBGM: {
         'opera_house': AudioManager.BGM.XINHAI_THEATER,
         'beijing_1900': AudioManager.BGM.XINHAI_BEIJING_SOMBER,
@@ -323,10 +329,10 @@
     urgentText: "起义计划泄露了！清军正在搜捕革命党人。要么今晚动手，要么等死——",
     timeoutText: "你犹豫了太久。等天亮时，起义已经爆发了。你没有参与这场改变中国历史的革命。",
     choices: [
-      { text: "今晚就动手！宁可战死，也不坐以待毙！", effects: { democracy: 15, justice: 5 } },
+      { text: "今晚就动手！宁可战死，也不坐以待毙！", effects: { democracy: 15, justice: 5 }, trust: { npc_lin_wenqing: 1 } },
       { text: "按原计划行动，但做好应急准备", effects: { rule: 10, justice: 5 } },
       { text: "先撤离，保存革命力量", effects: { rule: 5 } },
-      { text: "这不是你该参与的事情", effects: {} }
+      { text: "这不是你该参与的事情", effects: {}, trust: { npc_lin_wenqing: -1 } }
     ]
   },
 
@@ -427,10 +433,10 @@
     urgentText: "袁世凯手握北洋军，列强支持他。孙中山说：'如果我不让位，中国会陷入内战。'——",
     timeoutText: "你没有表态。孙中山独自做出了决定——让位给袁世凯。历史证明，这个决定带来了更大的灾难。",
     choices: [
-      { text: "支持孙中山——革命果实不能拱手让人！", effects: { justice: 15, democracy: 5 } },
+      { text: "支持孙中山——革命果实不能拱手让人！", effects: { justice: 15, democracy: 5 }, trust: { npc_lin_wenqing: 1 } },
       { text: "理解孙中山的苦衷——和平比权力更重要", effects: { rule: 10, justice: 5 } },
       { text: "建议孙中山设置条件限制袁世凯的权力", effects: { rule: 15 } },
-      { text: "沉默——政治太复杂了", effects: {} }
+      { text: "沉默——政治太复杂了", effects: {}, trust: { npc_lin_wenqing: -1 } }
     ]
   },
 
@@ -490,9 +496,9 @@
     timeoutText: "你没有做出选择。最终清帝被允许留在紫禁城中，享受优待。这个决定在后来引发了巨大的争议。",
     choices: [
       { text: "严惩满清皇室——他们压迫了汉人268年", effects: { justice: 5, democracy: 10 } },
-      { text: "优待清帝——和平过渡比报复更重要", effects: { rule: 15, justice: 10 } },
+      { text: "优待清帝——和平过渡比报复更重要", effects: { rule: 15, justice: 10 }, trust: { npc_lin_wenqing: 1 } },
       { text: "不惩罚也不优待，让他们成为普通公民", effects: { democracy: 10, rule: 5 } },
-      { text: "这不是你能决定的事情", effects: {} }
+      { text: "这不是你能决定的事情", effects: {}, trust: { npc_lin_wenqing: -1 } }
     ]
   },
 
@@ -614,10 +620,11 @@
     urgentText: "袁世凯宣布恢复帝制！孙中山发出讨袁檄文——",
     timeoutText: "你没有做出选择。护国战争爆发了，无数人为了共和而战。你站在一旁，看着历史重演。",
     choices: [
-      { text: "加入护国军，保卫共和！", effects: { democracy: 15, justice: 10 } },
-      { text: "发表文章声讨袁世凯，唤醒民众", effects: { democracy: 10, patriotism: 5 } },
+      { text: "加入护国军，保卫共和！", effects: { democracy: 15, justice: 10 }, trust: { npc_lin_wenqing: 1 } },
+      { text: "发表文章声讨袁世凯，唤醒民众", effects: { democracy: 10, patriotism: 5 }, trust: { npc_lin_wenqing: 1 },
+        minTrust: { npcId: 'npc_lin_wenqing', value: 2, refuseText: '林文清把报纸折了起来，看着你：「你的名字，还撑不起一篇檄文。先让我在报馆里替你把名字磨一磨——等它有了分量，再署上去。」' } },
       { text: "呼吁和平解决，避免内战", effects: { rule: 10 } },
-      { text: "远离政治——你已经厌倦了", effects: {} }
+      { text: "远离政治——你已经厌倦了", effects: {}, trust: { npc_lin_wenqing: -1 } }
     ]
   },
 
@@ -631,6 +638,7 @@
 <!-- Game Engine -->
 <script src="assets/js/game-hooks.js?v=20260804"></script>
 <script src="engine.js?v=20260526e"></script>
+<script type="module" src="assets/js/npc-presence.js"></script>
 
 </body>
 </html>

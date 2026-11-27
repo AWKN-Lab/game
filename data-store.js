@@ -97,12 +97,17 @@
    */
   DataStore.saveProgress = function (data) {
     if (!data || !data.scriptId) return;
+    // 增量合并：未传字段沿用上次存档，避免部分保存丢失 npcFate / choicesByAct / npcTrust
+    var prev = _get('progress_' + data.scriptId, null) || {};
     _set('progress_' + data.scriptId, {
       scriptId: data.scriptId,
       dialogIndex: data.dialogIndex || 0,
       gameValues: data.gameValues || {},
       collectedItems: data.collectedItems || [],
       currentAct: data.currentAct || '',
+      npcFate: data.npcFate !== undefined ? data.npcFate : (prev.npcFate || null),
+      choicesByAct: data.choicesByAct !== undefined ? data.choicesByAct : (prev.choicesByAct || {}),
+      npcTrust: data.npcTrust !== undefined ? data.npcTrust : (prev.npcTrust || {}),
       savedAt: Date.now()
     });
   };

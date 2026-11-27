@@ -139,11 +139,357 @@ function ttHook(name, payload) {
 }
 
 let ttLastActId = '';
+let ttCurrentActId = 'act_1'; // 归一化幕次编号，供选择记录与回响触发使用
 function ttEmitActEnter(actId, actTitle) {
   var key = String(actId || '').trim();
   if (!key || key === ttLastActId) return;
   ttLastActId = key;
+  var P = presence();
+  ttCurrentActId = P ? (P.actIdFromScene(key) || P.actIdFromScene(actTitle) || ttCurrentActId) : ttCurrentActId;
   ttHook('script.act_enter', { actId: key, actTitle: String(actTitle || key).trim() });
+  maybeTriggerEcho(ttCurrentActId);
+}
+
+// ============================================================
+// MOD-ENGINE-04 回响触发 + MOD-ENGINE-05 人物信任可见化
+// 依赖 assets/js/npc-presence.js（window.NpcPresence），缺失时静默降级
+// ============================================================
+let choicesByAct = {};   // actId -> 玩家在该幕的选择原文（用于回响回读）
+let npcTrust = {};       // npcId -> 信任值（幕后数值，口径与 NPC 对话系统一致）
+let shownEchoAnchors = {}; // 本次会话已触发的回响锚点，避免重复
+
+function presence() {
+  return (typeof window !== 'undefined' && window.NpcPresence) ? window.NpcPresence : null;
+}
+
+function echoNpcName(npcId) {
+  var names = GAME_CONFIG.echoNpcNames || {};
+  return names[npcId] || npcId;
+}
+
+function saveProgressWithPresence() {
+  DataStore.saveProgress({
+    scriptId: GAME_CONFIG.scriptId,
+    dialogIndex,
+    gameValues: { ...gameValues },
+    collectedItems: [...collectedItems],
+    npcFate: JSON.parse(JSON.stringify(npcFate)),
+    choicesByAct: { ...choicesByAct },
+    npcTrust: { ...npcTrust },
+    currentAct: ''
+  });
+}
+
+// 记录玩家选择（按幕次归一化），供后续幕次回响回读
+function recordChoiceForEcho(choiceText, actLabel) {
+  var P = presence();
+  if (!P || !choiceText) return;
+  var actId = ttCurrentActId || P.actIdFromScene(actLabel || ttCurrentAct());
+  if (!actId) return;
+  choicesByAct[actId] = String(choiceText).slice(0, 200);
+  saveProgressWithPresence();
+}
+
+// 进入幕次时检查回响锚点：回读玩家历史选择，插入 NPC 回响台词
+function maybeTriggerEcho(actId) {
+  var P = presence();
+  var anchors = GAME_CONFIG.echoAnchors;
+  if (!P || !anchors || !anchors.length) return;
+  var due = P.findEchoAnchors(anchors, actId);
+  due.forEach(function (anchor) {
+    if (shownEchoAnchors[anchor.id]) return;
+    var choiceText = choicesByAct[anchor.refersToActId];
+    if (!choiceText) return; // 该幕还没有可回响的选择，静默跳过
+    shownEchoAnchors[anchor.id] = true;
+    var npcName = echoNpcName(anchor.npcId);
+    var actTitle = anchor.refersToActTitle || anchor.refersToActId;
+    var fallback = P.buildRuleEcho(anchor.ruleTemplate, actTitle, choiceText);
+    var done = false;
+    var showEcho = function (text) {
+      if (done || !text) return;
+      done = true;
+      showEchoPanel(npcName, text);
+      ttHook('npc.echo_referenced', { scriptId: GAME_CONFIG.scriptId, npcId: anchor.npcId });
+    };
+    // 优先服务端生成（AI 或规则版），不可用或超时用本地规则版兜底——相关率 100%
+    var timer = setTimeout(function () { showEcho(fallback); }, 6000);
+    try {
+      if (window.TTNPChat && typeof window.TTNPChat.echo === 'function') {
+        window.TTNPChat.echo({ scriptId: GAME_CONFIG.scriptId, anchorId: anchor.id, npcId: anchor.npcId })
+          .then(function (r) {
+            clearTimeout(timer);
+            showEcho((r && r.echo) ? r.echo : fallback);
+          })
+          .catch(function () { clearTimeout(timer); showEcho(fallback); });
+      } else {
+        clearTimeout(timer);
+        showEcho(fallback);
+      }
+    } catch (error) {
+      clearTimeout(timer);
+      showEcho(fallback);
+    }
+  });
+}
+
+// 回响面板：与命运变更 toast 区分的叙事呈现，点击或 9 秒后消失
+function showEchoPanel(npcName, text) {
+  var el = document.getElementById('npcEchoPanel');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'npcEchoPanel';
+    el.className = 'npc-echo-panel';
+    el.onclick = function () { el.classList.remove('show'); };
+    document.body.appendChild(el);
+  }
+  el.innerHTML = `
+    <div class="echo-panel-title">📜 回响</div>
+    <div class="echo-panel-name">${npcName}</div>
+    <div class="echo-panel-text"></div>
+  `;
+  el.querySelector('.echo-panel-text').textContent = text;
+  requestAnimationFrame(() => { el.classList.add('show'); });
+  setTimeout(() => { el.classList.remove('show'); }, 9000);
+}
+
+// 应用选择的信任变化；信任不足时 NPC 以角色身份拒绝（不置灰选项，剧情继续）
+// 返回 true 表示本次选择被 NPC 拒绝，跳过效果与结算
+function applyChoiceTrust(choice) {
+  var P = presence();
+  if (!choice) return false;
+  // 信任门槛：不足时拒绝或提出条件
+  if (choice.minTrust) {
+    var gate = choice.minTrust;
+    var cur = npcTrust[gate.npcId] || 0;
+    var blocked = P ? P.trustGateBlocked(cur, gate) : (typeof gate.value === 'number' && cur < gate.value);
+    if (blocked) {
+      showTrustRefusal(echoNpcName(gate.npcId), gate.refuseText || '……这次不行。等你证明了自己，再来找我。');
+      return true;
+    }
+  }
+  if (choice.trust && Object.keys(choice.trust).length) {
+    for (var npcId in choice.trust) {
+      var delta = choice.trust[npcId];
+      var before = npcTrust[npcId] || 0;
+      var next = P ? P.applyTrustDelta(before, delta) : Math.max(-5, Math.min(10, before + delta));
+      npcTrust[npcId] = next;
+      var tier = P ? P.trustTierOf(next) : 'normal';
+      var dir = next > before ? 'up' : (next < before ? 'down' : 'flat');
+      var text = P ? P.trustNarrative(echoNpcName(npcId), tier, dir)
+                   : (dir === 'up' ? '对方对你的态度友善了几分。' : (dir === 'down' ? '对方对你多了几分提防。' : ''));
+      if (text) showTrustNarrativeToast(text);
+      ttHook('npc.trust_level_changed', { scriptId: GAME_CONFIG.scriptId, npcId: npcId, trust: next, tier: tier });
+    }
+    saveProgressWithPresence();
+  }
+  return false;
+}
+
+// 信任叙事 toast：只说态度，不出现数值条
+function showTrustNarrativeToast(text) {
+  var el = document.getElementById('npcTrustToast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'npcTrustToast';
+    el.className = 'npc-trust-toast';
+    document.body.appendChild(el);
+  }
+  el.textContent = text;
+  requestAnimationFrame(() => { el.classList.add('show'); });
+  setTimeout(() => { el.classList.remove('show'); }, 3600);
+}
+
+// 信任不足的拒绝：NPC 以角色身份提出条件，剧情继续（失败可玩）
+function showTrustRefusal(npcName, refuseText) {
+  var overlay = document.getElementById('npcTrustRefusalOverlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'npcTrustRefusalOverlay';
+    overlay.className = 'npc-trust-refusal-overlay';
+    document.body.appendChild(overlay);
+  }
+  overlay.innerHTML = `
+    <div class="trust-refusal-card">
+      <div class="trust-refusal-name">${npcName}</div>
+      <div class="trust-refusal-text"></div>
+      <div class="trust-refusal-hint">（他还没有完全信任你。剧情继续——你可以用别的方式赢得他的信任。）</div>
+    </div>
+  `;
+  overlay.querySelector('.trust-refusal-text').textContent = refuseText;
+  overlay.classList.add('show');
+  overlay.onclick = function () {
+    overlay.classList.remove('show');
+    dialogIndex++;
+    showDialogLine();
+  };
+}
+
+// ============================================================
+// MOD-ENGINE-06 课堂皮（绘本/课件模式）
+// 同一引擎、同一剧情数据与存档；投影友好排版，隐藏积分与游戏化元素，可导出学情摘要
+// ============================================================
+const CLASSROOM_MODE_KEY = 'tt_classroom_mode';
+
+function isClassroomMode() {
+  try { return localStorage.getItem(CLASSROOM_MODE_KEY) === '1'; } catch (error) { return false; }
+}
+
+function setClassroomMode(on) {
+  try { localStorage.setItem(CLASSROOM_MODE_KEY, on ? '1' : '0'); } catch (error) {}
+  applyClassroomMode();
+}
+
+function applyClassroomMode() {
+  var on = isClassroomMode();
+  document.body.classList.toggle('tt-classroom', on);
+  var btn = document.getElementById('classroomToggleBtn');
+  if (btn) btn.textContent = on ? '🎮 退出课堂模式' : '📖 课堂模式';
+  var exportBtn = document.getElementById('classroomExportBtn');
+  if (exportBtn) exportBtn.style.display = on ? 'block' : 'none';
+}
+
+function initClassroomMode() {
+  var style = document.createElement('style');
+  style.id = 'classroomModeStyle';
+  style.textContent = `
+    /* 课堂皮：隐藏积分与游戏化元素 */
+    body.tt-classroom #valueHud,
+    body.tt-classroom .collectible-toast,
+    body.tt-classroom #collectibleToast,
+    body.tt-classroom .value-hud { display: none !important; }
+    /* 投影友好：更大字号、更高对比 */
+    body.tt-classroom #dialogText { font-size: 26px !important; line-height: 1.9 !important; color: #fff !important; text-shadow: 0 2px 8px rgba(0,0,0,0.9); }
+    body.tt-classroom #dialogSpeaker { font-size: 24px !important; }
+    body.tt-classroom .choice-btn { font-size: 22px !important; padding: 16px 24px !important; }
+    body.tt-classroom .pressure-choice-btn { font-size: 22px !important; padding: 16px 24px !important; }
+    /* 模式切换与导出按钮 */
+    #classroomToggleBtn, #classroomExportBtn {
+      position: fixed; right: 16px; z-index: 3000;
+      background: rgba(20,20,40,0.85); color: #e8d5b5; border: 1px solid #d4a574;
+      border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer;
+      backdrop-filter: blur(6px); font-family: inherit;
+    }
+    #classroomToggleBtn { bottom: 16px; }
+    #classroomExportBtn { bottom: 52px; display: none; }
+    /* 回响面板 */
+    .npc-echo-panel {
+      position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%) translateY(20px);
+      max-width: 640px; width: calc(100% - 48px); z-index: 2600;
+      background: linear-gradient(135deg, rgba(26,26,46,0.96), rgba(22,33,62,0.96));
+      border: 1px solid #d4a574; border-radius: 14px; padding: 16px 20px;
+      opacity: 0; transition: all 0.4s ease; pointer-events: auto; cursor: pointer;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    }
+    .npc-echo-panel.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .echo-panel-title { font-size: 12px; color: #d4a574; letter-spacing: 2px; margin-bottom: 6px; }
+    .echo-panel-name { font-size: 15px; color: #fff; font-weight: bold; margin-bottom: 6px; }
+    .echo-panel-text { font-size: 16px; color: #e8e0d0; line-height: 1.8; }
+    /* 信任叙事 toast */
+    .npc-trust-toast {
+      position: fixed; top: 76px; left: 50%; transform: translateX(-50%) translateY(-12px);
+      max-width: 520px; z-index: 2600; padding: 10px 20px; border-radius: 20px;
+      background: rgba(20,20,40,0.92); border: 1px solid rgba(212,165,116,0.6);
+      color: #f0e6d2; font-size: 15px; opacity: 0; transition: all 0.4s ease; pointer-events: none;
+      text-align: center;
+    }
+    .npc-trust-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    /* 信任拒绝卡 */
+    .npc-trust-refusal-overlay {
+      position: fixed; inset: 0; z-index: 2500; display: flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.55); opacity: 0; pointer-events: none; transition: opacity 0.3s ease; cursor: pointer;
+    }
+    .npc-trust-refusal-overlay.show { opacity: 1; pointer-events: auto; }
+    .trust-refusal-card {
+      background: linear-gradient(135deg, #1a1a2e, #16213e); border: 1px solid #d4a574;
+      border-radius: 16px; padding: 28px 32px; max-width: 460px; text-align: center;
+    }
+    .trust-refusal-name { font-size: 18px; color: #d4a574; font-weight: bold; margin-bottom: 12px; }
+    .trust-refusal-text { font-size: 17px; color: #fff; line-height: 1.8; margin-bottom: 14px; }
+    .trust-refusal-hint { font-size: 13px; color: #9a9ab0; }
+  `;
+  document.head.appendChild(style);
+
+  var toggle = document.createElement('button');
+  toggle.id = 'classroomToggleBtn';
+  toggle.onclick = function () { setClassroomMode(!isClassroomMode()); };
+  document.body.appendChild(toggle);
+
+  var exportBtn = document.createElement('button');
+  exportBtn.id = 'classroomExportBtn';
+  exportBtn.textContent = '📋 导出学情摘要';
+  exportBtn.onclick = exportLearningSummary;
+  document.body.appendChild(exportBtn);
+
+  applyClassroomMode();
+}
+
+// 课堂皮学情摘要：选择轨迹、信任叙事、命运档案、答题情况，打印导出
+function exportLearningSummary() {
+  var actTitles = GAME_CONFIG.echoActTitles || {};
+  var lines = [];
+  lines.push('<h1>学情摘要 · ' + (GAME_CONFIG.title || GAME_CONFIG.scriptId) + '</h1>');
+  lines.push('<p>导出时间：' + new Date().toLocaleString('zh-CN') + '</p>');
+
+  lines.push('<h2>一、选择轨迹</h2>');
+  var choiceKeys = Object.keys(choicesByAct);
+  if (choiceKeys.length === 0) {
+    lines.push('<p>本机暂无选择记录。</p>');
+  } else {
+    lines.push('<ul>');
+    choiceKeys.sort().forEach(function (actId) {
+      var title = actTitles[actId] || actId;
+      lines.push('<li><strong>' + title + '</strong>：你选择了「' + escapeHtmlText(choicesByAct[actId]) + '」</li>');
+    });
+    lines.push('</ul>');
+  }
+
+  lines.push('<h2>二、人物态度（信任轨迹）</h2>');
+  var trustNpcs = GAME_CONFIG.echoNpcNames || {};
+  var trustKeys = Object.keys(npcTrust);
+  if (trustKeys.length === 0) {
+    lines.push('<p>本机暂无信任变化记录。</p>');
+  } else {
+    lines.push('<ul>');
+    trustKeys.forEach(function (npcId) {
+      var P = window.NpcPresence;
+      var tier = P ? P.trustTierOf(npcTrust[npcId]) : 'normal';
+      var tierText = tier === 'high' ? '信任很深，愿意交心' : (tier === 'normal' ? '态度友善，愿意合作' : '仍有戒备，需要证明自己');
+      lines.push('<li><strong>' + (trustNpcs[npcId] || npcId) + '</strong>：' + tierText + '</li>');
+    });
+    lines.push('</ul>');
+  }
+
+  lines.push('<h2>三、人物命运档案</h2>');
+  var fateKeys = Object.keys(npcFate || {});
+  if (fateKeys.length === 0 || !GAME_CONFIG.NPC_FATE_CONFIG) {
+    lines.push('<p>本剧本无命运档案或暂无变化。</p>');
+  } else {
+    lines.push('<ul>');
+    fateKeys.forEach(function (npcId) {
+      var cfg = GAME_CONFIG.NPC_FATE_CONFIG[npcId];
+      if (!cfg) return;
+      var fate = npcFate[npcId] || { state: 'unknown', events: [] };
+      var stateLabel = cfg.stateLabels[fate.state] || fate.state;
+      lines.push('<li><strong>' + cfg.name + '</strong>：' + stateLabel + (fate.events.length ? '（' + escapeHtmlText(fate.events[fate.events.length - 1]) + '）' : '') + '</li>');
+    });
+    lines.push('</ul>');
+  }
+
+  lines.push('<h2>四、知识测试</h2>');
+  if (quizScore > 0) {
+    lines.push('<p>测试得分：' + quizScore + ' 分。</p>');
+  } else {
+    lines.push('<p>尚未完成知识测试。</p>');
+  }
+
+  var win = window.open('', '_blank', 'width=820,height=680');
+  if (!win) return;
+  win.document.write('<html><head><meta charset="utf-8"><title>学情摘要</title><style>body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:32px auto;color:#222;line-height:1.8}h1{font-size:24px}h2{font-size:18px;border-bottom:1px solid #ddd;padding-bottom:6px;margin-top:28px}li{margin:8px 0}@media print{body{margin:16px}}</style></head><body>' + lines.join('') + '<script>setTimeout(function(){window.print();},300);<\/script></body></html>');
+  win.document.close();
+}
+
+function escapeHtmlText(s) {
+  return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 // ============================================================
@@ -203,6 +549,8 @@ function initGameHUD() {
     gameValues = savedProgress.gameValues || { ...GAME_CONFIG.values };
     collectedItems = savedProgress.collectedItems || [];
     if (savedProgress.npcFate) npcFate = savedProgress.npcFate;
+    if (savedProgress.choicesByAct) choicesByAct = savedProgress.choicesByAct;
+    if (savedProgress.npcTrust) npcTrust = savedProgress.npcTrust;
   } else {
     dialogIndex = 0;
     gameValues = { ...GAME_CONFIG.values };
@@ -1278,6 +1626,9 @@ function showStarChoice(line) {
         actId: ttCurrentAct(),
         timed: false
       });
+      recordChoiceForEcho(choice.text, ttCurrentAct());
+      // 信任门槛：不足时 NPC 以角色身份拒绝，跳过效果与结算（剧情继续）
+      if (applyChoiceTrust(choice)) return;
       if (choice.effects) {
         for (const [key, val] of Object.entries(choice.effects)) {
           updateValue(key, val);
@@ -1353,6 +1704,9 @@ function showChoices(line) {
         actId: ttCurrentAct(),
         timed: false
       });
+      recordChoiceForEcho(choice.text, ttCurrentAct());
+      // 信任门槛：不足时 NPC 以角色身份拒绝，跳过效果与结算（剧情继续）
+      if (applyChoiceTrust(choice)) return;
       // 应用效果
       if (choice.effects) {
         for (const [key, val] of Object.entries(choice.effects)) {
@@ -1846,6 +2200,7 @@ function pressureTimeout() {
     actId: ttCurrentAct(),
     timed: true
   });
+  recordChoiceForEcho('[超时默认] ' + choice.text, ttCurrentAct());
   // 显示超时提示
   const textEl = document.getElementById('dialogText');
   textEl.innerHTML = `<span style="color:#fbbf24">⏰ 时间耗尽……</span><br><br>${line.timeoutText || '你犹豫太久，局势已经替你做出了选择。'}`;
@@ -1879,6 +2234,9 @@ function selectPressureChoice(idx) {
     actId: ttCurrentAct(),
     timed: true
   });
+  recordChoiceForEcho(choice.text, ttCurrentAct());
+  // 信任门槛：不足时 NPC 以角色身份拒绝，跳过效果与结算（剧情继续）
+  if (applyChoiceTrust(choice)) return;
   if (choice.effects) {
     for (const [key, val] of Object.entries(choice.effects)) {
       updateValue(key, val);
@@ -1895,6 +2253,7 @@ function selectPressureChoice(idx) {
 // ============================================================
 function initGame() {
   initGameHUD();
+  initClassroomMode();
   // 键盘支持：空格/回车推进对话
   document.addEventListener('keydown', (e) => {
     if (e.key === ' ' || e.key === 'Enter') {

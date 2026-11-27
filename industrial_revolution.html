@@ -102,6 +102,12 @@
         '史蒂芬孙': 'stephenson', '工厂主布莱克': 'blake',
         '纺织女工玛丽': 'mary', '童工汤姆': 'tom'
       },
+      echoNpcNames: { npc_tom: '汤姆' },
+      echoActTitles: { act_1: '纺织机器', act_2: '蒸汽动力', act_3: '工厂与城市', act_4: '铁路时代', act_5: '光与影' },
+      echoAnchors: [
+        { id: 'echo_in_act3', npcId: 'npc_tom', echoActId: 'act_3', refersToActId: 'act_1', refersToActTitle: '纺织机器',
+          ruleTemplate: '你之前在{actTitle}说过「{choiceText}」。我记着呢——厂里没人听我把话说完，你是头一个。' }
+      ],
       sceneBGM: {
         '时空剧场': AudioManager.BGM.THEATER,
         '第一幕 · 珍妮机的诞生': AudioManager.BGM.PASTORAL,
@@ -378,9 +384,9 @@
     urgentText: "愤怒的手工纺纱工冲进了工坊，有人举起了铁棍！哈格里夫斯惊恐地看向你——",
     timeoutText: "你还没来得及反应，纺纱工们已经砸碎了珍妮机的模型。哈格里夫斯瘫坐在地上，眼中满是绝望。",
     choices: [
-      { text: "挡在哈格里夫斯面前，劝纺纱工们冷静", effects: { justice: 10, responsibility: 5 } },
+      { text: "挡在哈格里夫斯面前，劝纺纱工们冷静", effects: { justice: 10, responsibility: 5 }, trust: { npc_tom: 1 } },
       { text: "帮哈格里夫斯带着珍妮机从后门撤离", effects: { labor: 10 } },
-      { text: "保持沉默——这是工人和发明家之间的矛盾", effects: { responsibility: 5 } },
+      { text: "保持沉默——这是工人和发明家之间的矛盾", effects: { responsibility: 5 }, trust: { npc_tom: -1 } },
       { text: "告诉纺纱工们，机器也会创造新的工作机会", effects: { justice: 10, life: 5 } }
     ]
   },
@@ -725,8 +731,8 @@
     urgentText: "汤姆的手被卷进了机器！他只有十岁！布莱克站在远处冷冷地看着——",
     timeoutText: "你犹豫了太久。等工友们把汤姆拉出来时，他的右手已经严重受伤。布莱克只说了一句：'换个人来操作。'",
     choices: [
-      { text: "冲上去关掉机器，把汤姆救出来", effects: { justice: 15 } },
-      { text: "大声质问布莱克：'他还是个孩子！'", effects: { justice: 10, life: 5 } },
+      { text: "冲上去关掉机器，把汤姆救出来", effects: { justice: 15 }, trust: { npc_tom: 1 } },
+      { text: "大声质问布莱克：'他还是个孩子！'", effects: { justice: 10, life: 5 }, trust: { npc_tom: 1 } },
       { text: "记住这一幕，等有了力量再来改变", effects: { responsibility: 5 } },
       { text: "去找工厂监工要求改善安全措施", effects: { responsibility: 10, justice: 5 } }
     ]
@@ -857,10 +863,10 @@
     urgentText: "村民们堵在铁轨上不肯离开。史蒂芬孙说铁路不能改道。你只有几秒——",
     timeoutText: "你没有说话。最终士兵们强行驱散了村民。铁路按时通车了，但你看到一位老妇人坐在废墟上哭泣。",
     choices: [
-      { text: "支持村民——铁路可以改道，人的家园不能被毁", effects: { justice: 15, life: 5 } },
+      { text: "支持村民——铁路可以改道，人的家园不能被毁", effects: { justice: 15, life: 5 }, trust: { npc_tom: 1 } },
       { text: "说服村民接受合理补偿，让铁路通过", effects: { responsibility: 10, life: 10 } },
       { text: "支持铁路——技术进步需要牺牲，但应给予充分补偿", effects: { labor: 5, responsibility: 10 } },
-      { text: "沉默不语，让双方自己解决", effects: {} }
+      { text: "沉默不语，让双方自己解决", effects: {}, trust: { npc_tom: -1 } }
     ]
   },
 
@@ -1124,10 +1130,11 @@
     urgentText: "军警举起了警棍，罢工的工人们手挽手站成一排。玛丽站在最前面——",
     timeoutText: "你没有做出选择。军警冲入人群，多名工人受伤。玛丽被推倒在地，但她爬起来继续喊口号。你什么都做不了。",
     choices: [
-      { text: "加入工人队伍，和玛丽站在一起", effects: { justice: 15, life: 10 } },
-      { text: "站出来调停，要求政府和工人双方对话", effects: { responsibility: 15, justice: 5 } },
+      { text: "加入工人队伍，和玛丽站在一起", effects: { justice: 15, life: 10 }, trust: { npc_tom: 1 },
+        minTrust: { npcId: 'npc_tom', value: 2, refuseText: '汤姆拉住了你的袖子，摇了摇头：「他们还不认识你。先让我跟玛丽说说你是谁——不然你站进去，也只是一排陌生人里多出来的一个。」' } },
+      { text: "站出来调停，要求政府和工人双方对话", effects: { responsibility: 15, justice: 5 }, trust: { npc_tom: 1 } },
       { text: "记录这一切，让更多人知道工人的处境", effects: { labor: 10 } },
-      { text: "后退——你不想卷入暴力冲突", effects: { responsibility: 5 } }
+      { text: "后退——你不想卷入暴力冲突", effects: { responsibility: 5 }, trust: { npc_tom: -1 } }
     ]
   },
 
@@ -1154,6 +1161,7 @@
 <!-- Game Engine -->
 <script src="assets/js/game-hooks.js?v=20260804"></script>
 <script src="engine.js?v=20260526e"></script>
+<script type="module" src="assets/js/npc-presence.js"></script>
 
 </body>
 </html>

@@ -52,6 +52,76 @@ for (const relative of ['.env.example', 'data/ai_prompts.json']) {
   }
 }
 
+// 回响锚点与后果登记校验（MOD-ENGINE-04）
+// 元数据层：echoAnchors 的幕次引用与 acts 一致；consequences 的 actId 合法；echo 条目的 anchorId 必须存在于 echoAnchors。
+const metadataPath = path.join(root, 'data', 'teaching_metadata.json');
+if (!fs.existsSync(metadataPath)) {
+  errors.push('缺少 data/teaching_metadata.json');
+} else {
+  try {
+    const meta = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
+    const scripts = meta.scripts || {};
+    for (const [scriptId, sc] of Object.entries(scripts)) {
+      const acts = Array.isArray(sc.acts) ? sc.acts : [];
+      const actIds = new Set(acts.map((a) => a.id));
+      const actTitleById = new Map(acts.map((a) => [a.id, a.title]));
+
+      for (const anchor of sc.echoAnchors || []) {
+        const label = `${scriptId} 回响锚点 ${anchor.id || '(缺 id)'}`;
+        if (!anchor.id) errors.push(`${label}：缺少 id`);
+        if (!anchor.npcId) errors.push(`${label}：缺少 npcId`);
+        if (!actIds.has(anchor.echoActId)) errors.push(`${label}：echoActId ${anchor.echoActId} 不在 acts 中`);
+        if (!actIds.has(anchor.refersToActId)) errors.push(`${label}：refersToActId ${anchor.refersToActId} 不在 acts 中`);
+        if (actTitleById.has(anchor.refersToActId) && anchor.refersToActTitle !== actTitleById.get(anchor.refersToActId)) {
+          errors.push(`${label}：refersToActTitle「${anchor.refersToActTitle}」与 acts 中「${actTitleById.get(anchor.refersToActId)}」不一致`);
+        }
+        if (anchor.refersToActId === anchor.echoActId) errors.push(`${label}：回响不能与被回读幕次相同`);
+      }
+
+      const anchorIds = new Set((sc.echoAnchors || []).map((a) => a.id).filter(Boolean));
+      for (const [index, item] of (sc.consequences || []).entries()) {
+        if (!actIds.has(item.actId)) errors.push(`${scriptId} consequences[${index}]：actId ${item.actId} 不在 acts 中`);
+        if (item.anchorId && !anchorIds.has(item.anchorId)) {
+          errors.push(`${scriptId} consequences[${index}]：anchorId ${item.anchorId} 不存在于 echoAnchors`);
+        }
+      }
+    }
+  } catch (error) {
+    errors.push(`teaching_metadata.json 解析失败：${error.message}`);
+  }
+}
+
+// 页面层：注册剧本页内 echoAnchors 的 refersToActTitle 须与该页 echoActTitles（优先）或幕次副标题一致。
+const registrySource = fs.existsSync(registryPath) ? fs.readFileSync(registryPath, 'utf8') : '';
+const pageFiles = [...registrySource.matchAll(/file:\s*['"]([^'"]+)['"]/g)].map((match) => match[1]);
+for (const file of pageFiles) {
+  const pagePath = path.join(root, file);
+  if (!fs.existsSync(pagePath)) continue;
+  const html = fs.readFileSync(pagePath, 'utf8');
+  const anchorsBlock = html.match(/echoAnchors:\s*\[([\s\S]*?)\n\s*\]/);
+  if (!anchorsBlock) continue;
+
+  // echoActTitles: { act_1: '标题', ... }（单引号或双引号均可）
+  const titlesBlock = html.match(/echoActTitles:\s*\{([\s\S]*?)\}/);
+  const pageTitleById = new Map();
+  if (titlesBlock) {
+    for (const m of titlesBlock[1].matchAll(/(act_\d+)\s*:\s*['"]([^'"]+)['"]/g)) {
+      pageTitleById.set(m[1], m[2]);
+    }
+  }
+  const subtitles = new Set([...html.matchAll(/(?:actSubtitle|subtitle):\s*["']([^"']+)["']/g)].map((m) => m[1]));
+
+  for (const m of anchorsBlock[1].matchAll(/id:\s*['"]([^'"]+)['"][\s\S]*?refersToActId:\s*['"]([^'"]+)['"][\s\S]*?refersToActTitle:\s*['"]([^'"]+)['"]/g)) {
+    const [, anchorId, refersToActId, refersToActTitle] = m;
+    const expected = pageTitleById.get(refersToActId);
+    if (expected) {
+      if (expected !== refersToActTitle) errors.push(`${file}：回响 ${anchorId} refersToActTitle「${refersToActTitle}」与 echoActTitles 中「${expected}」不一致`);
+    } else if (!subtitles.has(refersToActTitle)) {
+      errors.push(`${file}：回响 ${anchorId} refersToActTitle「${refersToActTitle}」与页面幕次副标题不一致`);
+    }
+  }
+}
+
 if (errors.length) {
   console.error('\n内容校验失败：');
   for (const error of errors) console.error(`- ${error}`);

@@ -99,6 +99,12 @@
         '市民': 'citizen', '民兵': 'soldier',
         '杰斐逊': 'jefferson', '华盛顿': 'washington'
       },
+      echoNpcNames: { npc_captain_miller: '米勒上尉' },
+      echoActTitles: { act_1: '波士顿的怒火', act_2: '莱克星顿的枪声', act_3: '独立宣言', act_4: '战争转折', act_5: '共和国建立', act_6: '自由星火' },
+      echoAnchors: [
+        { id: 'echo_us_act3', npcId: 'npc_captain_miller', echoActId: 'act_3', refersToActId: 'act_1', refersToActTitle: '波士顿的怒火',
+          ruleTemplate: '在{actTitle}的时候，你说过「{choiceText}」。行军路上我翻来覆去想这句话——像个当兵的说的。' }
+      ],
       sceneBGM: {
         '时空剧场': AudioManager.BGM.AMERICAN_THEATER,
         '第一幕 · 波士顿的怒火': AudioManager.BGM.AMERICAN_COLONIAL,
@@ -434,10 +440,10 @@
     urgentText: "夜幕降临，三艘运茶船停在港口。有人已经开始往船上爬了——",
     timeoutText: "你犹豫了太久。等你到达港口时，茶叶已经被倒进了海里。你错过了一个历史性的时刻。",
     choices: [
-      { text: "加入他们，把茶叶倒进海里！", effects: { freedom: 15, equality: 5 } },
-      { text: "记录这一刻，让后人知道为什么人民会选择反抗", effects: { justice: 10 } },
+      { text: "加入他们，把茶叶倒进海里！", effects: { freedom: 15, equality: 5 }, trust: { npc_captain_miller: 1 } },
+      { text: "记录这一刻，让后人知道为什么人民会选择反抗", effects: { justice: 10 }, trust: { npc_captain_miller: 1 } },
       { text: "劝他们用合法途径抗议，不要暴力", effects: { rule: 10 } },
-      { text: "远远看着，不参与", effects: {} }
+      { text: "远远看着，不参与", effects: {}, trust: { npc_captain_miller: -1 } }
     ]
   },
 
@@ -625,10 +631,10 @@
     urgentText: "枪声四起！一位民兵倒在了路中间，子弹在他身边飞过——",
     timeoutText: "你呆立在原地。等枪声停歇时，那位民兵已经被战友拖走了。你不知道他是否还活着。",
     choices: [
-      { text: "冲上去把受伤的民兵拖到掩体后面", effects: { justice: 15 } },
-      { text: "捡起民兵的步枪，加入战斗", effects: { freedom: 15 } },
+      { text: "冲上去把受伤的民兵拖到掩体后面", effects: { justice: 15 }, trust: { npc_captain_miller: 1 } },
+      { text: "捡起民兵的步枪，加入战斗", effects: { freedom: 15 }, trust: { npc_captain_miller: 1 } },
       { text: "高声呼喊让其他人来帮忙", effects: { equality: 10 } },
-      { text: "趴下躲避，保护自己", effects: { rule: 5 } }
+      { text: "趴下躲避，保护自己", effects: { rule: 5 }, trust: { npc_captain_miller: -1 } }
     ]
   },
 
@@ -845,10 +851,10 @@
     urgentText: "富兰克林说：'我们必须团结一致，否则必然会被一个个绞死。'轮到你表态了——",
     timeoutText: "你没有表态。富兰克林叹了口气，在宣言上签下了自己的名字。你站在一旁，看着历史从你身边流过。",
     choices: [
-      { text: "坚决签名——不自由，毋宁死！", effects: { freedom: 15, justice: 10 } },
-      { text: "签名，但要求加入更多保障人民权利的条款", effects: { rule: 10, justice: 10 } },
+      { text: "坚决签名——不自由，毋宁死！", effects: { freedom: 15, justice: 10 }, trust: { npc_captain_miller: 1 } },
+      { text: "签名，但要求加入更多保障人民权利的条款", effects: { rule: 10, justice: 10 }, trust: { npc_captain_miller: 1 } },
       { text: "支持独立，但认为应该先尝试和平谈判", effects: { rule: 10 } },
-      { text: "犹豫不决——叛国的代价太大了", effects: {} }
+      { text: "犹豫不决——叛国的代价太大了", effects: {}, trust: { npc_captain_miller: -1 } }
     ]
   },
 
@@ -953,8 +959,9 @@
     urgentText: "一个年轻士兵的腿被炮弹炸伤，鲜血染红了绷带。军医说绷带不够了——",
     timeoutText: "你没有做出选择。军医按伤势轻重分配了仅剩的绷带。那个年轻士兵因为伤势不是最重的，没有分到。",
     choices: [
-      { text: "把自己的衣服撕成绷带给他包扎", effects: { justice: 15 } },
-      { text: "帮军医分类伤员，确保最重的伤员优先", effects: { rule: 10, justice: 5 } },
+      { text: "把自己的衣服撕成绷带给他包扎", effects: { justice: 15 }, trust: { npc_captain_miller: 1 } },
+      { text: "帮军医分类伤员，确保最重的伤员优先", effects: { rule: 10, justice: 5 },
+        minTrust: { npcId: 'npc_captain_miller', value: 2, refuseText: '米勒按住你的肩膀：「战地医院人命关天，我还不知道你靠不靠得住。先去撕绷带——做扎实了，下次这个位置给你。」' } },
       { text: "安慰他，告诉他很快就会有救援", effects: { equality: 5 } },
       { text: "去寻找更多医疗物资", effects: { rule: 5 } }
     ]
@@ -1218,6 +1225,7 @@
 <!-- Game Engine -->
 <script src="assets/js/game-hooks.js?v=20260804"></script>
 <script src="engine.js?v=20260526e"></script>
+<script type="module" src="assets/js/npc-presence.js"></script>
 
 </body>
 </html>

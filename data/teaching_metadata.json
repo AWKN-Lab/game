@@ -1,22 +1,75 @@
 {
   "version": 1,
-  "updatedAt": "2026-08-04",
+  "updatedAt": "2026-11-27",
   "scripts": {
     "american_revolution": {
-      "grade": ["八年级", "九年级复习"],
-      "durationOptions": [15, 20, 40],
+      "grade": [
+        "八年级",
+        "九年级复习"
+      ],
+      "durationOptions": [
+        15,
+        20,
+        40
+      ],
       "objectives": [
         "区分根本原因、导火线和开始标志",
         "理解《独立宣言》的核心主张与历史局限",
         "说明美国独立战争的双重性质"
       ],
       "acts": [
-        {"id": "act_1", "title": "波士顿的怒火", "minutes": 8, "focus": ["殖民统治", "波士顿倾茶事件"]},
-        {"id": "act_2", "title": "莱克星顿的枪声", "minutes": 7, "focus": ["战争开始标志"]},
-        {"id": "act_3", "title": "独立宣言", "minutes": 8, "focus": ["1776年7月4日", "天赋人权"]},
-        {"id": "act_4", "title": "战争转折", "minutes": 6, "focus": ["萨拉托加大捷"]},
-        {"id": "act_5", "title": "共和国建立", "minutes": 7, "focus": ["1787年宪法", "三权分立"]},
-        {"id": "act_6", "title": "自由星火", "minutes": 4, "focus": ["战争性质", "历史影响"]}
+        {
+          "id": "act_1",
+          "title": "波士顿的怒火",
+          "minutes": 8,
+          "focus": [
+            "殖民统治",
+            "波士顿倾茶事件"
+          ]
+        },
+        {
+          "id": "act_2",
+          "title": "莱克星顿的枪声",
+          "minutes": 7,
+          "focus": [
+            "战争开始标志"
+          ]
+        },
+        {
+          "id": "act_3",
+          "title": "独立宣言",
+          "minutes": 8,
+          "focus": [
+            "1776年7月4日",
+            "天赋人权"
+          ]
+        },
+        {
+          "id": "act_4",
+          "title": "战争转折",
+          "minutes": 6,
+          "focus": [
+            "萨拉托加大捷"
+          ]
+        },
+        {
+          "id": "act_5",
+          "title": "共和国建立",
+          "minutes": 7,
+          "focus": [
+            "1787年宪法",
+            "三权分立"
+          ]
+        },
+        {
+          "id": "act_6",
+          "title": "自由星火",
+          "minutes": 4,
+          "focus": [
+            "战争性质",
+            "历史影响"
+          ]
+        }
       ],
       "commonMisconceptions": [
         "把英国征税直接写成根本原因",
@@ -35,22 +88,81 @@
         "《独立宣言》中的平等在当时是否完整实现？",
         "三权分立主要防止什么？"
       ],
-      "relatedScripts": ["french_revolution"]
+      "relatedScripts": [
+        "french_revolution"
+      ],
+      "echoAnchors": [
+        {
+          "id": "echo_us_act3",
+          "npcId": "npc_captain_miller",
+          "echoActId": "act_3",
+          "refersToActId": "act_1",
+          "ruleTemplate": "在{actTitle}的时候，你说过「{choiceText}」。行军路上我翻来覆去想这句话——像个当兵的说的。"
+        }
+      ]
     },
     "french_revolution": {
-      "grade": ["九年级", "九年级复习"],
-      "durationOptions": [15, 20, 40],
+      "grade": [
+        "九年级",
+        "九年级复习"
+      ],
+      "durationOptions": [
+        15,
+        20,
+        40
+      ],
       "objectives": [
         "理解法国大革命爆发的社会根源",
         "掌握攻占巴士底狱、《人权宣言》和《拿破仑法典》",
         "评价革命成果及其代价"
       ],
       "acts": [
-        {"id": "act_1", "title": "旧制度危机", "minutes": 7, "focus": ["等级制度", "财政危机"]},
-        {"id": "act_2", "title": "攻占巴士底狱", "minutes": 8, "focus": ["革命开始", "1789年7月14日"]},
-        {"id": "act_3", "title": "人权宣言", "minutes": 8, "focus": ["自由", "平等", "人权"]},
-        {"id": "act_4", "title": "共和国与恐怖统治", "minutes": 9, "focus": ["共和国", "雅各宾派"]},
-        {"id": "act_5", "title": "拿破仑时代", "minutes": 8, "focus": ["拿破仑法典", "革命影响"]}
+        {
+          "id": "act_1",
+          "title": "旧制度危机",
+          "minutes": 7,
+          "focus": [
+            "等级制度",
+            "财政危机"
+          ]
+        },
+        {
+          "id": "act_2",
+          "title": "攻占巴士底狱",
+          "minutes": 8,
+          "focus": [
+            "革命开始",
+            "1789年7月14日"
+          ]
+        },
+        {
+          "id": "act_3",
+          "title": "人权宣言",
+          "minutes": 8,
+          "focus": [
+            "自由",
+            "平等",
+            "人权"
+          ]
+        },
+        {
+          "id": "act_4",
+          "title": "共和国与恐怖统治",
+          "minutes": 9,
+          "focus": [
+            "共和国",
+            "雅各宾派"
+          ]
+        },
+        {
+          "id": "act_5",
+          "title": "拿破仑时代",
+          "minutes": 8,
+          "focus": [
+            "拿破仑法典",
+            "革命影响"
+          ]
+        }
       ],
       "commonMisconceptions": [
         "只把财政危机当成唯一原因",
@@ -69,22 +181,88 @@
         "自由和平等怎样进入制度？",
         "革命在什么情况下会偏离初衷？"
       ],
-      "relatedScripts": ["american_revolution"]
+      "relatedScripts": [
+        "american_revolution"
+      ],
+      "echoAnchors": [
+        {
+          "id": "echo_fr_act3",
+          "npcId": "npc_lucien",
+          "echoActId": "act_3",
+          "refersToActId": "act_1",
+          "ruleTemplate": "还记得吗，在{actTitle}的时候，你说过「{choiceText}」。这话我排过版——如今印出来再看，字还是那些字，味道不一样了。"
+        },
+        {
+          "id": "echo_fr_act4",
+          "npcId": "npc_lucien",
+          "echoActId": "act_4",
+          "refersToActId": "act_2",
+          "ruleTemplate": "{actTitle}那会儿，你讲过「{choiceText}」。我把这句话和后来的日子排在一起想了想——你当时是认真的吗？"
+        }
+      ]
     },
     "industrial_revolution": {
-      "grade": ["九年级", "九年级复习"],
-      "durationOptions": [15, 20, 40],
+      "grade": [
+        "九年级",
+        "九年级复习"
+      ],
+      "durationOptions": [
+        15,
+        20,
+        40
+      ],
       "objectives": [
         "说明工业革命首先发生在英国的条件",
         "掌握蒸汽机、工厂制度和铁路运输的影响",
         "从生产力与社会代价两个角度评价工业化"
       ],
       "acts": [
-        {"id": "act_1", "title": "纺织机器", "minutes": 7, "focus": ["英国", "纺织业"]},
-        {"id": "act_2", "title": "蒸汽动力", "minutes": 8, "focus": ["瓦特", "蒸汽机"]},
-        {"id": "act_3", "title": "工厂与城市", "minutes": 8, "focus": ["工厂制度", "城市化"]},
-        {"id": "act_4", "title": "铁路时代", "minutes": 7, "focus": ["史蒂芬孙", "交通运输"]},
-        {"id": "act_5", "title": "光与影", "minutes": 10, "focus": ["阶级分化", "童工", "环境代价"]}
+        {
+          "id": "act_1",
+          "title": "纺织机器",
+          "minutes": 7,
+          "focus": [
+            "英国",
+            "纺织业"
+          ]
+        },
+        {
+          "id": "act_2",
+          "title": "蒸汽动力",
+          "minutes": 8,
+          "focus": [
+            "瓦特",
+            "蒸汽机"
+          ]
+        },
+        {
+          "id": "act_3",
+          "title": "工厂与城市",
+          "minutes": 8,
+          "focus": [
+            "工厂制度",
+            "城市化"
+          ]
+        },
+        {
+          "id": "act_4",
+          "title": "铁路时代",
+          "minutes": 7,
+          "focus": [
+            "史蒂芬孙",
+            "交通运输"
+          ]
+        },
+        {
+          "id": "act_5",
+          "title": "光与影",
+          "minutes": 10,
+          "focus": [
+            "阶级分化",
+            "童工",
+            "环境代价"
+          ]
+        }
       ],
       "commonMisconceptions": [
         "把蒸汽机说成工业革命开始标志",
@@ -103,22 +281,77 @@
         "效率提高为什么没有自动带来公平？",
         "技术进步需要哪些规则保护劳动者？"
       ],
-      "relatedScripts": []
+      "relatedScripts": [],
+      "echoAnchors": [
+        {
+          "id": "echo_in_act3",
+          "npcId": "npc_tom",
+          "echoActId": "act_3",
+          "refersToActId": "act_1",
+          "ruleTemplate": "你之前在{actTitle}说过「{choiceText}」。我记着呢——厂里没人听我把话说完，你是头一个。"
+        }
+      ]
     },
     "wuxu_reform": {
-      "grade": ["八年级", "八年级复习"],
-      "durationOptions": [15, 20, 40],
+      "grade": [
+        "八年级",
+        "八年级复习"
+      ],
+      "durationOptions": [
+        15,
+        20,
+        40
+      ],
       "objectives": [
         "掌握公车上书、百日维新和戊戌六君子",
         "理解戊戌变法的性质与失败原因",
         "评价变法的思想启蒙作用"
       ],
       "acts": [
-        {"id": "act_1", "title": "甲午危机", "minutes": 7, "focus": ["民族危机"]},
-        {"id": "act_2", "title": "公车上书", "minutes": 7, "focus": ["康有为", "序幕"]},
-        {"id": "act_3", "title": "百日维新", "minutes": 10, "focus": ["1898年", "变法措施"]},
-        {"id": "act_4", "title": "变法失败", "minutes": 8, "focus": ["顽固派", "戊戌六君子"]},
-        {"id": "act_5", "title": "思想启蒙", "minutes": 8, "focus": ["性质", "历史作用"]}
+        {
+          "id": "act_1",
+          "title": "甲午危机",
+          "minutes": 7,
+          "focus": [
+            "民族危机"
+          ]
+        },
+        {
+          "id": "act_2",
+          "title": "公车上书",
+          "minutes": 7,
+          "focus": [
+            "康有为",
+            "序幕"
+          ]
+        },
+        {
+          "id": "act_3",
+          "title": "百日维新",
+          "minutes": 10,
+          "focus": [
+            "1898年",
+            "变法措施"
+          ]
+        },
+        {
+          "id": "act_4",
+          "title": "变法失败",
+          "minutes": 8,
+          "focus": [
+            "顽固派",
+            "戊戌六君子"
+          ]
+        },
+        {
+          "id": "act_5",
+          "title": "思想启蒙",
+          "minutes": 8,
+          "focus": [
+            "性质",
+            "历史作用"
+          ]
+        }
       ],
       "commonMisconceptions": [
         "把公车上书写成变法正式开始",
@@ -137,22 +370,78 @@
         "制度改革和思想启蒙有什么关系？",
         "失败的改革还能留下什么？"
       ],
-      "relatedScripts": ["xinhai_revolution"]
+      "relatedScripts": [
+        "xinhai_revolution"
+      ],
+      "echoAnchors": [
+        {
+          "id": "echo_wx_act3",
+          "npcId": "npc_shen_yanqiu",
+          "echoActId": "act_3",
+          "refersToActId": "act_1",
+          "ruleTemplate": "那日{actTitle}，你说过一句「{choiceText}」。老朽记到了今天——读书人的话，有人记得，就不算白说。"
+        }
+      ]
     },
     "xinhai_revolution": {
-      "grade": ["八年级", "八年级复习"],
-      "durationOptions": [15, 20, 40],
+      "grade": [
+        "八年级",
+        "八年级复习"
+      ],
+      "durationOptions": [
+        15,
+        20,
+        40
+      ],
       "objectives": [
         "掌握武昌起义、中华民国建立和《临时约法》",
         "理解三民主义与辛亥革命的历史意义",
         "认识革命成果及其局限"
       ],
       "acts": [
-        {"id": "act_1", "title": "革命思想", "minutes": 7, "focus": ["孙中山", "三民主义"]},
-        {"id": "act_2", "title": "武昌起义", "minutes": 8, "focus": ["1911年10月10日"]},
-        {"id": "act_3", "title": "民国建立", "minutes": 8, "focus": ["1912年", "南京临时政府"]},
-        {"id": "act_4", "title": "临时约法", "minutes": 7, "focus": ["共和国宪法性质"]},
-        {"id": "act_5", "title": "成果与局限", "minutes": 10, "focus": ["帝制终结", "革命果实被窃取"]}
+        {
+          "id": "act_1",
+          "title": "革命思想",
+          "minutes": 7,
+          "focus": [
+            "孙中山",
+            "三民主义"
+          ]
+        },
+        {
+          "id": "act_2",
+          "title": "武昌起义",
+          "minutes": 8,
+          "focus": [
+            "1911年10月10日"
+          ]
+        },
+        {
+          "id": "act_3",
+          "title": "民国建立",
+          "minutes": 8,
+          "focus": [
+            "1912年",
+            "南京临时政府"
+          ]
+        },
+        {
+          "id": "act_4",
+          "title": "临时约法",
+          "minutes": 7,
+          "focus": [
+            "共和国宪法性质"
+          ]
+        },
+        {
+          "id": "act_5",
+          "title": "成果与局限",
+          "minutes": 10,
+          "focus": [
+            "帝制终结",
+            "革命果实被窃取"
+          ]
+        }
       ],
       "commonMisconceptions": [
         "把辛亥革命等同于武昌起义",
@@ -171,7 +460,18 @@
         "一部临时约法为什么重要？",
         "革命成果怎样进入稳定制度？"
       ],
-      "relatedScripts": ["wuxu_reform"]
+      "relatedScripts": [
+        "wuxu_reform"
+      ],
+      "echoAnchors": [
+        {
+          "id": "echo_xh_act3",
+          "npcId": "npc_lin_wenqing",
+          "echoActId": "act_3",
+          "refersToActId": "act_1",
+          "ruleTemplate": "{actTitle}那时你说过「{choiceText}」。做报馆这一行的，最知道一句话能活多久——你那句，还活着。"
+        }
+      ]
     }
   }
 }

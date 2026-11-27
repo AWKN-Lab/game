@@ -11,10 +11,35 @@
  *  - DLP 过滤：入库前过滤手机号、证件号等敏感数字串。
  */
 
-import { loadPersonas, getPersona, trustTier, applyTrustEvent, buildSystemPrompt, preSpeakCheck } from '../../assets/js/npc-engine.js';
-import { config } from '../config.js';
+import { loadPersonas, getPersona, trustTier, applyTrustEvent, buildSystemPrompt, preSpeakCheck, checkNumberGate } from '../../assets/js/npc-engine.js';
+import { config, ROOT_DIR } from '../config.js';
 import { id, sha256, cleanText } from '../lib/security.js';
 import { json as toJson, parseJson } from '../db/database.js';
+import fs from 'node:fs';
+import path from 'node:path';
+
+const metadata = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'data/teaching_metadata.json'), 'utf8'));
+const knowledgePoints = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'data/knowledge_points.json'), 'utf8'));
+
+/** 审稿人 unsafe 拦截清单（最小集：现实威胁与自伤，不涉史实判断）。 */
+const UNSAFE_PATTERNS = [/我(要|会|去).{0,8}(杀|炸|毒|砍)/, /自(杀|残)/, /弄死/];
+
+export function getEchoAnchor(scriptId, anchorId) {
+  const script = metadata.scripts[scriptId];
+  return (script?.echoAnchors || []).find((a) => a.id === anchorId) || null;
+}
+
+function scriptKnowledge(scriptId) {
+  const kp = knowledgePoints[scriptId] || {};
+  const history = (kp.history || []).slice(0, 12).map((k) => `${k.name}：${k.content}`);
+  const meta = metadata.scripts[scriptId] || {};
+  return {
+    objectives: meta.objectives || [],
+    acts: (meta.acts || []).map((a) => `${a.id} ${a.title}`),
+    commonMisconceptions: meta.commonMisconceptions || [],
+    knowledge: history
+  };
+}
 
 const SESSION_WINDOW = 7;
 let personasCache = null;
@@ -195,13 +220,30 @@ export async function npcChat(db, input, deps = {}) {
     keyMemories: view.keyMemories.map((m) => ({ text: m.text, story_time: m.storyTime }))
   });
 
+  // MOD-AI-06 审稿人旁路：unsafe 直接拦截不进对话；anachronism/factual_error 由 NPC 入戏回应
+  const review = await factCheck(input.scriptId, input.message, deps);
+  if (review.verdict === 'unsafe') {
+    const deflection = `（${npc.name}皱了皱眉，往后退了半步。）这话不兴说。说点别的吧。`;
+    const userTurn = recordTurn(db, actorId, input.scriptId, input.npcId, 'user', input.message);
+    const npcTurn = recordTurn(db, actorId, input.scriptId, input.npcId, 'npc', deflection);
+    const { trust: blockedTrust, version: blockedVersion } = getNpcState(db, actorId, input.scriptId, input.npcId);
+    return {
+      reply: deflection, mode: 'rule', trust: blockedTrust, tier: trustTier(blockedTrust), stateVersion: blockedVersion,
+      trustChanged, gateBlocked: false, retried: false, fallbackReason: 'FACT_CHECK_UNSAFE',
+      factCheck: review, turnRefs: [userTurn.memoryId, npcTurn.memoryId]
+    };
+  }
+  const reviewNote = review.verdict === 'anachronism' || review.verdict === 'factual_error'
+    ? `\n\n【审稿提示】学生输入存在${review.verdict === 'anachronism' ? '时代错置' : '与知识库冲突'}：${review.reason}。请以${npc.name}的角色身份表达困惑或纠正，不要说教，不要出示任何"判定"。`
+    : '';
+
   let reply;
   let gate = { ok: true, violations: [] };
   let retried = false;
   let mode = 'ai';
   let fallbackReason = null;
   try {
-    reply = await callAi(systemPrompt, view.session, input.message);
+    reply = await callAi(systemPrompt + reviewNote, view.session, input.message);
     gate = preSpeakCheck({ personas, npcId: input.npcId, scriptId: input.scriptId, text: reply, trust });
     if (!gate.ok) {
       retried = true;
@@ -228,6 +270,89 @@ export async function npcChat(db, input, deps = {}) {
   return {
     reply, mode, trust: finalTrust, tier: trustTier(finalTrust), stateVersion: version,
     trustChanged, gateBlocked: retried && mode === 'rule', retried, fallbackReason,
-    turnRefs: [userTurn.memoryId, npcTurn.memoryId]
+    factCheck: review, turnRefs: [userTurn.memoryId, npcTurn.memoryId]
   };
+}
+
+/**
+ * MOD-AI-06 历史审稿人：只对照剧本知识库，不引入外部史实判断。
+ * 规则版兜底：账本 forbidden 命中 → factual_error；unsafe 清单命中 → unsafe；否则 pass。
+ * deps.callJudge 可注入用于测试。
+ */
+export async function factCheck(scriptId, message, deps = {}) {
+  const clean = cleanText(message, 500);
+  for (const pattern of UNSAFE_PATTERNS) {
+    if (pattern.test(clean)) return { verdict: 'unsafe', reason: '输入包含现实威胁或自伤内容', suggestion: '拦截，不进入 NPC 对话' };
+  }
+  const numberGate = checkNumberGate(await getPersonas(), scriptId, clean);
+  if (!numberGate.ok) {
+    return { verdict: 'factual_error', reason: `与剧本知识库冲突：${numberGate.violations[0].label}`, suggestion: '由 NPC 以角色身份表达困惑或纠正' };
+  }
+  const callJudge = deps.callJudge || callAiChat;
+  const kb = scriptKnowledge(scriptId);
+  const system = [
+    '你是历史剧本的事实审稿人。只依据给定的剧本知识库判断学生输入，不引入知识库以外的史实。',
+    '只输出 JSON：{"verdict":"pass|anachronism|factual_error|unsafe","reason":"一句话","suggestion":"一句话"}。',
+    'anachronism=时代错置（出现该时代不存在的事物）；factual_error=与知识库冲突；unsafe=现实威胁或不当内容；pass=无问题。'
+  ].join('\n');
+  const user = JSON.stringify({ knowledgeBase: kb, studentInput: clean });
+  try {
+    const raw = await callJudge(system, [], user);
+    const match = raw.match(/\{[\s\S]*\}/);
+    const parsed = match ? JSON.parse(match[0]) : null;
+    if (!parsed || !['pass', 'anachronism', 'factual_error', 'unsafe'].includes(parsed.verdict)) {
+      throw new Error('审稿输出不合法');
+    }
+    return { verdict: parsed.verdict, reason: String(parsed.reason || '').slice(0, 200), suggestion: String(parsed.suggestion || '').slice(0, 200) };
+  } catch (error) {
+    // AI 审稿不可用 → 规则版已在上文跑过（能到这里说明规则版判 pass）
+    return { verdict: 'pass', reason: 'AI 审稿不可用，规则版未发现问题', suggestion: '', degraded: true };
+  }
+}
+
+/**
+ * MOD-AI-05 生成回响：按锚点回读玩家历史选择，生成一至两句回响台词。
+ * 规则版兜底：锚点模板代入玩家选择原文——相关率 100%。
+ * 回响同时升格为 NPC 关键记忆，后续对话可引用。deps.callAi 可注入。
+ */
+export async function generateEcho(db, input, deps = {}) {
+  const anchor = getEchoAnchor(input.scriptId, input.anchorId);
+  if (!anchor) throw Object.assign(new Error('回响锚点不存在'), { code: 'ANCHOR_NOT_FOUND' });
+  const personas = await getPersonas();
+  const npc = getPersona(personas, anchor.npcId);
+
+  // 从事件流回读该玩家在该剧本、锚点指定幕次的选择
+  const choiceRows = db.prepare(`SELECT payload_json, occurred_at FROM product_events
+    WHERE actor_id=? AND name='script.choice' AND payload_json LIKE ?
+    ORDER BY occurred_at DESC LIMIT 20`).all(input.actorId, `%${input.scriptId}%`);
+  const choices = choiceRows
+    .map((r) => parseJson(r.payload_json, {}))
+    .filter((p) => p.actId === anchor.refersToActId && p.choiceText);
+  const referred = choices[0] || null;
+  if (!referred) {
+    throw Object.assign(new Error('锚点幕次没有可回响的玩家选择'), { code: 'NO_CHOICE_TO_ECHO' });
+  }
+  const actTitle = ((metadata.scripts[input.scriptId]?.acts || []).find((a) => a.id === anchor.refersToActId) || {}).title || anchor.refersToActId;
+  const ruleEcho = anchor.ruleTemplate.replaceAll('{actTitle}', actTitle).replaceAll('{choiceText}', String(referred.choiceText).slice(0, 120));
+
+  let echo = ruleEcho;
+  let mode = 'rule';
+  let fallbackReason = null;
+  const callAi = deps.callAi || callAiChat;
+  try {
+    const system = [
+      `你是${npc.name}（${npc.role}）。生成一句回响台词（一到两句，不超过60字）。`,
+      `要求：引用玩家当时的原话「${String(referred.choiceText).slice(0, 120)}」，用${npc.name}的语气说出这段时间过去后的新感受。`,
+      `口头钩子：「${npc.hook}」。只讲剧本知识库内的事，不出现任何账本外数字，不评价历史人物功过。只输出台词本身。`
+    ].join('\n');
+    const raw = await callAi(system, [], JSON.stringify({ actTitle, playerChoice: referred.choiceText }));
+    const gate = preSpeakCheck({ personas, npcId: anchor.npcId, scriptId: input.scriptId, text: raw, trust: 0 });
+    if (!gate.ok) throw Object.assign(new Error('回响命中门禁'), { code: 'GATE_BLOCKED' });
+    if (raw.length <= 120) { echo = raw.trim(); mode = 'ai'; }
+  } catch (error) {
+    echo = ruleEcho; mode = 'rule'; fallbackReason = error.code || 'AI_FAILED';
+  }
+
+  const promoted = promoteKeyMemory(db, input.actorId, input.scriptId, anchor.npcId, echo, actTitle, referred.nodeId ? [String(referred.nodeId)] : []);
+  return { echo, mode, anchorId: anchor.id, npcId: anchor.npcId, fallbackReason, memoryId: promoted.memoryId };
 }

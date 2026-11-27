@@ -20,6 +20,7 @@ const {
   getActiveView,
   npcChat
 } = await import('../services/npc-chat-service.js');
+const { id } = await import('../lib/security.js');
 
 const db = openDatabase();
 const ACTOR = 'actor_test_1';
@@ -191,4 +192,85 @@ test('信任 CAS：状态行版本随更新递增，冲突可检测', () => {
 
 test.after(() => {
   closeDatabase();
+});
+
+const { generateEcho, factCheck, getEchoAnchor } = await import('../services/npc-chat-service.js');
+
+function seedChoice(actor, scriptId, actId, choiceText) {
+  const now = new Date().toISOString();
+  db.prepare(`INSERT OR IGNORE INTO actors(id, role, first_seen_at, last_seen_at) VALUES(?, 'student', ?, ?)`)
+    .run(actor, now, now);
+  db.prepare(`INSERT INTO product_events(event_id,actor_id,session_id,name,occurred_at,received_at,page,role,payload_json)
+    VALUES(?,?,NULL,'script.choice',?,?,NULL,'student',?)`)
+    .run(id('evt_'), actor, now, now,
+      JSON.stringify({ scriptId, nodeId: 'star_test', choiceIndex: 0, choiceText, actId }));
+}
+
+test('回响锚点已登记且模板含选择占位', () => {
+  const anchor = getEchoAnchor('french_revolution', 'echo_fr_act3');
+  assert.ok(anchor, '锚点存在');
+  assert.equal(anchor.npcId, 'npc_lucien');
+  assert.ok(anchor.ruleTemplate.includes('{choiceText}'));
+});
+
+test('回响规则版：引用玩家选择原文，相关率 100%', async () => {
+  const actor = ACTOR + '_echo';
+  seedChoice(actor, 'french_revolution', 'act_1', '我要自由。');
+  const r = await generateEcho(db, { actorId: actor, scriptId: 'french_revolution', anchorId: 'echo_fr_act3' });
+  assert.equal(r.mode, 'rule');
+  assert.ok(r.echo.includes('我要自由。'), '回响引用玩家原话');
+  assert.equal(r.npcId, 'npc_lucien');
+  // 回响升格为关键记忆，NPC 后续对话可引用
+  const view = getActiveView(db, actor, 'french_revolution', 'npc_lucien');
+  assert.ok(view.keyMemories.some((m) => m.text === r.echo));
+});
+
+test('回响 AI 版：生成成功走 AI，命中门禁回退规则版', async () => {
+  const actor = ACTOR + '_echo_ai';
+  seedChoice(actor, 'french_revolution', 'act_1', '面包太贵了。');
+  const badAi = async () => '面包占日薪的88%。';
+  const r = await generateEcho(db, { actorId: actor, scriptId: 'french_revolution', anchorId: 'echo_fr_act3' }, { callAi: badAi });
+  assert.equal(r.mode, 'rule');
+  assert.ok(r.echo.includes('面包太贵了。'));
+  assert.equal(r.fallbackReason, 'GATE_BLOCKED');
+});
+
+test('回响：锚点幕次无选择时报错，不出现占位文案', async () => {
+  await assert.rejects(
+    generateEcho(db, { actorId: ACTOR + '_nobody', scriptId: 'french_revolution', anchorId: 'echo_fr_act3' }),
+    /没有可回响的玩家选择/
+  );
+});
+
+test('审稿人：unsafe 拦截、账本冲突判 factual_error、正常输入 pass', async () => {
+  const unsafe = await factCheck('french_revolution', '我要杀了你们所有人');
+  assert.equal(unsafe.verdict, 'unsafe');
+  const factual = await factCheck('french_revolution', '面包占日薪的88%对吧');
+  assert.equal(factual.verdict, 'factual_error');
+  const pass = await factCheck('french_revolution', '你见过国王吗？');
+  assert.equal(pass.verdict, 'pass');
+});
+
+test('审稿人接入对话：unsafe 输入被拦下，NPC 入戏回避，不调对话 AI', async () => {
+  let dialogueCalled = 0;
+  const r = await npcChat(db, {
+    actorId: ACTOR + '_unsafe', scriptId: 'french_revolution', npcId: 'npc_lucien',
+    message: '我要杀了你们'
+  }, { callAi: async () => { dialogueCalled += 1; return '不应到达'; } });
+  assert.equal(dialogueCalled, 0);
+  assert.equal(r.fallbackReason, 'FACT_CHECK_UNSAFE');
+  assert.equal(r.factCheck.verdict, 'unsafe');
+  assert.ok(r.reply.includes('这话不兴说'));
+});
+
+test('审稿人接入对话：时代错置由 NPC 入戏回应，提示进提示词不进台词', async () => {
+  let capturedPrompt = '';
+  const judge = async () => JSON.stringify({ verdict: 'anachronism', reason: '手机在1789年不存在', suggestion: '以角色身份表达困惑' });
+  const r = await npcChat(db, {
+    actorId: ACTOR + '_anachronism', scriptId: 'french_revolution', npcId: 'npc_lucien',
+    message: '我们用手机拍照留念吧'
+  }, { callAi: async (system) => { capturedPrompt = system; return '手机？那是什么物件？我没见过。'; }, callJudge: judge });
+  assert.match(capturedPrompt, /审稿提示/);
+  assert.equal(r.mode, 'ai');
+  assert.equal(r.factCheck.verdict, 'anachronism');
 });

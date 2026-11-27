@@ -6,7 +6,7 @@ import { config, ROOT_DIR } from './config.js';
 import { openDatabase, json as toJson, parseJson } from './db/database.js';
 import { id, publicId, token, sha256, hashPassword, verifyPassword, parseCookies, sessionCookie, cleanText, cleanEnum, safeInteger, ipHash } from './lib/security.js';
 import { generate as generateTeaching, supportedScript } from './services/ai-service.js';
-import { npcChat } from './services/npc-chat-service.js';
+import { npcChat, generateEcho, factCheck } from './services/npc-chat-service.js';
 
 const eventCatalogValue = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'data/event_catalog.json'), 'utf8'));
 const eventCatalog = new Map(eventCatalogValue.events.map((event) => [event.name, event]));
@@ -205,6 +205,36 @@ async function handleNpcChat(request, response, db) {
       .run(id('trace_'), actorId, sessionId, 'npc_chat', scriptId, Date.now() - started, toJson({ scriptId, npcId }), error.code || 'NPC_CHAT_FAILED', now());
     return sendError(response, 500, 'NPC_CHAT_FAILED', '对话暂时不可用，稍后再试');
   }
+}
+
+async function handleNpcEcho(request, response, db) {
+  if (!rateLimit(request, 'npc_echo', 20, 60000)) return sendError(response, 429, 'RATE_LIMITED', '请求太频繁');
+  const body = await readJson(request);
+  const scriptId = cleanText(body.scriptId, 80);
+  const anchorId = cleanText(body.anchorId, 80);
+  const actorId = cleanText(body.anonymousId, 100) || null;
+  if (!scriptId || !anchorId) return sendError(response, 400, 'INVALID_INPUT', 'scriptId 和 anchorId 不能为空');
+  if (!supportedScript(scriptId)) return sendError(response, 400, 'UNKNOWN_SCRIPT', '剧本不存在');
+  if (!actorId) return sendError(response, 400, 'ACTOR_REQUIRED', '缺少匿名身份');
+  try {
+    const result = await generateEcho(db, { actorId, scriptId, anchorId });
+    sendJson(response, 200, { success: true, ...result });
+  } catch (error) {
+    if (error.code === 'ANCHOR_NOT_FOUND') return sendError(response, 400, 'ANCHOR_NOT_FOUND', '回响锚点不存在');
+    if (error.code === 'NO_CHOICE_TO_ECHO') return sendError(response, 409, 'NO_CHOICE_TO_ECHO', '还没有可回响的选择记录');
+    return sendError(response, 500, 'NPC_ECHO_FAILED', '回响暂时不可用，稍后再试');
+  }
+}
+
+async function handleNpcFactCheck(request, response, db) {
+  if (!rateLimit(request, 'npc_fact_check', 30, 60000)) return sendError(response, 429, 'RATE_LIMITED', '请求太频繁');
+  const body = await readJson(request);
+  const scriptId = cleanText(body.scriptId, 80);
+  const message = cleanText(body.message, 500);
+  if (!scriptId || !message) return sendError(response, 400, 'INVALID_INPUT', 'scriptId 和 message 不能为空');
+  if (!supportedScript(scriptId)) return sendError(response, 400, 'UNKNOWN_SCRIPT', '剧本不存在');
+  const result = await factCheck(scriptId, message);
+  sendJson(response, 200, { success: true, ...result });
 }
 
 async function handleFeedbackCreate(request, response, db) {
@@ -427,6 +457,8 @@ export function createApp() {
       if (request.method === 'POST' && url.pathname === '/api/v1/events/batch') return await handleEvents(request, response, db);
       if (request.method === 'POST' && url.pathname === '/api/v1/teaching-assistant') return await handleTeaching(request, response, db);
       if (request.method === 'POST' && url.pathname === '/api/v1/npc/dialogue') return await handleNpcChat(request, response, db);
+      if (request.method === 'POST' && url.pathname === '/api/v1/npc/echo') return await handleNpcEcho(request, response, db);
+      if (request.method === 'POST' && url.pathname === '/api/v1/npc/fact-check') return await handleNpcFactCheck(request, response, db);
       if (request.method === 'POST' && url.pathname === '/api/v1/feedback') return await handleFeedbackCreate(request, response, db);
       const feedbackStatusMatch = url.pathname.match(/^\/api\/v1\/feedback\/([^/]+)\/status$/);
       if (request.method === 'GET' && feedbackStatusMatch) return handleFeedbackStatus(response, db, feedbackStatusMatch[1]);

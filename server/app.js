@@ -7,6 +7,7 @@ import { openDatabase, json as toJson, parseJson } from './db/database.js';
 import { id, publicId, token, sha256, hashPassword, verifyPassword, parseCookies, sessionCookie, cleanText, cleanEnum, safeInteger, ipHash } from './lib/security.js';
 import { generate as generateTeaching, supportedScript } from './services/ai-service.js';
 import { npcChat, generateEcho, factCheck } from './services/npc-chat-service.js';
+import { createSession, getSessionByCode, sessionView, updatePacing, recordTally, buildRoleCards, moderate } from './services/classroom-service.js';
 
 const eventCatalogValue = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'data/event_catalog.json'), 'utf8'));
 const eventCatalog = new Map(eventCatalogValue.events.map((event) => [event.name, event]));
@@ -237,6 +238,82 @@ async function handleNpcFactCheck(request, response, db) {
   sendJson(response, 200, { success: true, ...result });
 }
 
+async function handleClassroomCreate(request, response, db) {
+  if (!rateLimit(request, 'classroom-create', 10, 60000)) return sendError(response, 429, 'RATE_LIMITED', '创建请求过于频繁');
+  const body = await readJson(request);
+  const actorId = cleanText(body.anonymousId, 100) || null;
+  if (!actorId) return sendError(response, 400, 'ACTOR_REQUIRED', '缺少匿名身份');
+  try {
+    const session = createSession(db, { teacherActorId: actorId, scriptId: cleanText(body.scriptId, 80), title: body.title });
+    return sendJson(response, 201, { success: true, session });
+  } catch (error) {
+    if (error.code === 'UNKNOWN_SCRIPT') return sendError(response, 400, 'UNKNOWN_SCRIPT', '剧本不存在');
+    throw error;
+  }
+}
+
+function classroomOrNotFound(response, db, code) {
+  const row = getSessionByCode(db, code);
+  if (!row) { sendError(response, 404, 'CLASSROOM_NOT_FOUND', '课堂不存在或口令有误'); return null; }
+  return row;
+}
+
+async function handleClassroomPacing(request, response, db, code) {
+  const body = await readJson(request);
+  try {
+    const session = updatePacing(db, code, { actId: body.actId, status: body.status });
+    return sendJson(response, 200, { success: true, session });
+  } catch (error) {
+    if (error.code === 'CLASSROOM_NOT_FOUND') return sendError(response, 404, 'CLASSROOM_NOT_FOUND', '课堂不存在或口令有误');
+    if (error.code === 'CLASSROOM_CLOSED') return sendError(response, 409, 'CLASSROOM_CLOSED', '课堂已结课，不能再调整节奏');
+    if (error.code === 'ACT_NOT_FOUND') return sendError(response, 400, 'ACT_NOT_FOUND', '幕次不存在');
+    if (error.code === 'INVALID_STATUS') return sendError(response, 400, 'INVALID_STATUS', '课堂状态不合法');
+    throw error;
+  }
+}
+
+async function handleClassroomTally(request, response, db, code) {
+  if (!rateLimit(request, 'classroom-tally', 60, 60000)) return sendError(response, 429, 'RATE_LIMITED', '录入过于频繁');
+  const body = await readJson(request);
+  try {
+    const tally = recordTally(db, code, { actId: body.actId, topic: body.topic, entries: body.entries });
+    return sendJson(response, 201, { success: true, tally });
+  } catch (error) {
+    if (error.code === 'CLASSROOM_NOT_FOUND') return sendError(response, 404, 'CLASSROOM_NOT_FOUND', '课堂不存在或口令有误');
+    if (error.code === 'CLASSROOM_CLOSED') return sendError(response, 409, 'CLASSROOM_CLOSED', '课堂已结课，不能再录入统计');
+    if (error.code === 'ACT_NOT_FOUND') return sendError(response, 400, 'ACT_NOT_FOUND', '幕次不存在');
+    if (error.code === 'TALLY_EMPTY') return sendError(response, 400, 'TALLY_EMPTY', '至少录入一个选项的举手数');
+    throw error;
+  }
+}
+
+async function handleRoleCards(response, url) {
+  const scriptId = cleanText(url.searchParams.get('scriptId'), 80);
+  try {
+    const cards = await buildRoleCards(scriptId);
+    return sendJson(response, 200, { success: true, ...cards });
+  } catch (error) {
+    if (error.code === 'UNKNOWN_SCRIPT') return sendError(response, 400, 'UNKNOWN_SCRIPT', '剧本不存在');
+    throw error;
+  }
+}
+
+async function handleClassroomModerate(request, response, db) {
+  if (!rateLimit(request, 'classroom-moderate', 10, 60000)) return sendError(response, 429, 'RATE_LIMITED', '主持人请求过于频繁');
+  const body = await readJson(request);
+  try {
+    const result = await moderate(db, {
+      scriptId: cleanText(body.scriptId, 80), actId: cleanText(body.actId, 40) || null,
+      topic: body.topic, statements: body.statements, deps: {}
+    });
+    return sendJson(response, 200, { success: true, ...result });
+  } catch (error) {
+    if (error.code === 'UNKNOWN_SCRIPT') return sendError(response, 400, 'UNKNOWN_SCRIPT', '剧本不存在');
+    if (error.code === 'STATEMENTS_REQUIRED') return sendError(response, 400, 'STATEMENTS_REQUIRED', '讨论实录不能为空');
+    throw error;
+  }
+}
+
 async function handleFeedbackCreate(request, response, db) {
   if (!rateLimit(request, 'feedback', 10, 86400000)) return sendError(response, 429, 'DAILY_LIMIT', '今天提交的反馈已经较多，请明天再试');
   const body = await readJson(request);
@@ -459,6 +536,18 @@ export function createApp() {
       if (request.method === 'POST' && url.pathname === '/api/v1/npc/dialogue') return await handleNpcChat(request, response, db);
       if (request.method === 'POST' && url.pathname === '/api/v1/npc/echo') return await handleNpcEcho(request, response, db);
       if (request.method === 'POST' && url.pathname === '/api/v1/npc/fact-check') return await handleNpcFactCheck(request, response, db);
+      if (request.method === 'POST' && url.pathname === '/api/v1/classroom') return await handleClassroomCreate(request, response, db);
+      if (request.method === 'GET' && url.pathname === '/api/v1/role-cards') return await handleRoleCards(response, url);
+      if (request.method === 'POST' && url.pathname === '/api/v1/classroom/moderate') return await handleClassroomModerate(request, response, db);
+      const classroomMatch = url.pathname.match(/^\/api\/v1\/classroom\/([^/]+)$/);
+      if (request.method === 'GET' && classroomMatch) {
+        const row = classroomOrNotFound(response, db, classroomMatch[1]);
+        if (row) sendJson(response, 200, { success: true, session: sessionView(row, db) });
+        return;
+      }
+      if (request.method === 'PATCH' && classroomMatch) return await handleClassroomPacing(request, response, db, classroomMatch[1]);
+      const tallyMatch = url.pathname.match(/^\/api\/v1\/classroom\/([^/]+)\/tallies$/);
+      if (request.method === 'POST' && tallyMatch) return await handleClassroomTally(request, response, db, tallyMatch[1]);
       if (request.method === 'POST' && url.pathname === '/api/v1/feedback') return await handleFeedbackCreate(request, response, db);
       const feedbackStatusMatch = url.pathname.match(/^\/api\/v1\/feedback\/([^/]+)\/status$/);
       if (request.method === 'GET' && feedbackStatusMatch) return handleFeedbackStatus(response, db, feedbackStatusMatch[1]);

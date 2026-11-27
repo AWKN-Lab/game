@@ -174,6 +174,39 @@ CREATE TABLE IF NOT EXISTS npc_memory_records (
   updated_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_npc_memory_view ON npc_memory_records(actor_id, script_id, npc_id, tier, state, created_at);
+CREATE TABLE IF NOT EXISTS classroom_sessions (
+  id TEXT PRIMARY KEY,
+  join_code TEXT NOT NULL UNIQUE,
+  script_id TEXT NOT NULL,
+  teacher_actor_id TEXT,
+  title TEXT,
+  act_id TEXT,
+  status TEXT NOT NULL DEFAULT 'briefing',
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_classroom_updated ON classroom_sessions(updated_at DESC);
+CREATE TABLE IF NOT EXISTS classroom_tallies (
+  id TEXT PRIMARY KEY,
+  session_id TEXT NOT NULL,
+  act_id TEXT,
+  topic TEXT,
+  counts_json TEXT NOT NULL DEFAULT '[]',
+  total INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY(session_id) REFERENCES classroom_sessions(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_classroom_tallies ON classroom_tallies(session_id, created_at DESC);
+CREATE TABLE IF NOT EXISTS classroom_moderations (
+  id TEXT PRIMARY KEY,
+  session_id TEXT,
+  act_id TEXT,
+  topic TEXT,
+  mode TEXT NOT NULL DEFAULT 'rule',
+  output_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_classroom_mods ON classroom_moderations(created_at DESC);
 `;
 
 export function openDatabase() {

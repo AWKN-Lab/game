@@ -62,4 +62,5 @@ scripts/_tmp_*.mjs
 *.tgz
 
 # === 单文件大小门禁（>25MB 由 pre-push hook 校验，本文件不写大小规则）===
-# 实际处理：阿里云打包阶段已 tar --exclude 4 个超大单文件；本仓库单文件 ≤25MB。
+# 实际处理：阿里云打包阶段已 tar --exclude 4 个超大单文件；本仓库单文件 ≤25MB。docs/**/.nfs*
+docs/.nfs*

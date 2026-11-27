@@ -367,11 +367,11 @@ function handleWishList(requestUrl, response, db, admin = false) {
     clauses.push('allow_public=1');
   }
   if (type) { clauses.push('wish_type=?'); params.push(type); }
-  const sql = `SELECT id,public_id,wish_type,title,reason,problem,grade,script_id,status,vote_count,admin_reply,priority,target_version,created_at,updated_at FROM wishes
+  const sql = `SELECT id,public_id,wish_type,title,reason,problem,grade,script_id,status,vote_count,admin_reply,priority,target_version,github_issue,created_at,updated_at FROM wishes
     ${clauses.length ? 'WHERE ' + clauses.join(' AND ') : ''} ORDER BY vote_count DESC, created_at DESC LIMIT ? OFFSET ?`;
   const rows = db.prepare(sql).all(...params, limit, offset).map((row) => ({
     id: row.id, publicId: row.public_id, wishType: row.wish_type, title: row.title, reason: row.reason, problem: row.problem, grade: row.grade, scriptId: row.script_id,
-    status: row.status, voteCount: row.vote_count, adminReply: row.admin_reply, priority: row.priority, targetVersion: row.target_version, createdAt: row.created_at, updatedAt: row.updated_at
+    status: row.status, voteCount: row.vote_count, adminReply: row.admin_reply, priority: row.priority, targetVersion: row.target_version, githubIssue: row.github_issue || null, createdAt: row.created_at, updatedAt: row.updated_at
   }));
   sendJson(response, 200, { success: true, items: rows, limit, offset });
 }
@@ -483,15 +483,16 @@ async function handleAdminWishUpdate(request, response, db, admin, wishId) {
   const reply = body.adminReply === undefined ? before.admin_reply : cleanText(body.adminReply, 1200);
   const priority = body.priority === undefined ? before.priority : cleanText(body.priority, 30);
   const targetVersion = body.targetVersion === undefined ? before.target_version : cleanText(body.targetVersion, 60);
+  const githubIssue = body.githubIssue === undefined ? before.github_issue : (cleanText(body.githubIssue, 100) || null);
   db.exec('BEGIN IMMEDIATE;');
   try {
-    db.prepare('UPDATE wishes SET status=?,admin_reply=?,priority=?,target_version=?,updated_at=? WHERE id=?').run(nextStatus, reply, priority, targetVersion, now(), before.id);
+    db.prepare('UPDATE wishes SET status=?,admin_reply=?,priority=?,target_version=?,github_issue=?,updated_at=? WHERE id=?').run(nextStatus, reply, priority, targetVersion, githubIssue, now(), before.id);
     if (nextStatus !== before.status) db.prepare('INSERT INTO wish_status_history(id,wish_id,from_status,to_status,admin_id,note,created_at) VALUES(?,?,?,?,?,?,?)').run(id('wh_'), before.id, before.status, nextStatus, admin.id, cleanText(body.note, 500), now());
     db.exec('COMMIT;');
   } catch (error) { db.exec('ROLLBACK;'); throw error; }
   const after = db.prepare('SELECT * FROM wishes WHERE id=?').get(before.id);
   audit(db, admin.id, 'wish.update', 'wish', before.id, before, after, request);
-  sendJson(response, 200, { success: true, item: after });
+  sendJson(response, 200, { success: true, item: { ...after, githubIssue: after.github_issue || null } });
 }
 
 function handleAdminAudit(url, response, db) {

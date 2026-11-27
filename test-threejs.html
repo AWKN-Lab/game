@@ -4,8 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Three.js测试</title>
-<script src="https://unpkg.com/three@0.128.0/build/three.module.js"></script>
-<script src="https://unpkg.com/three@0.128.0/examples/jsm/controls/OrbitControls.js"></script>
+<script type="importmap">
+  { "imports": { "three": "./vendor/three/build/three.module.js", "three/": "./vendor/three/" } }
+</script>
 <style>
 body {
   margin: 0;
@@ -40,8 +41,8 @@ body {
 
 <script type="module">
   try {
-    import * as THREE from 'https://unpkg.com/three@0.128.0/build/three.module.js';
-    import { OrbitControls } from 'https://unpkg.com/three@0.128.0/examples/jsm/controls/OrbitControls.js';
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
     document.getElementById('status').innerHTML = '<p style="color: green;">Three.js 模块加载成功!</p>';
 

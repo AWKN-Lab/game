@@ -91,6 +91,7 @@ CREATE TABLE IF NOT EXISTS wishes (
   admin_reply TEXT,
   priority TEXT,
   target_version TEXT,
+  github_issue TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
@@ -226,6 +227,9 @@ export function migrate(db = openDatabase()) {
     db.exec(SCHEMA);
     const existing = db.prepare('SELECT version FROM schema_migrations WHERE version = 1').get();
     if (!existing) db.prepare('INSERT INTO schema_migrations(version, name, applied_at) VALUES(1, ?, ?)').run('initial_mvp_schema', new Date().toISOString());
+    // 幂等补列：老库升级到 GitHub Issue 联动字段（CREATE TABLE IF NOT EXISTS 不会改已有表）。
+    const wishColumns = db.prepare('PRAGMA table_info(wishes)').all().map((column) => column.name);
+    if (!wishColumns.includes('github_issue')) db.exec('ALTER TABLE wishes ADD COLUMN github_issue TEXT;');
     db.exec('COMMIT;');
   } catch (error) {
     db.exec('ROLLBACK;');

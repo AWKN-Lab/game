@@ -161,3 +161,33 @@ test('管理员登录后可以查看总览', async () => {
   const unauthorized = await jsonRequest('/api/v1/admin/analytics');
   assert.equal(unauthorized.response.status, 401, '数据分析必须登录后才能访问');
 });
+
+test('GitHub Issue 联动：管理员可关联 Issue，公开列表带出链接字段', async () => {
+  const actor = 'actor-issue';
+  const created = await jsonRequest('/api/v1/wishes', {
+    method: 'POST',
+    body: JSON.stringify({ anonymousId: actor, wishType: 'feature', title: '希望支持离线模式', reason: '教室网络不稳', allowPublic: true })
+  });
+  assert.equal(created.response.status, 201);
+
+  const login = await jsonRequest('/api/v1/admin/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ email: 'admin@test.local', password: 'testing-password-123' })
+  });
+  const cookie = login.response.headers.get('set-cookie').split(';')[0];
+  const list = await jsonRequest('/api/v1/admin/wishes', { headers: { Cookie: cookie } });
+  const target = (list.body.items || []).find((item) => item.title === '希望支持离线模式');
+  assert.ok(target, '管理端列表必须能找到新愿望');
+
+  const updated = await jsonRequest(`/api/v1/admin/wishes/${encodeURIComponent(target.id)}`, {
+    method: 'PATCH', headers: { Cookie: cookie },
+    body: JSON.stringify({ status: 'planned', githubIssue: 'https://github.com/AWKN-Lab/game/issues/42' })
+  });
+  assert.equal(updated.response.status, 200);
+  assert.equal(updated.body.item.githubIssue, 'https://github.com/AWKN-Lab/game/issues/42');
+
+  const publicList = await jsonRequest('/api/v1/wishes?status=planned');
+  const publicRow = (publicList.body.items || []).find((item) => item.title === '希望支持离线模式');
+  assert.ok(publicRow, '公开列表应包含已计划愿望');
+  assert.equal(publicRow.githubIssue, 'https://github.com/AWKN-Lab/game/issues/42', '公开列表必须带出 Issue 字段供路线图页链接');
+});

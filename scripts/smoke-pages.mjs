@@ -19,6 +19,7 @@ const pages = [
   'role-cards.html',
   'learning-review.html',
   'wish-pool.html',
+  'roadmap.html',
   'privacy.html',
   'admin/login.html',
   'admin/index.html',

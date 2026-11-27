@@ -1,0 +1,112 @@
+<!doctype html>
+<html class="dark" lang="zh">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>产品路线图｜时空剧场</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
+  <link rel="stylesheet" href="dist/output.css?v=5"/>
+  <link rel="stylesheet" href="assets/css/mvp.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <style>
+    body { background-color:#041133; color:#dbe1ff; font-family:'Manrope',sans-serif; }
+    .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; vertical-align:middle; }
+    .glass-card { background:rgba(40,51,86,0.6); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); }
+    .ornate-corner { border-radius:4px 24px 4px 4px; }
+    .column-wish { border-top:1px solid rgba(148,163,255,0.18); padding:0.75rem 0; }
+    .status-badge { font-size:0.7rem; padding:0.15rem 0.6rem; border-radius:9999px; border:1px solid rgba(239,189,138,0.5); color:#efbd8a; }
+  </style>
+</head>
+<body class="min-h-screen relative overflow-x-hidden">
+<main class="relative max-w-5xl mx-auto px-4 py-10">
+  <header class="mb-8">
+    <h1 class="text-3xl md:text-4xl font-bold mb-2" style="font-family:'Noto Serif SC',serif;">产品路线图</h1>
+    <p class="text-sm opacity-70">这里展示大家在许愿池许下的愿望正在走到哪一步：调研中 → 已计划 → 开发中 → 已实现。每一条都来自真实愿望，点亮数越多的越靠前。</p>
+  </header>
+
+  <div id="roadmap" class="grid md:grid-cols-2 gap-5">
+    <section class="glass-card ornate-corner p-5">
+      <h2 class="text-lg font-bold mb-1" style="font-family:'Noto Serif SC',serif;"><span class="material-symbols-outlined text-sm" style="color:#efbd8a;">search</span> 正在调研</h2>
+      <p class="text-xs opacity-50 mb-2">我们在核实需求、想方案</p>
+      <div data-column="researching"></div>
+    </section>
+    <section class="glass-card ornate-corner p-5">
+      <h2 class="text-lg font-bold mb-1" style="font-family:'Noto Serif SC',serif;"><span class="material-symbols-outlined text-sm" style="color:#efbd8a;">event_note</span> 已进入计划</h2>
+      <p class="text-xs opacity-50 mb-2">定了要做，排进了版本</p>
+      <div data-column="planned"></div>
+    </section>
+    <section class="glass-card ornate-corner p-5">
+      <h2 class="text-lg font-bold mb-1" style="font-family:'Noto Serif SC',serif;"><span class="material-symbols-outlined text-sm" style="color:#efbd8a;">construction</span> 正在开发</h2>
+      <p class="text-xs opacity-50 mb-2">已经在写，很快见面</p>
+      <div data-column="developing"></div>
+    </section>
+    <section class="glass-card ornate-corner p-5">
+      <h2 class="text-lg font-bold mb-1" style="font-family:'Noto Serif SC',serif;"><span class="material-symbols-outlined text-sm" style="color:#efbd8a;">celebration</span> 最近实现</h2>
+      <p class="text-xs opacity-50 mb-2">已经上线，去试试吧</p>
+      <div data-column="implemented"></div>
+    </section>
+  </div>
+  <p id="roadmap-error" class="text-sm mt-6 hidden" style="color:#f87171;"></p>
+  <p class="text-xs opacity-50 mt-8">想提新愿望或给现有愿望点亮？去 <a href="wish-pool.html" class="underline underline-offset-4" style="color:#efbd8a;">许愿池</a>。</p>
+</main>
+
+<script src="data-store.js"></script>
+<script src="assets/js/api-client.js"></script>
+<script src="assets/js/identity-client.js"></script>
+<script>
+(function () {
+  'use strict';
+  var COLUMNS = ['researching', 'planned', 'developing', 'implemented'];
+  var REPO_ISSUES = 'https://github.com/AWKN-Lab/game/issues/';
+
+  function escapeHtml(text) {
+    return String(text == null ? '' : text).replace(/[&<>"']/g, function (ch) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+    });
+  }
+
+  function issueLink(issue) {
+    if (!issue) return '';
+    var match = String(issue).match(/(\d+)\s*$/);
+    if (!match) return '';
+    return ' · <a href="' + REPO_ISSUES + match[1] + '" target="_blank" rel="noopener" class="underline underline-offset-4" style="color:#efbd8a;">#' + match[1] + '</a>';
+  }
+
+  function renderCard(item) {
+    var version = item.targetVersion ? ' · ' + escapeHtml(item.targetVersion) : '';
+    return '<article class="column-wish">'
+      + '<div class="flex items-start justify-between gap-2"><h3 class="text-sm font-semibold leading-snug">' + escapeHtml(item.title) + '</h3>'
+      + '<span class="text-xs whitespace-nowrap" style="color:#efbd8a;">✦ ' + Number(item.voteCount || 0) + '</span></div>'
+      + (item.adminReply ? '<p class="text-xs opacity-70 mt-1">' + escapeHtml(item.adminReply) + '</p>' : '')
+      + '<p class="text-xs opacity-50 mt-1">' + version + issueLink(item.githubIssue) + '</p>'
+      + '</article>';
+  }
+
+  function renderEmpty(column) {
+    column.innerHTML = '<p class="text-xs opacity-50 py-2">这一栏暂时是空的。</p>';
+  }
+
+  async function load() {
+    try {
+      var results = await Promise.all(COLUMNS.map(function (status) {
+        return window.TTApi.get('/wishes?status=' + status + '&limit=30');
+      }));
+      COLUMNS.forEach(function (status, index) {
+        var column = document.querySelector('[data-column="' + status + '"]');
+        var items = results[index].items || [];
+        column.innerHTML = items.map(renderCard).join('');
+        if (!items.length) renderEmpty(column);
+      });
+    } catch (error) {
+      var box = document.getElementById('roadmap-error');
+      box.textContent = error && error.message ? error.message : '路线图加载失败，请稍后重试';
+      box.classList.remove('hidden');
+    }
+  }
+
+  load();
+})();
+</script>
+</body>
+</html>

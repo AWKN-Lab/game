@@ -241,6 +241,61 @@
         "trust",
         "tier"
       ]
+    },
+    {
+      "name": "director.class_started",
+      "critical": false,
+      "allowedPayloadKeys": [
+        "scriptId"
+      ]
+    },
+    {
+      "name": "director.session_resumed",
+      "critical": false,
+      "allowedPayloadKeys": [
+        "scriptId"
+      ]
+    },
+    {
+      "name": "director.pacing_changed",
+      "critical": false,
+      "allowedPayloadKeys": [
+        "scriptId",
+        "actId",
+        "status"
+      ]
+    },
+    {
+      "name": "director.tally_submitted",
+      "critical": false,
+      "allowedPayloadKeys": [
+        "scriptId",
+        "rows"
+      ]
+    },
+    {
+      "name": "director.moderation_submitted",
+      "critical": false,
+      "allowedPayloadKeys": [
+        "scriptId",
+        "lines",
+        "factFlags"
+      ]
+    },
+    {
+      "name": "light_mode.auto_enabled",
+      "critical": false,
+      "allowedPayloadKeys": [
+        "reason"
+      ]
+    },
+    {
+      "name": "light_mode.changed",
+      "critical": false,
+      "allowedPayloadKeys": [
+        "mode",
+        "source"
+      ]
     }
   ]
 }

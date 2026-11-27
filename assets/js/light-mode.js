@@ -35,6 +35,19 @@
         return false;
     }
 
+    function autoReason() {
+        try {
+            var conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection || {};
+            if (conn.saveData) return 'saveData';
+            if (/^2g$/i.test(conn.effectiveType || '')) return '2g';
+        } catch (e) { /* 忽略探测失败 */ }
+        return 'unknown';
+    }
+
+    function report(name, payload) {
+        try { if (global.TTEvents) global.TTEvents.track(name, payload || {}); } catch (e) { /* 埋点失败不影响模式功能 */ }
+    }
+
     function enabled() {
         var mode = storedMode();
         if (mode === 'on') return true;
@@ -45,6 +58,7 @@
     function set(mode) {
         if (['auto', 'on', 'off'].indexOf(mode) === -1) return enabled();
         try { localStorage.setItem(KEY, mode); } catch (e) { /* 存储不可用时仅本次生效 */ }
+        report('light_mode.changed', { mode: mode, source: 'user' });
         apply();
         if (!enabled() && lastBlockedBGM && global.AudioManager && typeof global.AudioManager.playBGM === 'function') {
             var src = lastBlockedBGM;
@@ -100,6 +114,7 @@
                 if (storedMode() === 'auto' && !autoToastShown) {
                     autoToastShown = true;
                     showToast();
+                    report('light_mode.auto_enabled', { reason: autoReason() });
                 }
                 return;
             }

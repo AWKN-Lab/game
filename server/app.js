@@ -426,7 +426,7 @@ export function createApp() {
       }
       if (request.method === 'POST' && url.pathname === '/api/v1/events/batch') return await handleEvents(request, response, db);
       if (request.method === 'POST' && url.pathname === '/api/v1/teaching-assistant') return await handleTeaching(request, response, db);
-      if (request.method === 'POST' && url.pathname === '/api/v1/npc-chat') return await handleNpcChat(request, response, db);
+      if (request.method === 'POST' && url.pathname === '/api/v1/npc/dialogue') return await handleNpcChat(request, response, db);
       if (request.method === 'POST' && url.pathname === '/api/v1/feedback') return await handleFeedbackCreate(request, response, db);
       const feedbackStatusMatch = url.pathname.match(/^\/api\/v1\/feedback\/([^/]+)\/status$/);
       if (request.method === 'GET' && feedbackStatusMatch) return handleFeedbackStatus(response, db, feedbackStatusMatch[1]);

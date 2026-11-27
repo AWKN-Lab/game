@@ -1,23 +1,246 @@
 {
   "version": 1,
   "events": [
-    {"name": "page.view", "critical": false, "allowedPayloadKeys": ["page", "referrerPath", "scriptId", "role"]},
-    {"name": "script.open", "critical": false, "allowedPayloadKeys": ["scriptId", "source"]},
-    {"name": "script.start", "critical": true, "allowedPayloadKeys": ["scriptId", "mode"]},
-    {"name": "script.act_enter", "critical": false, "allowedPayloadKeys": ["scriptId", "actId", "actTitle"]},
-    {"name": "script.choice", "critical": true, "allowedPayloadKeys": ["scriptId", "nodeId", "choiceIndex", "choiceText", "actId", "timed"]},
-    {"name": "script.evidence_open", "critical": false, "allowedPayloadKeys": ["scriptId", "nodeId", "evidenceId", "evidenceTitle"]},
-    {"name": "script.knowledge_open", "critical": false, "allowedPayloadKeys": ["scriptId", "knowledgeId", "title"]},
-    {"name": "script.card", "critical": false, "allowedPayloadKeys": ["scriptId", "cardId", "action"]},
-    {"name": "quiz.answer", "critical": true, "allowedPayloadKeys": ["scriptId", "questionId", "choiceIndex", "correct", "knowledgeId"]},
-    {"name": "quiz.complete", "critical": true, "allowedPayloadKeys": ["scriptId", "score", "total", "pct", "learningTier"]},
-    {"name": "script.ending", "critical": true, "allowedPayloadKeys": ["scriptId", "endingType", "learningTier"]},
-    {"name": "lesson_plan.request", "critical": false, "allowedPayloadKeys": ["scriptId", "duration", "studentLevel", "usageMode"]},
-    {"name": "lesson_plan.generated", "critical": true, "allowedPayloadKeys": ["scriptId", "mode", "durationMs", "success"]},
-    {"name": "learning_review.request", "critical": false, "allowedPayloadKeys": ["scriptId", "quizPct", "completed"]},
-    {"name": "learning_review.generated", "critical": true, "allowedPayloadKeys": ["scriptId", "mode", "durationMs", "success"]},
-    {"name": "feedback.submitted", "critical": true, "allowedPayloadKeys": ["category", "contextType", "scriptId"]},
-    {"name": "wish.submitted", "critical": true, "allowedPayloadKeys": ["wishType", "scriptId", "grade"]},
-    {"name": "wish.voted", "critical": false, "allowedPayloadKeys": ["wishId", "active"]}
+    {
+      "name": "page.view",
+      "critical": false,
+      "allowedPayloadKeys": [
+        "page",
+        "referrerPath",
+        "scriptId",
+        "role"
+      ]
+    },
+    {
+      "name": "script.open",
+      "critical": false,
+      "allowedPayloadKeys": [
+        "scriptId",
+        "source"
+      ]
+    },
+    {
+      "name": "script.start",
+      "critical": true,
+      "allowedPayloadKeys": [
+        "scriptId",
+        "mode"
+      ]
+    },
+    {
+      "name": "script.act_enter",
+      "critical": false,
+      "allowedPayloadKeys": [
+        "scriptId",
+        "actId",
+        "actTitle"
+      ]
+    },
+    {
+      "name": "script.choice",
+      "critical": true,
+      "allowedPayloadKeys": [
+        "scriptId",
+        "nodeId",
+        "choiceIndex",
+        "choiceText",
+        "actId",
+        "timed"
+      ]
+    },
+    {
+      "name": "script.evidence_open",
+      "critical": false,
+      "allowedPayloadKeys": [
+        "scriptId",
+        "nodeId",
+        "evidenceId",
+        "evidenceTitle"
+      ]
+    },
+    {
+      "name": "script.knowledge_open",
+      "critical": false,
+      "allowedPayloadKeys": [
+        "scriptId",
+        "knowledgeId",
+        "title"
+      ]
+    },
+    {
+      "name": "script.card",
+      "critical": false,
+      "allowedPayloadKeys": [
+        "scriptId",
+        "cardId",
+        "action"
+      ]
+    },
+    {
+      "name": "quiz.answer",
+      "critical": true,
+      "allowedPayloadKeys": [
+        "scriptId",
+        "questionId",
+        "choiceIndex",
+        "correct",
+        "knowledgeId"
+      ]
+    },
+    {
+      "name": "quiz.complete",
+      "critical": true,
+      "allowedPayloadKeys": [
+        "scriptId",
+        "score",
+        "total",
+        "pct",
+        "learningTier"
+      ]
+    },
+    {
+      "name": "script.ending",
+      "critical": true,
+      "allowedPayloadKeys": [
+        "scriptId",
+        "endingType",
+        "learningTier"
+      ]
+    },
+    {
+      "name": "lesson_plan.request",
+      "critical": false,
+      "allowedPayloadKeys": [
+        "scriptId",
+        "duration",
+        "studentLevel",
+        "usageMode"
+      ]
+    },
+    {
+      "name": "lesson_plan.generated",
+      "critical": true,
+      "allowedPayloadKeys": [
+        "scriptId",
+        "mode",
+        "durationMs",
+        "success"
+      ]
+    },
+    {
+      "name": "learning_review.request",
+      "critical": false,
+      "allowedPayloadKeys": [
+        "scriptId",
+        "quizPct",
+        "completed"
+      ]
+    },
+    {
+      "name": "learning_review.generated",
+      "critical": true,
+      "allowedPayloadKeys": [
+        "scriptId",
+        "mode",
+        "durationMs",
+        "success"
+      ]
+    },
+    {
+      "name": "feedback.submitted",
+      "critical": true,
+      "allowedPayloadKeys": [
+        "category",
+        "contextType",
+        "scriptId"
+      ]
+    },
+    {
+      "name": "wish.submitted",
+      "critical": true,
+      "allowedPayloadKeys": [
+        "wishType",
+        "scriptId",
+        "grade"
+      ]
+    },
+    {
+      "name": "wish.voted",
+      "critical": false,
+      "allowedPayloadKeys": [
+        "wishId",
+        "active"
+      ]
+    },
+    {
+      "name": "npc.dialogue_started",
+      "critical": false,
+      "allowedPayloadKeys": [
+        "scriptId",
+        "npcId"
+      ]
+    },
+    {
+      "name": "npc.message_sent",
+      "critical": false,
+      "allowedPayloadKeys": [
+        "scriptId",
+        "npcId"
+      ]
+    },
+    {
+      "name": "npc.reply_generated",
+      "critical": true,
+      "allowedPayloadKeys": [
+        "scriptId",
+        "npcId",
+        "mode",
+        "durationMs",
+        "retried"
+      ]
+    },
+    {
+      "name": "npc.reply_rule_fallback",
+      "critical": true,
+      "allowedPayloadKeys": [
+        "scriptId",
+        "npcId",
+        "fallbackReason"
+      ]
+    },
+    {
+      "name": "npc.free_input_submitted",
+      "critical": false,
+      "allowedPayloadKeys": [
+        "scriptId",
+        "npcId"
+      ]
+    },
+    {
+      "name": "npc.fact_check_flagged",
+      "critical": false,
+      "allowedPayloadKeys": [
+        "scriptId",
+        "npcId"
+      ]
+    },
+    {
+      "name": "npc.echo_referenced",
+      "critical": false,
+      "allowedPayloadKeys": [
+        "scriptId",
+        "npcId"
+      ]
+    },
+    {
+      "name": "npc.trust_level_changed",
+      "critical": false,
+      "allowedPayloadKeys": [
+        "scriptId",
+        "npcId",
+        "trust",
+        "tier"
+      ]
+    }
   ]
 }

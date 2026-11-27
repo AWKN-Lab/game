@@ -182,7 +182,11 @@ export async function npcChat(db, input, deps = {}) {
     throw Object.assign(new Error('NPC 与剧本不匹配'), { code: 'NPC_SCRIPT_MISMATCH' });
   }
   const actorId = input.actorId;
-  if (input.trustEvent) applyTrust(db, actorId, input.scriptId, input.npcId, personas, input.trustEvent);
+  let trustChanged = false;
+  if (input.trustEvent) {
+    const applied = applyTrust(db, actorId, input.scriptId, input.npcId, personas, input.trustEvent);
+    trustChanged = applied.applied;
+  }
   const { trust } = getNpcState(db, actorId, input.scriptId, input.npcId);
   const view = getActiveView(db, actorId, input.scriptId, input.npcId);
   const systemPrompt = buildSystemPrompt({
@@ -223,7 +227,7 @@ export async function npcChat(db, input, deps = {}) {
   const { trust: finalTrust, version } = getNpcState(db, actorId, input.scriptId, input.npcId);
   return {
     reply, mode, trust: finalTrust, tier: trustTier(finalTrust), stateVersion: version,
-    gateBlocked: retried && mode === 'rule', retried, fallbackReason,
+    trustChanged, gateBlocked: retried && mode === 'rule', retried, fallbackReason,
     turnRefs: [userTurn.memoryId, npcTurn.memoryId]
   };
 }

@@ -146,6 +146,34 @@ CREATE TABLE IF NOT EXISTS privacy_preferences (
   event_tracking INTEGER NOT NULL DEFAULT 1,
   updated_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS npc_states (
+  actor_id TEXT NOT NULL,
+  script_id TEXT NOT NULL,
+  npc_id TEXT NOT NULL,
+  trust INTEGER NOT NULL DEFAULT 0,
+  version INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  PRIMARY KEY(actor_id, script_id, npc_id)
+);
+CREATE TABLE IF NOT EXISTS npc_memory_records (
+  memory_id TEXT PRIMARY KEY,
+  actor_id TEXT NOT NULL,
+  script_id TEXT NOT NULL,
+  npc_id TEXT NOT NULL,
+  tier TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  role TEXT,
+  content TEXT NOT NULL,
+  story_time TEXT,
+  source_refs_json TEXT NOT NULL DEFAULT '[]',
+  content_hash TEXT NOT NULL,
+  state TEXT NOT NULL DEFAULT 'ACTIVE',
+  version INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_npc_memory_view ON npc_memory_records(actor_id, script_id, npc_id, tier, state, created_at);
 `;
 
 export function openDatabase() {

@@ -1,0 +1,160 @@
+<!doctype html>
+<html class="dark" lang="zh">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>剧场来客｜时空剧场</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
+  <link rel="stylesheet" href="dist/output.css?v=5"/>
+  <link rel="stylesheet" href="assets/css/mvp.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700&family=Manrope:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;600&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <style>
+    body { background-color:#041133; color:#dbe1ff; font-family:'Manrope',sans-serif; }
+    .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; vertical-align:middle; }
+    .glass-card { background:rgba(40,51,86,0.6); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); }
+    .ornate-corner { border-radius:4px 24px 4px 4px; }
+    #chat-log { scroll-behavior:smooth; }
+    .bubble-npc { background:rgba(40,51,86,0.75); border:1px solid rgba(148,163,255,0.18); }
+    .bubble-user { background:rgba(239,189,138,0.16); border:1px solid rgba(239,189,138,0.35); }
+  </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen font-body relative overflow-x-hidden">
+<div class="absolute inset-0 z-0">
+  <img alt="grand library interior" class="w-full h-full object-cover opacity-50" src="images/bg/grand_library.png" loading="lazy"/>
+</div>
+
+<main class="relative z-10 max-w-3xl mx-auto px-4 py-10">
+  <header class="mb-6">
+    <h1 class="text-3xl md:text-4xl font-headline text-on-surface mb-2">剧场来客</h1>
+    <p class="font-body text-on-surface-variant text-sm">和剧本里的见证者聊聊。他们记得你说过的话——信任是慢慢攒起来的，秘密只说给信得过的人。</p>
+  </header>
+
+  <section class="glass-card ornate-corner p-4 mb-4">
+    <div class="flex flex-wrap gap-2" id="npc-picker"></div>
+    <div class="mt-3 flex items-center gap-2 text-xs font-label text-on-surface-variant">
+      <span class="material-symbols-outlined text-sm">favorite</span>
+      <span>信任：<span id="trust-display">0</span>（<span id="tier-display">初识</span>）</span>
+      <span id="mode-badge" class="hidden ml-auto px-2 py-0.5 rounded-full border border-outline-variant/30"></span>
+    </div>
+  </section>
+
+  <section class="glass-card ornate-corner p-4">
+    <div id="chat-log" class="h-80 overflow-y-auto flex flex-col gap-3 mb-4 pr-1"></div>
+    <div class="flex gap-2">
+      <input id="chat-input" type="text" maxlength="500" placeholder="说点什么……"
+        class="flex-1 px-4 py-2.5 rounded-xl bg-surface-variant/70 border border-outline-variant/30 text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary/60"/>
+      <button id="send-btn" class="sigil-button px-5 py-2.5 rounded-xl font-label text-sm">送出</button>
+    </div>
+  </section>
+</main>
+
+<script src="data-store.js"></script>
+<script src="assets/js/api-client.js"></script>
+<script src="assets/js/identity-client.js"></script>
+<script src="assets/js/npc-chat-client.js"></script>
+<script>
+(function () {
+  'use strict';
+  var NPCS = [
+    { npcId: 'npc_lucien', scriptId: 'french_revolution', name: '吕西安', title: '巴黎印刷学徒' },
+    { npcId: 'npc_tom', scriptId: 'industrial_revolution', name: '汤姆', title: '纺织厂童工' },
+    { npcId: 'npc_shen_yanqiu', scriptId: 'wuxu_reform', name: '沈砚秋', title: '赴京举人' },
+    { npcId: 'npc_lin_wenqing', scriptId: 'xinhai_revolution', name: '林文清', title: '报馆主笔' },
+    { npcId: 'npc_captain_miller', scriptId: 'american_revolution', name: '米勒', title: '民兵队长' }
+  ];
+  var current = NPCS[0];
+  var picker = document.getElementById('npc-picker');
+  var log = document.getElementById('chat-log');
+  var input = document.getElementById('chat-input');
+  var sendBtn = document.getElementById('send-btn');
+  var trustDisplay = document.getElementById('trust-display');
+  var tierDisplay = document.getElementById('tier-display');
+  var modeBadge = document.getElementById('mode-badge');
+  var TIER_LABEL = { low: '设防', normal: '熟络', high: '交心' };
+
+  NPCS.forEach(function (npc) {
+    var btn = document.createElement('button');
+    btn.className = 'px-3 py-1.5 rounded-full font-label text-xs border border-outline-variant/30 text-on-surface-variant hover:text-on-surface transition-all';
+    btn.textContent = npc.name + '·' + npc.title;
+    btn.addEventListener('click', function () { selectNpc(npc, btn); });
+    btn.dataset.npcId = npc.npcId;
+    picker.appendChild(btn);
+  });
+
+  function selectNpc(npc, btn) {
+    current = npc;
+    Array.prototype.forEach.call(picker.children, function (b) {
+      b.classList.remove('bg-primary', 'text-on-primary');
+    });
+    btn.classList.add('bg-primary', 'text-on-primary');
+    log.innerHTML = '';
+    appendBubble('npc', '（' + npc.name + '抬眼看了看你。）');
+  }
+
+  function appendBubble(role, text, badge) {
+    var row = document.createElement('div');
+    row.className = role === 'user' ? 'self-end max-w-[85%]' : 'self-start max-w-[85%]';
+    var bubble = document.createElement('div');
+    bubble.className = (role === 'user' ? 'bubble-user' : 'bubble-npc') + ' px-4 py-2.5 rounded-2xl font-body text-sm leading-relaxed whitespace-pre-wrap';
+    bubble.textContent = text;
+    row.appendChild(bubble);
+    if (badge) {
+      var tag = document.createElement('div');
+      tag.className = 'text-[10px] font-label text-on-surface-variant mt-1 text-right';
+      tag.textContent = badge;
+      row.appendChild(tag);
+    }
+    log.appendChild(row);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function updateTrust(trust, tier) {
+    trustDisplay.textContent = trust;
+    tierDisplay.textContent = TIER_LABEL[tier] || '初识';
+  }
+
+  function setModeBadge(mode, fallbackReason) {
+    modeBadge.classList.remove('hidden');
+    if (mode === 'rule') {
+      modeBadge.textContent = fallbackReason === 'GATE_BLOCKED' ? '规则版（门禁拦截后降级）' : '规则版';
+      modeBadge.className = 'ml-auto px-2 py-0.5 rounded-full border border-amber-400/40 text-amber-300 text-[10px]';
+    } else {
+      modeBadge.textContent = 'AI 版';
+      modeBadge.className = 'ml-auto px-2 py-0.5 rounded-full border border-emerald-400/40 text-emerald-300 text-[10px]';
+    }
+  }
+
+  async function send() {
+    var message = input.value.trim();
+    if (!message) return;
+    input.value = '';
+    sendBtn.disabled = true;
+    appendBubble('user', message);
+    var pending = document.createElement('div');
+    pending.className = 'self-start font-label text-xs text-on-surface-variant';
+    pending.textContent = current.name + '在想……';
+    log.appendChild(pending);
+    log.scrollTop = log.scrollHeight;
+    try {
+      var result = await global.TTNPChat.talk({ scriptId: current.scriptId, npcId: current.npcId, message: message });
+      pending.remove();
+      appendBubble('npc', result.reply, result.retried ? '（说漏过一次嘴，重新组织了语言）' : null);
+      updateTrust(result.trust, result.tier);
+      setModeBadge(result.mode, result.fallbackReason);
+    } catch (error) {
+      pending.remove();
+      appendBubble('npc', '（' + current.name + '好像没听见。稍后再试试。）');
+    } finally {
+      sendBtn.disabled = false;
+      input.focus();
+    }
+  }
+
+  sendBtn.addEventListener('click', send);
+  input.addEventListener('keydown', function (event) { if (event.key === 'Enter') send(); });
+  selectNpc(current, picker.children[0]);
+})();
+</script>
+</body>
+</html>

@@ -6,6 +6,7 @@ import { config, ROOT_DIR } from './config.js';
 import { openDatabase, json as toJson, parseJson } from './db/database.js';
 import { id, publicId, token, sha256, hashPassword, verifyPassword, parseCookies, sessionCookie, cleanText, cleanEnum, safeInteger, ipHash } from './lib/security.js';
 import { generate as generateTeaching, supportedScript } from './services/ai-service.js';
+import { npcChat } from './services/npc-chat-service.js';
 
 const eventCatalogValue = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'data/event_catalog.json'), 'utf8'));
 const eventCatalog = new Map(eventCatalogValue.events.map((event) => [event.name, event]));
@@ -175,6 +176,35 @@ async function handleTeaching(request, response, db) {
   db.prepare(`INSERT INTO ai_runs(id,actor_id,session_id,task,script_id,mode,success,duration_ms,input_summary_json,output_json,error_code,created_at)
     VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`).run(traceId, actorId, sessionId, task, scriptId, result.mode, 1, Date.now() - started, toJson({ scriptId, task }), toJson(result.data), result.errorCode, now());
   sendJson(response, 200, { success: true, mode: result.mode, data: result.data, provider: result.provider, traceId, fallbackReason: result.errorCode });
+}
+
+async function handleNpcChat(request, response, db) {
+  if (!rateLimit(request, 'npc_chat', 30, 60000)) return sendError(response, 429, 'RATE_LIMITED', '说话太频繁了，歇一会再聊');
+  const body = await readJson(request);
+  const scriptId = cleanText(body.scriptId, 80);
+  const npcId = cleanText(body.npcId, 60);
+  const message = cleanText(body.message, 500);
+  const trustEvent = cleanText(body.trustEvent, 60) || null;
+  const actorId = cleanText(body.anonymousId, 100) || null;
+  const sessionId = cleanText(body.sessionId, 100) || null;
+  if (!scriptId || !npcId || !message) return sendError(response, 400, 'INVALID_INPUT', 'scriptId、npcId 和 message 都不能为空');
+  if (!supportedScript(scriptId)) return sendError(response, 400, 'UNKNOWN_SCRIPT', '剧本不存在');
+  if (!actorId) return sendError(response, 400, 'ACTOR_REQUIRED', '缺少匿名身份');
+  const started = Date.now();
+  try {
+    const result = await npcChat(db, { actorId, sessionId, scriptId, npcId, message, trustEvent });
+    db.prepare(`INSERT INTO ai_runs(id,actor_id,session_id,task,script_id,mode,success,duration_ms,input_summary_json,output_json,error_code,created_at)
+      VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`)
+      .run(id('trace_'), actorId, sessionId, 'npc_chat', scriptId, result.mode, 1, Date.now() - started,
+        toJson({ scriptId, npcId, trustEvent }), toJson({ reply: result.reply, gateBlocked: result.gateBlocked }), result.fallbackReason, now());
+    sendJson(response, 200, { success: true, ...result });
+  } catch (error) {
+    if (error.code === 'NPC_SCRIPT_MISMATCH') return sendError(response, 400, 'NPC_SCRIPT_MISMATCH', '这个角色不属于当前剧本');
+    db.prepare(`INSERT INTO ai_runs(id,actor_id,session_id,task,script_id,mode,success,duration_ms,input_summary_json,output_json,error_code,created_at)
+      VALUES(?,?,?,?,?,'rule',0,?,?,NULL,?,?)`)
+      .run(id('trace_'), actorId, sessionId, 'npc_chat', scriptId, Date.now() - started, toJson({ scriptId, npcId }), error.code || 'NPC_CHAT_FAILED', now());
+    return sendError(response, 500, 'NPC_CHAT_FAILED', '对话暂时不可用，稍后再试');
+  }
 }
 
 async function handleFeedbackCreate(request, response, db) {
@@ -396,6 +426,7 @@ export function createApp() {
       }
       if (request.method === 'POST' && url.pathname === '/api/v1/events/batch') return await handleEvents(request, response, db);
       if (request.method === 'POST' && url.pathname === '/api/v1/teaching-assistant') return await handleTeaching(request, response, db);
+      if (request.method === 'POST' && url.pathname === '/api/v1/npc-chat') return await handleNpcChat(request, response, db);
       if (request.method === 'POST' && url.pathname === '/api/v1/feedback') return await handleFeedbackCreate(request, response, db);
       const feedbackStatusMatch = url.pathname.match(/^\/api\/v1\/feedback\/([^/]+)\/status$/);
       if (request.method === 'GET' && feedbackStatusMatch) return handleFeedbackStatus(response, db, feedbackStatusMatch[1]);

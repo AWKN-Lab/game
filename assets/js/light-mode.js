@@ -9,6 +9,9 @@
  *
  * 模式取值（localStorage st_light_mode）：'auto'（默认，按 saveData/2G 自动判定）| 'on' | 'off'。
  * 页面可通过 window.LightMode.enabled() / .set(mode) 读取或切换，切换后立即生效。
+ *
+ * 自动静音提示：auto 判定拦截 BGM 时展示一次性提示（用户可感知音乐为何不响）；
+ * 关闭轻量模式时自动恢复最近被拦截的 BGM。
  */
 (function (global) {
     'use strict';
@@ -16,6 +19,8 @@
     var KEY = 'st_light_mode';
     var ROOT_CLASS = 'tt-light';
     var STYLE_ID = 'tt-light-style';
+    var lastBlockedBGM = null;
+    var autoToastShown = false;
 
     function storedMode() {
         try { return localStorage.getItem(KEY) || 'auto'; } catch (e) { return 'auto'; }
@@ -41,7 +46,27 @@
         if (['auto', 'on', 'off'].indexOf(mode) === -1) return enabled();
         try { localStorage.setItem(KEY, mode); } catch (e) { /* 存储不可用时仅本次生效 */ }
         apply();
+        if (!enabled() && lastBlockedBGM && global.AudioManager && typeof global.AudioManager.playBGM === 'function') {
+            var src = lastBlockedBGM;
+            lastBlockedBGM = null;
+            try { global.AudioManager.playBGM(src); } catch (e) { /* 恢复失败不影响模式切换 */ }
+        }
         return enabled();
+    }
+
+    function showToast() {
+        if (document.getElementById('tt-light-toast')) return;
+        var toast = document.createElement('div');
+        toast.id = 'tt-light-toast';
+        toast.setAttribute('role', 'status');
+        toast.textContent = '🍃 轻量模式已自动静音背景音乐（省流量）——点右下角「轻量模式」按钮可恢复';
+        toast.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:76px;z-index:9999;'
+            + 'background:rgba(30,60,40,.92);color:#fff;padding:10px 16px;border-radius:10px;'
+            + 'font-size:14px;line-height:1.5;max-width:82vw;box-shadow:0 4px 14px rgba(0,0,0,.25);';
+        document.body.appendChild(toast);
+        setTimeout(function () {
+            if (toast.parentNode) toast.parentNode.removeChild(toast);
+        }, 6000);
     }
 
     function injectStyle() {
@@ -71,6 +96,11 @@
         global.AudioManager.playBGM = function (src) {
             if (enabled()) {
                 console.log('[LightMode] 轻量模式：跳过 BGM 加载', src);
+                lastBlockedBGM = src;
+                if (storedMode() === 'auto' && !autoToastShown) {
+                    autoToastShown = true;
+                    showToast();
+                }
                 return;
             }
             return originalBGM.call(global.AudioManager, src);

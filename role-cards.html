@@ -1,0 +1,137 @@
+<!doctype html>
+<html class="dark" lang="zh">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>学生角色卡｜时空剧场</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
+  <link rel="stylesheet" href="dist/output.css?v=5"/>
+  <link rel="stylesheet" href="assets/css/mvp.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <style>
+    body { background-color:#041133; color:#dbe1ff; font-family:'Manrope',sans-serif; }
+    .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; vertical-align:middle; }
+    .glass-card { background:rgba(40,51,86,0.6); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); }
+    .ornate-corner { border-radius:4px 24px 4px 4px; }
+    .field { width:100%; padding:0.625rem 1rem; border-radius:0.75rem; background:rgba(10,20,50,0.7); border:1px solid rgba(148,163,255,0.25); color:#dbe1ff; }
+    .field:focus { outline:none; border-color:rgba(148,163,255,0.6); }
+    .primary-btn { background:#3b5bdb; color:#fff; }
+    .primary-btn:hover { background:#4c6ef5; }
+    .role-card { background:rgba(10,20,50,0.85); border:1px solid rgba(239,189,138,0.35); border-radius:4px 24px 4px 4px; }
+    .fact-item { border-left:3px solid rgba(239,189,138,0.6); padding-left:0.75rem; }
+
+    @media print {
+      body { background:#fff !important; color:#1a1a2e !important; }
+      .no-print { display:none !important; }
+      .role-card { background:#fff !important; border:1.5px solid #b8860b !important; break-inside:avoid; page-break-inside:avoid; margin-bottom:12px; }
+      .role-card * { color:#1a1a2e !important; }
+      .print-header { color:#1a1a2e !important; }
+    }
+  </style>
+</head>
+<body class="min-h-screen relative overflow-x-hidden">
+<main class="relative max-w-4xl mx-auto px-4 py-10">
+  <header class="mb-6 no-print">
+    <h1 class="text-3xl md:text-4xl font-bold mb-2" style="font-family:'Noto Serif SC',serif;">学生角色卡</h1>
+    <p class="text-sm opacity-70">每张卡只含剧本的一部分关键信息——各组拿到的卡不同，讨论时需要交换才能拼出完整因果。选剧本、打印、按组分发即可。</p>
+  </header>
+
+  <section class="glass-card ornate-corner p-5 mb-6 no-print">
+    <div class="grid md:grid-cols-[1fr_auto] gap-3 items-end">
+      <div>
+        <label class="block text-xs opacity-70 mb-1">选剧本</label>
+        <select id="script-select" class="field"></select>
+      </div>
+      <div class="flex gap-2">
+        <button id="load-btn" class="primary-btn px-5 py-2.5 rounded-xl text-sm font-semibold">生成角色卡</button>
+        <button id="print-btn" class="px-5 py-2.5 rounded-xl text-sm font-semibold border border-outline-variant/40 hover:bg-white/5 hidden">
+          <span class="material-symbols-outlined text-sm">print</span> 打印
+        </button>
+      </div>
+    </div>
+    <p id="msg" class="text-sm mt-3 hidden"></p>
+  </section>
+
+  <div id="cards-area" class="flex flex-col gap-5"></div>
+</main>
+
+<script src="data-store.js"></script>
+<script src="script-registry.js"></script>
+<script src="assets/js/api-client.js"></script>
+<script src="assets/js/identity-client.js"></script>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var scriptSelect = $('script-select');
+  Object.keys(window.SCRIPT_REGISTRY).forEach(function (key) {
+    var option = document.createElement('option');
+    option.value = key;
+    option.textContent = window.SCRIPT_REGISTRY[key].name;
+    scriptSelect.appendChild(option);
+  });
+
+  function showMsg(text, ok) {
+    var el = $('msg');
+    el.textContent = text;
+    el.className = 'text-sm mt-3 ' + (ok ? 'text-emerald-300' : 'text-red-300');
+  }
+
+  function escapeHtml(text) {
+    return String(text == null ? '' : text).replace(/[&<>"']/g, function (ch) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+    });
+  }
+
+  async function load() {
+    var btn = $('load-btn');
+    btn.disabled = true;
+    try {
+      var result = await window.TTApi.get('/role-cards?scriptId=' + encodeURIComponent(scriptSelect.value));
+      render(result);
+      showMsg('已生成 ' + result.cards.length + ' 张角色卡（' + result.scriptTitle + '）。打印后按卡上组号分发。', true);
+      $('print-btn').classList.remove('hidden');
+    } catch (error) {
+      showMsg(error && error.message ? error.message : '生成失败，请重试', false);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  function render(data) {
+    var area = $('cards-area');
+    area.innerHTML = '';
+    var head = document.createElement('div');
+    head.className = 'print-header text-center mb-2';
+    head.innerHTML = '<div style="font-family:\'Noto Serif SC\',serif;font-size:1.3rem;font-weight:700;">' + escapeHtml(data.scriptTitle) + '·角色卡</div>'
+      + '<div class="text-xs opacity-60 mt-1 no-print">教学目标：' + (data.publicBrief.objectives || []).map(escapeHtml).join('；') + '</div>';
+    area.appendChild(head);
+    data.cards.forEach(function (card) {
+      var el = document.createElement('section');
+      el.className = 'role-card p-5';
+      var witness = card.witness
+        ? '<div class="text-sm mb-2"><span class="material-symbols-outlined text-sm" style="color:#efbd8a;">record_voice_over</span> '
+          + '<strong>' + escapeHtml(card.witness.name) + '</strong>（' + escapeHtml(card.witness.role) + '）：' + escapeHtml(card.witness.hook) + '</div>'
+        : '';
+      var focus = card.actFocus ? '<div class="text-xs opacity-70 mb-3">本卡主线：' + escapeHtml(card.actFocus.title) + '——' + escapeHtml(card.actFocus.focus) + '</div>' : '';
+      var facts = (card.knownFacts || []).map(function (fact) {
+        return '<li class="fact-item text-sm leading-relaxed mb-2"><strong>' + escapeHtml(fact.name) + '</strong>　' + escapeHtml(fact.content) + '</li>';
+      }).join('');
+      el.innerHTML = '<div class="flex items-center justify-between mb-3">'
+        + '<h2 style="font-family:\'Noto Serif SC\',serif;font-size:1.15rem;font-weight:700;">' + escapeHtml(card.groupLabel) + '</h2>'
+        + '<span class="text-xs px-2 py-0.5 rounded-full border" style="border-color:rgba(239,189,138,0.5);color:#efbd8a;">' + escapeHtml(data.scriptTitle) + '</span>'
+        + '</div>'
+        + witness + focus
+        + '<ul class="mb-3">' + facts + '</ul>'
+        + '<div class="text-xs opacity-70 border-t pt-2" style="border-color:rgba(239,189,138,0.25);">' + escapeHtml(card.note) + '</div>';
+      area.appendChild(el);
+    });
+  }
+
+  $('load-btn').addEventListener('click', load);
+  $('print-btn').addEventListener('click', function () { window.print(); });
+})();
+</script>
+</body>
+</html>

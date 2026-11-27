@@ -15,6 +15,8 @@ const pages = [
   'xinhai_revolution.html',
   'ai-mvp.html',
   'teacher-guide.html',
+  'director.html',
+  'role-cards.html',
   'learning-review.html',
   'wish-pool.html',
   'privacy.html',

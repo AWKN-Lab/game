@@ -1,0 +1,389 @@
+<!doctype html>
+<html class="dark" lang="zh">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>教师导演台｜时空剧场</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
+  <link rel="stylesheet" href="dist/output.css?v=5"/>
+  <link rel="stylesheet" href="assets/css/mvp.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <style>
+    body { background-color:#041133; color:#dbe1ff; font-family:'Manrope',sans-serif; }
+    .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; vertical-align:middle; }
+    .glass-card { background:rgba(40,51,86,0.6); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); }
+    .ornate-corner { border-radius:4px 24px 4px 4px; }
+    .field { width:100%; padding:0.625rem 1rem; border-radius:0.75rem; background:rgba(10,20,50,0.7); border:1px solid rgba(148,163,255,0.25); color:#dbe1ff; }
+    .field:focus { outline:none; border-color:rgba(148,163,255,0.6); }
+    .primary-btn { background:#3b5bdb; color:#fff; }
+    .primary-btn:hover { background:#4c6ef5; }
+    .primary-btn:disabled { opacity:0.5; cursor:not-allowed; }
+    .tally-bar { background:rgba(239,189,138,0.85); border-radius:0 0.5rem 0.5rem 0; min-width:4px; }
+    .status-chip { padding:0.35rem 0.9rem; border-radius:9999px; border:1px solid rgba(148,163,255,0.3); font-size:0.8rem; }
+    .status-chip.active { background:#3b5bdb; border-color:#3b5bdb; color:#fff; }
+    .flag-unsafe { border-color:rgba(248,113,113,0.5); background:rgba(127,29,29,0.25); }
+    .flag-error { border-color:rgba(251,191,36,0.5); background:rgba(120,53,15,0.25); }
+  </style>
+</head>
+<body class="min-h-screen relative overflow-x-hidden">
+<main class="relative max-w-4xl mx-auto px-4 py-10">
+  <header class="mb-8 flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h1 class="text-3xl md:text-4xl font-bold mb-2" style="font-family:'Noto Serif SC',serif;">教师导演台</h1>
+      <p class="text-sm opacity-70">开一节课堂：控节奏、录举手、让 AI 主持人帮你盯事实。学生不用装任何东西，你手里的这台设备就是入口。</p>
+    </div>
+    <a href="role-cards.html" class="text-sm opacity-70 hover:opacity-100 underline underline-offset-4">学生角色卡 →</a>
+  </header>
+
+  <!-- 区块一：创建 / 恢复课堂 -->
+  <section id="setup-card" class="glass-card ornate-corner p-5 mb-5">
+    <h2 class="text-lg font-bold mb-3" style="font-family:'Noto Serif SC',serif;">① 开课</h2>
+    <div class="grid md:grid-cols-2 gap-5">
+      <div>
+        <label class="block text-xs opacity-70 mb-1">选剧本</label>
+        <select id="script-select" class="field mb-2"></select>
+        <label class="block text-xs opacity-70 mb-1">课堂名（可选）</label>
+        <input id="class-title" class="field mb-3" maxlength="80" placeholder="例：初二（3）班·法国大革命"/>
+        <button id="create-btn" class="primary-btn w-full py-2.5 rounded-xl text-sm font-semibold">创建课堂</button>
+      </div>
+      <div>
+        <label class="block text-xs opacity-70 mb-1">恢复课堂：输入 6 位口令</label>
+        <input id="code-input" class="field mb-3" maxlength="6" placeholder="例：A3K7QM" style="text-transform:uppercase;letter-spacing:0.3em;"/>
+        <button id="resume-btn" class="w-full py-2.5 rounded-xl text-sm font-semibold border border-outline-variant/40 hover:bg-white/5">恢复课堂</button>
+        <p class="text-xs opacity-50 mt-3">口令在创建课堂后生成，只含数字与大写字母（不含 0/O/1/I/L），念给学生也不会听错。</p>
+      </div>
+    </div>
+    <p id="setup-msg" class="text-sm mt-3 hidden"></p>
+  </section>
+
+  <!-- 课堂工作区（恢复/创建后显示） -->
+  <div id="workspace" class="hidden">
+    <!-- 区块二：控节奏 -->
+    <section class="glass-card ornate-corner p-5 mb-5">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <h2 class="text-lg font-bold" style="font-family:'Noto Serif SC',serif;">② 控节奏</h2>
+        <span id="session-badge" class="text-xs px-3 py-1 rounded-full border border-outline-variant/40"></span>
+      </div>
+      <div class="grid md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs opacity-70 mb-1">当前幕次</label>
+          <select id="act-select" class="field"></select>
+        </div>
+        <div>
+          <label class="block text-xs opacity-70 mb-1">课堂状态</label>
+          <div id="status-chips" class="flex flex-wrap gap-2"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 区块三：举手统计 -->
+    <section class="glass-card ornate-corner p-5 mb-5">
+      <h2 class="text-lg font-bold mb-1" style="font-family:'Noto Serif SC',serif;">③ 举手统计</h2>
+      <p class="text-xs opacity-60 mb-3">学生举手，你来录数。录完立刻出分布条，适合直接投影。</p>
+      <div class="grid md:grid-cols-2 gap-4 mb-3">
+        <div>
+          <label class="block text-xs opacity-70 mb-1">讨论话题（可选）</label>
+          <input id="tally-topic" class="field" maxlength="120" placeholder="例：如果你是路易十六，你会怎么应对赤字？"/>
+        </div>
+        <div class="text-xs opacity-60 self-end">幕次跟随上方「当前幕次」；改幕次后这里会跟着变。</div>
+      </div>
+      <div id="tally-rows" class="flex flex-col gap-2 mb-3"></div>
+      <div class="flex gap-2">
+        <button id="add-row-btn" class="px-4 py-2 rounded-xl text-sm border border-outline-variant/40 hover:bg-white/5">＋ 加一行</button>
+        <button id="tally-btn" class="primary-btn px-5 py-2 rounded-xl text-sm font-semibold flex-1">录入并出分布</button>
+      </div>
+      <div id="tally-result" class="hidden mt-4 p-4 rounded-xl" style="background:rgba(4,17,51,0.8);">
+        <div id="tally-result-head" class="text-sm mb-3"></div>
+        <div id="tally-bars" class="flex flex-col gap-2"></div>
+      </div>
+    </section>
+
+    <!-- 区块四：AI 主持人 -->
+    <section class="glass-card ornate-corner p-5 mb-5">
+      <h2 class="text-lg font-bold mb-1" style="font-family:'Noto Serif SC',serif;">④ AI 主持人</h2>
+      <p class="text-xs opacity-60 mb-3">把分组讨论实录贴进来，每行一条，格式「组名: 发言」。主持人只按剧本知识库裁判，会拦下危险发言、标出与史实冲突的说法。</p>
+      <input id="mod-topic" class="field mb-2" maxlength="160" placeholder="讨论话题（可选，默认用当前幕次名）"/>
+      <textarea id="mod-input" rows="6" class="field mb-3" placeholder="第一组: 我们觉得国王召开三级会议就是为了加税&#10;第二组: 攻占巴士底狱那天监狱里只关了七个犯人"></textarea>
+      <button id="moderate-btn" class="primary-btn w-full py-2.5 rounded-xl text-sm font-semibold">请主持人点评</button>
+      <div id="mod-result" class="hidden mt-4 flex flex-col gap-3"></div>
+    </section>
+  </div>
+</main>
+
+<script src="data-store.js"></script>
+<script src="script-registry.js"></script>
+<script src="assets/js/api-client.js"></script>
+<script src="assets/js/identity-client.js"></script>
+<script>
+(function () {
+  'use strict';
+  var STATUS = [
+    { id: 'briefing', label: '导入' },
+    { id: 'acting', label: '推进剧情' },
+    { id: 'discussion', label: '小组讨论' },
+    { id: 'paused', label: '暂停讨论' },
+    { id: 'closed', label: '已结课' }
+  ];
+  var session = null;
+  var $ = function (id) { return document.getElementById(id); };
+
+  // 剧本下拉
+  var scriptSelect = $('script-select');
+  Object.keys(window.SCRIPT_REGISTRY).forEach(function (key) {
+    var option = document.createElement('option');
+    option.value = key;
+    option.textContent = window.SCRIPT_REGISTRY[key].name;
+    scriptSelect.appendChild(option);
+  });
+
+  function showMsg(text, ok) {
+    var el = $('setup-msg');
+    el.textContent = text;
+    el.className = 'text-sm mt-3 ' + (ok ? 'text-emerald-300' : 'text-red-300');
+  }
+
+  function renderWorkspace() {
+    $('setup-card').classList.add('hidden');
+    $('workspace').classList.remove('hidden');
+    $('session-badge').textContent = session.scriptTitle + ' · ' + session.title
+      + ' · 口令 ' + session.joinCode + ' · ' + session.statusLabel;
+    var actSelect = $('act-select');
+    actSelect.innerHTML = '';
+    session.acts.forEach(function (act) {
+      var option = document.createElement('option');
+      option.value = act.id;
+      option.textContent = act.title + '（' + act.minutes + ' 分钟）';
+      if (act.id === session.actId) option.selected = true;
+      actSelect.appendChild(option);
+    });
+    var chips = $('status-chips');
+    chips.innerHTML = '';
+    STATUS.forEach(function (st) {
+      var chip = document.createElement('button');
+      chip.className = 'status-chip' + (st.id === session.status ? ' active' : '');
+      chip.textContent = st.label;
+      chip.addEventListener('click', function () { patchPacing({ status: st.id }); });
+      chips.appendChild(chip);
+    });
+  }
+
+  async function patchPacing(body) {
+    try {
+      var result = await window.TTApi.patch('/classroom/' + session.joinCode, body);
+      session = result.session;
+      renderWorkspace();
+    } catch (error) {
+      alert(error && error.message ? error.message : '操作失败，请重试');
+    }
+  }
+
+  async function create() {
+    var btn = $('create-btn');
+    btn.disabled = true;
+    try {
+      var result = await window.TTApi.post('/classroom', {
+        anonymousId: window.TTIdentity.getAnonymousId(),
+        scriptId: scriptSelect.value,
+        title: $('class-title').value.trim() || null
+      });
+      session = result.session;
+      resetTallyRows();
+      renderWorkspace();
+      showMsg('', true);
+    } catch (error) {
+      showMsg(error && error.message ? error.message : '创建失败，请重试', false);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  async function resume() {
+    var code = $('code-input').value.trim().toUpperCase();
+    if (!code) { showMsg('请输入 6 位口令', false); return; }
+    try {
+      var result = await window.TTApi.get('/classroom/' + encodeURIComponent(code));
+      session = result.session;
+      resetTallyRows();
+      renderWorkspace();
+      showMsg('', true);
+    } catch (error) {
+      showMsg(error && error.message ? error.message : '课堂不存在或口令有误', false);
+    }
+  }
+
+  // 举手统计行
+  function tallyRow(label, count) {
+    var row = document.createElement('div');
+    row.className = 'flex gap-2 items-center';
+    var labelInput = document.createElement('input');
+    labelInput.className = 'field flex-1';
+    labelInput.maxLength = 60;
+    labelInput.placeholder = '选项（例：选 A 的举手）';
+    labelInput.value = label || '';
+    var countInput = document.createElement('input');
+    countInput.className = 'field w-24';
+    countInput.type = 'number';
+    countInput.min = '0';
+    countInput.max = '999';
+    countInput.value = count === undefined ? '' : String(count);
+    var removeBtn = document.createElement('button');
+    removeBtn.className = 'px-3 py-2 text-sm opacity-60 hover:opacity-100';
+    removeBtn.textContent = '✕';
+    removeBtn.addEventListener('click', function () { row.remove(); });
+    row.appendChild(labelInput);
+    row.appendChild(countInput);
+    row.appendChild(removeBtn);
+    return row;
+  }
+
+  function resetTallyRows() {
+    var rows = $('tally-rows');
+    rows.innerHTML = '';
+    rows.appendChild(tallyRow());
+    rows.appendChild(tallyRow());
+  }
+
+  async function submitTally() {
+    var entries = [];
+    Array.prototype.forEach.call($('tally-rows').children, function (row) {
+      var label = row.children[0].value.trim();
+      var count = parseInt(row.children[1].value, 10);
+      if (label) entries.push({ label: label, count: isNaN(count) ? 0 : count });
+    });
+    if (!entries.length) { alert('至少填一行选项'); return; }
+    var btn = $('tally-btn');
+    btn.disabled = true;
+    try {
+      var result = await window.TTApi.post('/classroom/' + session.joinCode + '/tallies', {
+        actId: $('act-select').value,
+        topic: $('tally-topic').value.trim() || null,
+        entries: entries
+      });
+      renderTally(result.tally);
+    } catch (error) {
+      alert(error && error.message ? error.message : '录入失败，请重试');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  function renderTally(tally) {
+    var box = $('tally-result');
+    box.classList.remove('hidden');
+    $('tally-result-head').innerHTML = '<strong style="font-size:1.05rem;">' + escapeHtml(tally.topic || '本幕讨论')
+      + '</strong>　共 <strong>' + tally.total + '</strong> 人举手'
+      + (tally.leader ? '　领先：' + escapeHtml(tally.leader.label) + '（' + tally.leader.pct + '%）' : '');
+    var bars = $('tally-bars');
+    bars.innerHTML = '';
+    var max = Math.max.apply(null, tally.distribution.map(function (d) { return d.count; })) || 1;
+    tally.distribution.forEach(function (item) {
+      var line = document.createElement('div');
+      var head = document.createElement('div');
+      head.className = 'flex justify-between text-sm mb-1';
+      head.innerHTML = '<span>' + escapeHtml(item.label) + '</span><span style="font-size:1.15rem;font-weight:700;">' + item.count + ' 人 · ' + item.pct + '%</span>';
+      var track = document.createElement('div');
+      track.style.cssText = 'height:14px;background:rgba(148,163,255,0.12);border-radius:0.5rem;';
+      var fill = document.createElement('div');
+      fill.className = 'tally-bar';
+      fill.style.height = '14px';
+      fill.style.width = Math.round((item.count / max) * 100) + '%';
+      track.appendChild(fill);
+      line.appendChild(head);
+      line.appendChild(track);
+      bars.appendChild(line);
+    });
+  }
+
+  // AI 主持人
+  async function moderate() {
+    var statements = [];
+    $('mod-input').value.split('\n').forEach(function (line) {
+      var trimmed = line.trim();
+      if (!trimmed) return;
+      var sep = trimmed.indexOf(':') >= 0 ? trimmed.indexOf(':') : trimmed.indexOf('：');
+      if (sep > 0) {
+        statements.push({ group: trimmed.slice(0, sep).trim(), text: trimmed.slice(sep + 1).trim() });
+      } else {
+        statements.push({ group: '未分组', text: trimmed });
+      }
+    });
+    if (!statements.length) { alert('请按「组名: 发言」每行一条填入实录'); return; }
+    var btn = $('moderate-btn');
+    btn.disabled = true;
+    btn.textContent = '主持人正在翻知识库……';
+    try {
+      var result = await window.TTApi.post('/classroom/moderate', {
+        scriptId: session.scriptId,
+        actId: $('act-select').value,
+        topic: $('mod-topic').value.trim() || null,
+        statements: statements
+      });
+      renderModeration(result);
+    } catch (error) {
+      alert(error && error.message ? error.message : '主持失败，请重试');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '请主持人点评';
+    }
+  }
+
+  var VERDICT_LABEL = { unsafe: '危险发言', factual_error: '与史实冲突', anachronism: '时代错置' };
+
+  function renderModeration(result) {
+    var box = $('mod-result');
+    box.classList.remove('hidden');
+    box.innerHTML = '';
+    var head = document.createElement('div');
+    head.className = 'text-sm opacity-80';
+    head.textContent = '话题：' + result.topic + (result.mode === 'ai' ? '（AI 主持）' : '（规则版主持）');
+    var summary = document.createElement('div');
+    summary.className = 'p-4 rounded-xl text-sm leading-relaxed';
+    summary.style.background = 'rgba(4,17,51,0.8)';
+    summary.textContent = result.summary;
+    box.appendChild(head);
+    box.appendChild(summary);
+    (result.factFlags || []).forEach(function (flag) {
+      var item = document.createElement('div');
+      item.className = 'p-3 rounded-xl text-sm border ' + (flag.verdict === 'unsafe' ? 'flag-unsafe' : 'flag-error');
+      item.innerHTML = '<strong>[' + (VERDICT_LABEL[flag.verdict] || flag.verdict) + '] ' + escapeHtml(flag.group)
+        + '</strong>　' + escapeHtml(flag.issue)
+        + (flag.quote ? '<div class="text-xs opacity-60 mt-1">原话：' + escapeHtml(flag.quote) + '</div>' : '');
+      box.appendChild(item);
+    });
+    if (!result.factFlags || !result.factFlags.length) {
+      var ok = document.createElement('div');
+      ok.className = 'p-3 rounded-xl text-sm border';
+      ok.style.cssText = 'border-color:rgba(52,211,153,0.4);background:rgba(6,78,59,0.2);';
+      ok.textContent = '没有发现与知识库冲突的发言。';
+      box.appendChild(ok);
+    }
+    (result.nextQuestions || []).forEach(function (question) {
+      var item = document.createElement('div');
+      item.className = 'text-sm opacity-85';
+      item.innerHTML = '<span class="material-symbols-outlined text-sm" style="color:#efbd8a;">help</span> ' + escapeHtml(question);
+      box.appendChild(item);
+    });
+  }
+
+  function escapeHtml(text) {
+    return String(text == null ? '' : text).replace(/[&<>"']/g, function (ch) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+    });
+  }
+
+  $('create-btn').addEventListener('click', create);
+  $('resume-btn').addEventListener('click', resume);
+  $('code-input').addEventListener('keydown', function (e) { if (e.key === 'Enter') resume(); });
+  $('act-select').addEventListener('change', function () { patchPacing({ actId: $('act-select').value }); });
+  $('add-row-btn').addEventListener('click', function () {
+    var rows = $('tally-rows');
+    if (rows.children.length >= 8) { alert('最多 8 行'); return; }
+    rows.appendChild(tallyRow());
+  });
+  $('tally-btn').addEventListener('click', submitTally);
+  $('moderate-btn').addEventListener('click', moderate);
+})();
+</script>
+</body>
+</html>

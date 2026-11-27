@@ -154,6 +154,8 @@ test('数字门禁：戊戌「一千二百」违规，「一千三百多」通�
 test('数字门禁：工业「十二个钟头」违规，「十四个钟头」通过', () => {
   const bad = checkNumberGate(personas, 'industrial_revolution', '我一天干十二个钟头。');
   assert.equal(bad.ok, false);
+  const badArabic = checkNumberGate(personas, 'industrial_revolution', '我一天干12小时。');
+  assert.equal(badArabic.ok, false);
   const good = checkNumberGate(personas, 'industrial_revolution', '我一天看十四个钟头的纱锭。');
   assert.equal(good.ok, true);
 });
@@ -163,6 +165,8 @@ test('数字门禁：美国「五十分之一」违规，法国「十四个小�
   assert.equal(badUs.ok, false);
   const badFr = checkNumberGate(personas, 'french_revolution', '印刷工一天只干十四个小时。');
   assert.equal(badFr.ok, false);
+  const badFrArabic = checkNumberGate(personas, 'french_revolution', '印刷工一天只干14小时。');
+  assert.equal(badFrArabic.ok, false);
   assert.equal(badFr.violations[0].label, '史实参考（印刷工特权工时），仅供编剧取用');
 });
 

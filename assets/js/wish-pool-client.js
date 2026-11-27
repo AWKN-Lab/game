@@ -7,6 +7,23 @@
     return global.TTIdentity?.getContext?.() || {};
   }
 
+  var DRAFT_KEY = 'st_wish_draft_v1';
+
+  function saveDraft(payload) {
+    try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ payload: payload, savedAt: new Date().toISOString() })); } catch (e) { /* 存储不可用时静默跳过 */ }
+  }
+  function peekDraft() {
+    try {
+      var raw = localStorage.getItem(DRAFT_KEY);
+      if (!raw) return null;
+      var draft = JSON.parse(raw);
+      return draft && draft.payload ? draft : null;
+    } catch (e) { return null; }
+  }
+  function clearDraft() {
+    try { localStorage.removeItem(DRAFT_KEY); } catch (e) { /* 忽略 */ }
+  }
+
   async function list(filters) {
     filters = filters || {};
     var params = new URLSearchParams();
@@ -32,7 +49,14 @@
       allowPublic: input.allowPublic !== false
     };
     if (payload.title.length < 2) throw new Error('愿望标题至少需要两个字');
-    var response = await global.TTApi.post('/wishes', payload, { timeoutMs: 8000 });
+    var response;
+    try {
+      response = await global.TTApi.post('/wishes', payload, { timeoutMs: 8000 });
+    } catch (error) {
+      saveDraft(payload);
+      throw error;
+    }
+    clearDraft();
     global.TTEvents?.track('wish.submitted', { wishType: payload.wishType, scriptId: payload.scriptId, grade: payload.grade });
     return response;
   }
@@ -47,5 +71,5 @@
     return response;
   }
 
-  global.TTWishes = { list: list, submit: submit, vote: vote };
+  global.TTWishes = { list: list, submit: submit, vote: vote, peekDraft: peekDraft, clearDraft: clearDraft };
 })(window);

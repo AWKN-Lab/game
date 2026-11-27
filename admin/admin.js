@@ -10,12 +10,93 @@
   function query(name) { return new URLSearchParams(location.search).get(name) || ''; }
   function statusText(value) { return ({new:'新反馈',reviewing:'处理中',replied:'已回复',resolved:'已解决',closed:'已关闭',pending_review:'待审核',needs_info:'需要补充',public:'已公开',researching:'调研中',planned:'已计划',developing:'开发中',implemented:'已实现',duplicate:'重复',not_planned:'暂不采纳',rejected:'拒绝'})[value] || value; }
 
+  // 应急只读模式：服务异常时拦截写操作、用最近一次成功快照兜底展示，不显示伪数据。
+  var AdminGuard = (function () {
+    var SNAPSHOT_KEY = 'st_admin_readonly_snapshots_v1';
+    var SNAPSHOT_PATHS = ['/admin/dashboard', '/admin/events', '/admin/feedback', '/admin/wishes', '/admin/audit'];
+    var SNAPSHOT_LIMIT = 12;
+    var state = { active: false };
+
+    function snapshots() { try { return JSON.parse(sessionStorage.getItem(SNAPSHOT_KEY) || '{}'); } catch (e) { return {}; } }
+    function saveSnapshot(path, data) {
+      try {
+        var encoded = JSON.stringify(data);
+        if (encoded.length > 500 * 1024) return;
+        var all = snapshots();
+        var keys = Object.keys(all);
+        if (keys.length >= SNAPSHOT_LIMIT && !all[path]) {
+          keys.sort(function (a, b) { return new Date(all[a].at) - new Date(all[b].at); });
+          delete all[keys[0]];
+        }
+        all[path] = { at: new Date().toISOString(), data: data };
+        sessionStorage.setItem(SNAPSHOT_KEY, JSON.stringify(all));
+      } catch (e) { /* 快照失败不影响正常流程 */ }
+    }
+    function snapshotable(path) {
+      return SNAPSHOT_PATHS.some(function (prefix) { return path === prefix || path.indexOf(prefix + '?') === 0; });
+    }
+    function banner() {
+      if (document.getElementById('adminEmergencyBanner')) return;
+      var el = document.createElement('div');
+      el.id = 'adminEmergencyBanner';
+      el.setAttribute('role', 'alert');
+      el.style.cssText = 'position:sticky;top:0;z-index:999;background:#7a1f1f;color:#fff;padding:10px 16px;font-size:14px;line-height:1.5;text-align:center;';
+      el.textContent = '⚠️ 服务异常——应急只读模式：写操作已暂停；列表数据可能来自最近一次成功加载的快照，非实时数据。';
+      document.body.insertBefore(el, document.body.firstChild);
+    }
+    function activate() {
+      if (state.active) return;
+      state.active = true;
+      TTApi.post = function () { return Promise.reject(new TTApi.ApiError('应急只读模式下已暂停写操作', { code: 'EMERGENCY_READONLY' })); };
+      TTApi.patch = TTApi.post;
+      TTApi.delete = TTApi.post;
+      banner();
+    }
+    // 平时记录管理端列表快照；应急模式下 GET 失败时回退最近一次成功快照。
+    (function wrapGet() {
+      var originalGet = TTApi.get;
+      TTApi.get = async function (path, options) {
+        try {
+          var response = await originalGet(path, options);
+          if (snapshotable(path)) saveSnapshot(path, response);
+          return response;
+        } catch (error) {
+          if (state.active && snapshotable(path)) {
+            var snap = snapshots()[path];
+            if (snap) return Object.assign({}, snap.data, { snapshotAt: snap.at });
+          }
+          throw error;
+        }
+      };
+    })();
+    async function probe() {
+      try { await TTApi.request('/health/ready', { method: 'GET', timeoutMs: 3000 }); return true; }
+      catch (e) { return false; }
+    }
+    async function probeOrActivate() {
+      if (await probe()) {
+        if (state.active) location.reload();
+        return;
+      }
+      activate();
+      scheduleReprobe();
+    }
+    function scheduleReprobe() {
+      if (!state.active) return;
+      setTimeout(function () { probeOrActivate(); }, 60000);
+    }
+    return { probeOrActivate: probeOrActivate, isActive: function () { return state.active; } };
+  })();
+
   var page = document.body.dataset.page || '';
   var currentAdmin = null;
 
   async function me() {
     try { var response = await TTApi.get('/admin/auth/me'); currentAdmin = response.admin; return currentAdmin; }
-    catch (error) { if (page !== 'login') location.replace('login.html?next=' + encodeURIComponent(location.pathname + location.search)); throw error; }
+    catch (error) {
+      if (AdminGuard.isActive()) return null;
+      if (page !== 'login') location.replace('login.html?next=' + encodeURIComponent(location.pathname + location.search)); throw error;
+    }
   }
 
   function setTopbar() {
@@ -126,6 +207,7 @@
   document.addEventListener('DOMContentLoaded', async function () {
     if (page === 'login') return loginPage();
     try {
+      await AdminGuard.probeOrActivate();
       await me(); setTopbar();
       if (page === 'dashboard') await dashboardPage();
       else if (page === 'interactions') await interactionsPage();

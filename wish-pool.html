@@ -81,6 +81,19 @@
         } catch (error) { list.innerHTML = '<div class="tt-alert">暂时无法读取公开愿望：' + escapeHtml(error.message) + '</div>'; }
       }
       document.getElementById('statusFilter').addEventListener('change', load);
+      (function restoreDraft() {
+        var draft = TTWishes.peekDraft();
+        if (!draft) return;
+        var p = draft.payload;
+        if (p.wishType) document.getElementById('wishType').value = p.wishType;
+        document.getElementById('title').value = p.title || '';
+        document.getElementById('reason').value = p.reason || '';
+        document.getElementById('problem').value = p.problem || '';
+        if (p.grade) document.getElementById('grade').value = p.grade;
+        if (p.scriptId && SCRIPT_REGISTRY[p.scriptId]) scriptSelect.value = p.scriptId;
+        document.getElementById('allowPublic').checked = p.allowPublic !== false;
+        document.getElementById('submitStatus').textContent = '已恢复上次未提交成功的愿望草稿（' + new Date(draft.savedAt).toLocaleString('zh-CN', { hour12: false }) + '），确认内容后可直接重新提交。';
+      })();
       document.getElementById('wishList').addEventListener('click', async function (event) {
         var button = event.target.closest('[data-vote]'); if (!button) return;
         var id = button.dataset.vote; var next = button.dataset.active !== '1'; button.disabled = true;
@@ -93,8 +106,9 @@
         try {
           var response = await TTWishes.submit({ wishType: document.getElementById('wishType').value, title: document.getElementById('title').value, reason: document.getElementById('reason').value, problem: document.getElementById('problem').value, grade: document.getElementById('grade').value, scriptId: scriptSelect.value, allowPublic: document.getElementById('allowPublic').checked });
           status.textContent = '已经收到，审核编号：' + (response.publicId || response.id || '已记录');
+          TTWishes.clearDraft();
           event.target.reset(); document.getElementById('allowPublic').checked = true;
-        } catch (error) { status.textContent = error.message || '提交失败'; }
+        } catch (error) { status.textContent = (error.message || '提交失败') + '；内容已保留为草稿，刷新或下次打开本页可恢复重提。'; }
         finally { button.disabled = false; }
       });
       load();

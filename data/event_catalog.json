@@ -243,6 +243,25 @@
       ]
     },
     {
+      "name": "npc.consequence_applied",
+      "critical": false,
+      "allowedPayloadKeys": [
+        "scriptId",
+        "npcId",
+        "axis",
+        "delta"
+      ]
+    },
+    {
+      "name": "npc.emotion_changed",
+      "critical": false,
+      "allowedPayloadKeys": [
+        "scriptId",
+        "npcId",
+        "emotion"
+      ]
+    },
+    {
       "name": "director.class_started",
       "critical": false,
       "allowedPayloadKeys": [

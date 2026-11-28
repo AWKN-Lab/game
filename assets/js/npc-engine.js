@@ -129,8 +129,7 @@ export function createMemoryStore() {
  * 装配系统提示词：骨架卡 + 信任档位 + 记忆（按剧本隔离）。
  * @param {object} opts { personas, npcId, scriptId, trust, session?, keyMemories? }
  * @returns {string} system prompt
- */
-export function buildSystemPrompt({ personas, npcId, scriptId, trust = 0, session = [], keyMemories = [] }) {
+ */export function buildSystemPrompt({ personas, npcId, scriptId, trust = 0, session = [], keyMemories = [] }) {
   const npc = getPersona(personas, npcId);
   const tier = trustTier(trust);
   const tierRule = personas.trustTiers[tier];
@@ -203,4 +202,108 @@ export function preSpeakCheck({ personas, npcId, scriptId, text, trust }) {
       ...secretGate.violations.map((v) => ({ gate: 'secret', ...v })),
     ],
   };
+}
+
+// ============================================================
+// 结构化后果（AI 不只说话，还要改变游戏状态）
+// ============================================================
+
+/**
+ * 生成结构化输出指令：让 AI 在正文之后附一段 JSON。
+ * @param {object} opts { axes: {key:{label,hint}}, emotions: string[], maxAxes?: number, maxDelta?: number }
+ * @returns {string}
+ */
+export function buildStructuredInstruction({ axes = {}, emotions = [], maxAxes = 3, maxDelta = 3 } = {}) {
+  const axisList = Object.entries(axes)
+    .map(([key, def]) => `- ${key}（${def.label}）：${def.hint}`)
+    .join('\n');
+  return [
+    '【结构化输出】在正文说完之后，另起一行输出一段 JSON（不要用代码块包裹）：',
+    '{"emotion":"<情绪>","consequence":{"<轴>":整数},"unlockChoice":"<选项ID或空字符串>"}',
+    `情绪只能取：${emotions.join(' / ')}；`,
+    `后果轴只能取以下 ${maxAxes} 个以内，每轴取值 -${maxDelta} 到 ${maxDelta} 的整数：`,
+    axisList || '- （本次不输出后果）',
+    '如果这一轮不需要改变任何状态，consequence 输出 {} 即可。',
+    '只输出 JSON 一行，不要解释。'
+  ].join('\n');
+}
+
+/**
+ * 解析 AI 回复中的结构化尾巴，并做白名单清洗。
+ * @param {string} text AI 原始回复
+ * @param {object} opts { axes, emotions, maxAxes, maxDelta, minDelta }
+ * @returns {{reply:string, emotion:string|null, consequence:object, unlockChoice:string|null}}
+ */
+export function parseStructuredReply(text, { axes = {}, emotions = [], maxAxes = 3, maxDelta = 3, minDelta = -3 } = {}) {
+  const raw = String(text || '');
+  let reply = raw;
+  let payload = null;
+
+  // 取最后一段看起来像 JSON 的内容（允许 ```json 包裹，或独立成行的 JSON）
+  const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
+  const candidates = [];
+  if (fenced) candidates.push({ text: fenced[1].trim(), raw: fenced[0] });
+  const lines = raw.split(/\r?\n/);
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const line = lines[i].trim();
+    if (line.startsWith('{') && line.endsWith('}')) {
+      candidates.push({ text: line, raw: line });
+      break;
+    }
+  }
+  const inlineMatch = raw.match(/\{[\s\S]*\}/);
+  if (inlineMatch) candidates.push({ text: inlineMatch[0], raw: inlineMatch[0] });
+
+  let used = null;
+  for (const candidate of candidates) {
+    try {
+      const parsed = JSON.parse(candidate.text);
+      if (parsed && typeof parsed === 'object') { payload = parsed; used = candidate.raw; break; }
+    } catch (error) { /* 继续尝试下一个候选 */ }
+  }
+
+  if (!payload) return { reply: raw.trim(), emotion: null, consequence: {}, unlockChoice: null };
+
+  // 去掉正文里的 JSON 尾巴
+  if (used) reply = raw.replace(used, '');
+  reply = reply.trim();
+
+  const emotion = emotions.includes(payload.emotion) ? payload.emotion : null;
+
+  const consequence = {};
+  const rawConsequence = (payload.consequence && typeof payload.consequence === 'object') ? payload.consequence : {};
+  let count = 0;
+  for (const [key, value] of Object.entries(rawConsequence)) {
+    if (count >= maxAxes) break;
+    if (!Object.prototype.hasOwnProperty.call(axes, key)) continue;
+    const num = Math.round(Number(value));
+    if (!Number.isFinite(num) || num === 0) continue;
+    consequence[key] = Math.max(minDelta, Math.min(maxDelta, num));
+    count += 1;
+  }
+
+  const unlockChoice = typeof payload.unlockChoice === 'string' && /^[A-Za-z0-9_-]{1,40}$/.test(payload.unlockChoice)
+    ? payload.unlockChoice
+    : null;
+
+  return { reply, emotion, consequence, unlockChoice };
+}
+
+/**
+ * 情绪 → 立绘表情。角色没有该表情时回落到默认表情。
+ */
+export function emotionToExpression(emotion, available = []) {
+  const map = {
+    calm: 'normal',
+    serious: 'serious',
+    excited: 'excited',
+    thinking: 'thinking',
+    sad: 'sad',
+    hopeful: 'hopeful'
+  };
+  const target = map[emotion] || 'normal';
+  if (!available || !available.length) return target;
+  if (available.includes(target)) return target;
+  const fallback = available.includes('normal') ? 'normal' : available[0];
+  return fallback;
 }

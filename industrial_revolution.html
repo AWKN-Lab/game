@@ -86,16 +86,22 @@
       title: '时空剧场 - 工业革命',
       values: { labor: 50, justice: 50, responsibility: 50, life: 50 },
       valueLabels: { labor: '劳动', justice: '正义', responsibility: '责任', life: '生命' },
+      consequenceAxes: { insight: 'justice', resolve: 'responsibility', sympathy: 'labor', pressure: 'life' },
+      chatNpcs: [
+        { key: 'fulina', npcId: 'npc_zijin', name: '子衿', trustEvents: { connect: 'student_connects_cause', dilemma: 'student_connects_cause', demand: 'student_demands_answer' } },
+        { key: 'hutao', npcId: 'npc_luoshu', name: '洛书', trustEvents: { connect: 'student_faces_dilemma', dilemma: 'student_faces_dilemma', demand: 'student_cites_standard_answer' } },
+        { key: 'tom', npcId: 'npc_tom', name: '汤姆', trustEvents: { connect: 'treat_as_equal', dilemma: 'ask_about_sister', demand: 'bring_outside_news' } }
+      ],
       valueColors: { labor: '#E67E22', justice: '#9B59B6', responsibility: '#1ABC9C', life: '#E74C3C' },
       charConfig: {
-        fulina: { name: '子衿', color: '#6A5ACD', dir: 'fulina', defaultExpr: 'normal' },
-        hutao: { name: '洛书', color: '#DC143C', dir: 'hutao', defaultExpr: 'normal' },
-        watt: { name: '瓦特', color: '#4682B4', dir: 'npc', defaultExpr: 'watt', file: 'watt' },
-        hargreaves: { name: '哈格里夫斯', color: '#8B4513', dir: 'npc', defaultExpr: 'hargreaves', file: 'hargreaves' },
-        stephenson: { name: '史蒂芬孙', color: '#2F4F4F', dir: 'npc', defaultExpr: 'stephenson', file: 'stephenson' },
-        blake: { name: '工厂主布莱克', color: '#B8860B', dir: 'npc', defaultExpr: 'factory_owner', file: 'factory_owner' },
-        mary: { name: '纺织女工玛丽', color: '#DB7093', dir: 'npc', defaultExpr: 'worker', file: 'worker' },
-        tom: { name: '童工汤姆', color: '#87CEEB', dir: 'npc', defaultExpr: 'child_worker', file: 'child_worker' }
+        fulina: { name: '子衿', color: '#6A5ACD', src: 'images/characters/zijin', defaultExpr: 'normal' },
+        hutao: { name: '洛书', color: '#DC143C', src: 'images/characters/luoshu', defaultExpr: 'normal' },
+        watt: { name: '瓦特', color: '#4682B4', src: 'images/characters/npc', defaultExpr: 'watt' },
+        hargreaves: { name: '哈格里夫斯', color: '#8B4513', src: 'images/characters/npc', defaultExpr: 'hargreaves' },
+        stephenson: { name: '史蒂芬孙', color: '#2F4F4F', src: 'images/characters/npc', defaultExpr: 'stephenson' },
+        blake: { name: '工厂主布莱克', color: '#B8860B', src: 'images/characters/npc', defaultExpr: 'factory_owner' },
+        mary: { name: '纺织女工玛丽', color: '#DB7093', src: 'images/characters/npc', defaultExpr: 'worker' },
+        tom: { name: '童工汤姆', color: '#87CEEB', src: 'images/characters/npc', defaultExpr: 'child_worker' }
       },
       speakerNameToKey: {
         '子衿': 'fulina', '洛书': 'hutao',
@@ -1161,7 +1167,12 @@
 
 <!-- Game Engine -->
 <script src="assets/js/game-hooks.js?v=20260804"></script>
-<script src="engine.js?v=20260526e"></script>
+<script src="assets/js/api-client.js"></script>
+<script src="assets/js/identity-client.js"></script>
+<script src="assets/js/event-client.js"></script>
+<script src="assets/js/npc-chat-client.js"></script>
+<script src="assets/js/in-game-npc-chat.js"></script>
+<script src="engine.js?v=20261128a"></script>
 <script type="module" src="assets/js/npc-presence.js"></script>
 
 </body>

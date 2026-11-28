@@ -87,6 +87,8 @@
         "scriptId",
         "questionId",
         "choiceIndex",
+        "choiceText",
+        "correctText",
         "correct",
         "knowledgeId",
         "initiator"

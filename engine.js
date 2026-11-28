@@ -1412,13 +1412,15 @@ function renderQuizQuestion() {
     return;
   }
   const q = QUIZ_DATA[quizIndex];
+  // W03 随机化：结业测验选项每次展示洗牌，消除 ans 位置泄漏（判分跟随对象引用，见 selectAnswer）
+  window._currentQuizOptions = shuffleQuizOptions(q.opts);
   const dialogBox = document.querySelector('.dialog-box');
   dialogBox.innerHTML = `
     <div style="padding:16px;">
       <div style="font-size:12px;color:#8f909d;margin-bottom:8px;font-family:'Plus Jakarta Sans',sans-serif;">第 ${quizIndex + 1} / ${QUIZ_DATA.length} 题</div>
       <div style="font-size:16px;color:#dbe1ff;margin-bottom:16px;line-height:1.6;">${q.q}</div>
       <div style="display:flex;flex-direction:column;gap:8px;" id="quizOptions">
-        ${q.opts.map((opt, i) => `
+        ${window._currentQuizOptions.map((opt, i) => `
           <button onclick="selectAnswer(${i})" id="qopt${i}" style="text-align:left;padding:10px 16px;border-radius:8px;border:1px solid rgba(68,70,81,0.5);background:rgba(18,30,64,0.6);color:#c5c5d3;cursor:pointer;font-size:14px;transition:all 0.2s;">${opt}</button>
         `).join('')}
       </div>
@@ -1427,14 +1429,28 @@ function renderQuizQuestion() {
   `;
 }
 
+// W03: 结业测验洗牌复用 D1 Fisher-Yates 核心
+function shuffleQuizOptions(options, rng = Math.random) {
+  return shuffleEvidenceOptions(options, rng);
+}
+
+// W03: 判定某显示位选项是否为正确项——跟随对象引用而非显示索引
+function isQuizOptionCorrect(q, shuffled, displayIdx) {
+  return shuffled[displayIdx] === q.opts[q.ans];
+}
+
 function selectAnswer(idx) {
   const q = QUIZ_DATA[quizIndex];
-  const correct = idx === q.ans;
+  const shuffled = window._currentQuizOptions || q.opts;
+  const chosen = shuffled[idx];
+  const correct = isQuizOptionCorrect(q, shuffled, idx);
   if (correct) quizScore++;
 
   ttHook('quiz.answer', {
     questionId: q.id || ('q' + (quizIndex + 1)),
     choiceIndex: idx,
+    choiceText: String(chosen),
+    correctText: String(q.opts[q.ans]),
     correct: correct,
     knowledgeId: q.knowledgeId || ''
   });
@@ -1445,7 +1461,7 @@ function selectAnswer(idx) {
   if (!correct) {
     DataStore.saveWrongAnswer({
       question: q.q,
-      userAnswer: q.opts[idx],
+      userAnswer: chosen,
       correctAnswer: q.opts[q.ans],
       explanation: q.explain,
       subject: (GAME_CONFIG.title || '综合').replace('时空剧场 - ', ''),
@@ -1453,10 +1469,10 @@ function selectAnswer(idx) {
     });
   }
 
-  // Disable all buttons and show feedback
+  // Disable all buttons and show feedback（按洗牌后对象引用定位正确项）
   document.querySelectorAll('#quizOptions button').forEach((btn, i) => {
     btn.style.pointerEvents = 'none';
-    if (i === q.ans) {
+    if (isQuizOptionCorrect(q, shuffled, i)) {
       btn.style.background = 'rgba(34,197,94,0.2)';
       btn.style.borderColor = '#22c55e';
       btn.style.color = '#22c55e';

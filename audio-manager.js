@@ -9,6 +9,8 @@
     var _bgmVolume = 0.5;
     var _sfxVolume = 0.7;
     var _muted = false;
+    // 恢复上次会话的静音状态（刷新后保持）
+    try { _muted = localStorage.getItem('tt_audio_muted') === '1'; } catch(e) {}
     var _audioEnabled = false;
 
     // 尝试初始化 AudioContext（移动端需要用户交互后才能播放）
@@ -46,6 +48,7 @@
                 var audio = new Audio(src);
                 audio.loop = true;
                 audio.volume = _bgmVolume;
+                audio.muted = _muted;
                 audio.preload = 'auto';
 
                 // 淡入效果
@@ -104,6 +107,7 @@
                 var audio = new Audio(src);
                 audio.loop = true;
                 audio.volume = 0.25;  // 环境音效较低音量
+                audio.muted = _muted;
                 audio.play().catch(function(){});
                 _ambientAudio = audio;
                 console.log('[Audio] Playing ambient:', src);
@@ -127,6 +131,7 @@
         // 播放音效（单次）
         playSFX: function(src) {
             try {
+                if (_muted) return; // 静音时直接跳过音效
                 var audio = new Audio(src);
                 audio.volume = _sfxVolume;
                 audio.preload = 'auto';
@@ -163,12 +168,23 @@
             if (_bgmAudio) {
                 _bgmAudio.muted = _muted;
             }
+            if (_ambientAudio) {
+                _ambientAudio.muted = _muted;
+            }
+            try { localStorage.setItem('tt_audio_muted', _muted ? '1' : '0'); } catch(e) {}
             return _muted;
         },
 
         // 是否静音
         isMuted: function() {
             return _muted;
+        },
+
+        // 静音按钮 UI 辅助：切换并更新按钮文案（各剧本页控制栏调用）
+        toggleMuteUI: function(btn) {
+            var muted = this.toggleMute();
+            if (btn) btn.textContent = muted ? '🔇 静音' : '🔊 声音';
+            return muted;
         },
 
         // 预定义音频路径常量（新版MP3 BGM）

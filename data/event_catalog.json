@@ -45,7 +45,8 @@
         "choiceIndex",
         "choiceText",
         "actId",
-        "timed"
+        "timed",
+        "initiator"
       ]
     },
     {
@@ -55,7 +56,8 @@
         "scriptId",
         "nodeId",
         "evidenceId",
-        "evidenceTitle"
+        "evidenceTitle",
+        "initiator"
       ]
     },
     {
@@ -64,7 +66,8 @@
       "allowedPayloadKeys": [
         "scriptId",
         "knowledgeId",
-        "title"
+        "title",
+        "initiator"
       ]
     },
     {
@@ -73,7 +76,8 @@
       "allowedPayloadKeys": [
         "scriptId",
         "cardId",
-        "action"
+        "action",
+        "initiator"
       ]
     },
     {
@@ -84,7 +88,8 @@
         "questionId",
         "choiceIndex",
         "correct",
-        "knowledgeId"
+        "knowledgeId",
+        "initiator"
       ]
     },
     {
@@ -95,7 +100,8 @@
         "score",
         "total",
         "pct",
-        "learningTier"
+        "learningTier",
+        "initiator"
       ]
     },
     {
@@ -104,7 +110,8 @@
       "allowedPayloadKeys": [
         "scriptId",
         "endingType",
-        "learningTier"
+        "learningTier",
+        "initiator"
       ]
     },
     {
@@ -185,7 +192,8 @@
       "critical": false,
       "allowedPayloadKeys": [
         "scriptId",
-        "npcId"
+        "npcId",
+        "initiator"
       ]
     },
     {
@@ -213,7 +221,8 @@
       "critical": false,
       "allowedPayloadKeys": [
         "scriptId",
-        "npcId"
+        "npcId",
+        "initiator"
       ]
     },
     {
@@ -229,7 +238,8 @@
       "critical": false,
       "allowedPayloadKeys": [
         "scriptId",
-        "npcId"
+        "npcId",
+        "initiator"
       ]
     },
     {
@@ -239,7 +249,8 @@
         "scriptId",
         "npcId",
         "trust",
-        "tier"
+        "tier",
+        "initiator"
       ]
     },
     {

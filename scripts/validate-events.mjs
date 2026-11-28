@@ -79,4 +79,32 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log(`事件目录校验通过（engine.js 正式钩子 ${REQUIRED_ENGINE_HOOKS.length} 项齐全）`);
+// --- 探索类事件必须声明 initiator 字段（ENG-16 缺口 B：自主有效探索率的数据基础） ---
+const INITIATOR_REQUIRED = [
+  'script.choice',
+  'script.evidence_open',
+  'script.knowledge_open',
+  'script.card',
+  'quiz.answer',
+  'quiz.complete',
+  'script.ending',
+  'npc.message_sent',
+  'npc.free_input_submitted',
+  'npc.echo_referenced',
+  'npc.trust_level_changed'
+];
+const catalogForInitiator = JSON.parse(fs.readFileSync(target, 'utf8'));
+const initiatorMissing = [];
+for (const requiredName of INITIATOR_REQUIRED) {
+  const definition = (catalogForInitiator.events || []).find((event) => event.name === requiredName);
+  if (!definition || !(definition.allowedPayloadKeys || []).includes('initiator')) {
+    initiatorMissing.push(requiredName);
+  }
+}
+if (initiatorMissing.length) {
+  console.error('\n事件目录校验失败：探索类事件缺少 initiator 字段声明');
+  for (const name of initiatorMissing) console.error(`- ${name}`);
+  process.exit(1);
+}
+
+console.log(`事件目录校验通过（engine.js 正式钩子 ${REQUIRED_ENGINE_HOOKS.length} 项齐全，initiator 声明 ${INITIATOR_REQUIRED.length} 项齐全）`);

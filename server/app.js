@@ -8,6 +8,7 @@ import { id, publicId, token, sha256, hashPassword, verifyPassword, parseCookies
 import { generate as generateTeaching, supportedScript } from './services/ai-service.js';
 import { npcChat, generateEcho, factCheck } from './services/npc-chat-service.js';
 import { createSession, getSessionByCode, sessionView, updatePacing, recordTally, buildRoleCards, moderate } from './services/classroom-service.js';
+import { applyInitiator } from '../assets/js/event-initiator.js';
 
 const eventCatalogValue = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'data/event_catalog.json'), 'utf8'));
 const eventCatalog = new Map(eventCatalogValue.events.map((event) => [event.name, event]));
@@ -122,7 +123,8 @@ async function handleEvents(request, response, db) {
   try {
     for (const raw of events) {
       const name = cleanText(raw?.name, 80);
-      const payload = sanitizePayload(name, raw?.payload || {});
+      // ENG-16 缺口 B：入库前补默认 initiator，旧客户端版本上报的事件同样可算自主探索率
+      const payload = sanitizePayload(name, applyInitiator(name, raw?.payload || {}));
       if (!payload) { results.push({ eventId: raw?.eventId || null, accepted: false, code: 'EVENT_NOT_ALLOWED' }); continue; }
       const eventId = cleanText(raw.eventId, 100) || id('evt_');
       const actorId = cleanText(raw.anonymousId, 100) || null;

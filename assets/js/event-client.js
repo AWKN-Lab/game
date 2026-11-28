@@ -14,20 +14,28 @@
     'script.open': ['scriptId', 'source'],
     'script.start': ['scriptId', 'mode'],
     'script.act_enter': ['scriptId', 'actId', 'actTitle'],
-    'script.choice': ['scriptId', 'nodeId', 'choiceIndex', 'choiceText', 'actId', 'timed'],
-    'script.evidence_open': ['scriptId', 'nodeId', 'evidenceId', 'evidenceTitle'],
-    'script.knowledge_open': ['scriptId', 'knowledgeId', 'title'],
-    'script.card': ['scriptId', 'cardId', 'action'],
-    'quiz.answer': ['scriptId', 'questionId', 'choiceIndex', 'correct', 'knowledgeId'],
-    'quiz.complete': ['scriptId', 'score', 'total', 'pct', 'learningTier'],
-    'script.ending': ['scriptId', 'endingType', 'learningTier'],
+    'script.choice': ['scriptId', 'nodeId', 'choiceIndex', 'choiceText', 'actId', 'timed', 'initiator'],
+    'script.evidence_open': ['scriptId', 'nodeId', 'evidenceId', 'evidenceTitle', 'initiator'],
+    'script.knowledge_open': ['scriptId', 'knowledgeId', 'title', 'initiator'],
+    'script.card': ['scriptId', 'cardId', 'action', 'initiator'],
+    'quiz.answer': ['scriptId', 'questionId', 'choiceIndex', 'correct', 'knowledgeId', 'initiator'],
+    'quiz.complete': ['scriptId', 'score', 'total', 'pct', 'learningTier', 'initiator'],
+    'script.ending': ['scriptId', 'endingType', 'learningTier', 'initiator'],
     'lesson_plan.request': ['scriptId', 'duration', 'studentLevel', 'usageMode'],
     'lesson_plan.generated': ['scriptId', 'mode', 'durationMs', 'success'],
     'learning_review.request': ['scriptId', 'quizPct', 'completed'],
     'learning_review.generated': ['scriptId', 'mode', 'durationMs', 'success'],
     'feedback.submitted': ['category', 'contextType', 'scriptId'],
     'wish.submitted': ['wishType', 'scriptId', 'grade'],
-    'wish.voted': ['wishId', 'active']
+    'wish.voted': ['wishId', 'active'],
+    'npc.dialogue_started': ['scriptId', 'npcId'],
+    'npc.message_sent': ['scriptId', 'npcId', 'initiator'],
+    'npc.reply_generated': ['scriptId', 'npcId', 'mode', 'durationMs', 'retried'],
+    'npc.reply_rule_fallback': ['scriptId', 'npcId', 'fallbackReason'],
+    'npc.free_input_submitted': ['scriptId', 'npcId', 'initiator'],
+    'npc.fact_check_flagged': ['scriptId', 'npcId'],
+    'npc.echo_referenced': ['scriptId', 'npcId', 'initiator'],
+    'npc.trust_level_changed': ['scriptId', 'npcId', 'trust', 'tier', 'initiator']
   };
 
   function uuid() {
@@ -116,6 +124,10 @@
   function track(name, payload) {
     if (!catalog[name]) return false;
     if (global.TTIdentity && !global.TTIdentity.isTrackingEnabled()) return false;
+    // ENG-16 缺口 B：探索类事件补默认 initiator（player=自主发起 / script=剧情强制），调用方显式传值优先
+    if (global.TTEventInitiator && typeof global.TTEventInitiator.applyInitiator === 'function') {
+      payload = global.TTEventInitiator.applyInitiator(name, payload);
+    }
     var event = createEvent(name, payload);
     if (!event.payload) return false;
     var queue = readQueue();

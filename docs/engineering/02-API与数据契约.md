@@ -1,5 +1,9 @@
 # ENG-02｜API 与数据契约
 
+## V2.1 增量 API 契约（拟议，未实现）
+
+[ENG-13 §2](./13-历史探究实验与数据验收契约.md#2-运行身份与事件契约) 定义 attemptId、contentVersion、questionId、optionId 与版本兼容；现有 `/api/v1/events/batch` 保留，客户端、服务端白名单及校验同步。字段缺失的旧事件进入 legacy 统计；不伪造 ID。合成账号端到端验证后才可标记实现。
+
 > 状态：已确认  
 > 版本：V1.0  
 > Base URL：`/api/v1`  

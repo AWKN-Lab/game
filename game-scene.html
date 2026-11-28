@@ -245,7 +245,7 @@
     // ========== 法国大革命 - 剧本数据 ==========
     const DIALOG_SCRIPT = [
       // ===== 开场：法庭传唤 =====
-      { speaker: "旁白", text: "1789年，法兰西。一场革命即将改变整个欧洲的命运。", scene: "引渡·法国大革命", bg: "images/bg/opera_house.jpg" },
+      { speaker: "旁白", text: "1789年，法兰西。一场革命即将改变整个欧洲的命运。", scene: "引渡·法国大革命", bg: "images/bg/opera_house.webp" },
       { speaker: "旁白", text: "被告：路易十六、罗伯斯庇尔、拿破仑——以及'革命'本身。" },
       { speaker: "旁白", text: "你是陪审团。你的每一次选择，都是一次判决。" },
       { speaker: "旁白", text: "你放下笔。练习册上的'自由、平等、法治'，你已经能背出定义。", scene: "引渡·法国大革命" },
@@ -253,7 +253,7 @@
 
       // ===== 第一幕：三级会议的阴影 =====
       { type: "act_transition", actTitle: "第一程", actSubtitle: "三级会议的阴影" },
-      { speaker: null, text: "1789年5月，凡尔赛宫。法国国王路易十六被迫召开了中断了175年的三级会议。", scene: "第一幕 · 凡尔赛宫", bg: "images/bg/versailles_hall.jpg" },
+      { speaker: null, text: "1789年5月，凡尔赛宫。法国国王路易十六被迫召开了中断了175年的三级会议。", scene: "第一幕 · 凡尔赛宫", bg: "images/bg/versailles_hall.webp" },
       {
         type: "evidence",
         items: [
@@ -315,7 +315,7 @@
 
       // ===== 第二幕：攻占巴士底狱 =====
       { type: "act_transition", actTitle: "第二程", actSubtitle: "攻占巴士底狱" },
-      { speaker: null, text: "1789年7月14日，巴黎。愤怒的市民向巴士底狱发起了进攻……", scene: "第二幕 · 巴士底狱", bg: "images/bg/bastille.jpg" },
+      { speaker: null, text: "1789年7月14日，巴黎。愤怒的市民向巴士底狱发起了进攻……", scene: "第二幕 · 巴士底狱", bg: "images/bg/bastille.webp" },
       { speaker: null, text: "巴士底狱前，愤怒的市民越聚越多。有人举着火把，有人拿着铁棍。一个老人站在人群最前面，眼里满是泪水。" },
       { speaker: null, text: "「我儿子就死在这座监狱里！二十年了，我连他埋在哪里都不知道！」" },
       {
@@ -362,7 +362,7 @@
 
       // ===== 第三幕：《人权宣言》的光辉 =====
       { type: "act_transition", actTitle: "第三程", actSubtitle: "《人权宣言》的光辉" },
-      { speaker: null, text: "1789年8月，国民议会通过了《人权宣言》。", scene: "第三幕 · 国民议会", bg: "images/bg/national_assembly.jpg" },
+      { speaker: null, text: "1789年8月，国民议会通过了《人权宣言》。", scene: "第三幕 · 国民议会", bg: "images/bg/national_assembly.webp" },
       { speaker: "robespierre", text: "现在，我们要制定一部伟大的宣言，向全世界宣告人类的权利！", scene: "第三幕 · 国民议会", charLeft: "robespierre" },
       { speaker: "robespierre", text: "《人权宣言》第一条：在权利方面，人们生来是而且始终是自由平等的。" },
       { speaker: "robespierre", text: "《人权宣言》第二条：任何政治结合的目的都在于保存人的自然的和不可动摇的权利。这些权利就是自由、财产、安全和反抗压迫。" },
@@ -419,15 +419,15 @@
       { type: "knowledge", id: "k_freedom_law", name: "⚖️ 自由与法律的边界", desc: "自由就像风筝——飞得再高，也需要一根线牵着。这根线就是法律。没有法律约束的自由，就像脱线的风筝，最终会坠落。", category: "自由" },
       { type: "knowledge", id: "k_equality", name: "🤝 平等的真正含义", desc: "平等不是让所有人都一样高，而是让所有人站在同一个起跑线上。就像跑步比赛——有人跑得快，有人跑得慢，但起点必须相同。", category: "平等" },
       { type: "card_choice", prompt: "这句话已经写进宣言，但你更愿意向世界强调哪一面？", cards: [
-        { id: "freedom", name: "自由卡", desc: "自由是人的天赋权利", img: "images/cards/card_freedom.jpg", effect: { freedom: 15 }, recommend: false, hint: "提升自由值+15",
+        { id: "freedom", name: "自由卡", desc: "自由是人的天赋权利", img: "images/cards/card_freedom.webp", effect: { freedom: 15 }, recommend: false, hint: "提升自由值+15",
           quote: "我想争取自由，但我也知道自由必须有边界。",
           Feedback: "最遗憾的不是没有自由，而是从来没有被允许自由地活过一天。"
         },
-        { id: "equality", name: "平等卡", desc: "法律面前人人平等", img: "images/cards/card_equality.jpg", effect: { equality: 15 }, recommend: false, hint: "提升平等值+15",
+        { id: "equality", name: "平等卡", desc: "法律面前人人平等", img: "images/cards/card_equality.webp", effect: { equality: 15 }, recommend: false, hint: "提升平等值+15",
           quote: "身份不应成为特权，法律之前不该有贵贱之分。",
           Feedback: "平等不是让所有人都一样，而是让每个人都有一样的机会去成为自己。"
         },
-        { id: "human_rights", name: "人权宣言卡", desc: "人人生而自由，在尊严和权利上一律平等", img: "images/cards/card_human_rights.jpg", effect: { justice: 20 }, recommend: true, hint: "⭐推荐！提升正义值+20，更契合《人权宣言》精神",
+        { id: "human_rights", name: "人权宣言卡", desc: "人人生而自由，在尊严和权利上一律平等", img: "images/cards/card_human_rights.webp", effect: { justice: 20 }, recommend: true, hint: "⭐推荐！提升正义值+20，更契合《人权宣言》精神",
           quote: "权利不是恩赐，而是每个人生来就该拥有的东西。",
           Feedback: "至少现在，普通人终于有话语能保护自己了。哪怕只是一张纸，也是一道光。"
         }
@@ -454,9 +454,9 @@
 
       // ===== 第四幕：共和国的诞生与恐怖 =====
       { type: "act_transition", actTitle: "第四程", actSubtitle: "共和国的诞生与恐怖" },
-      { speaker: null, text: "1792年，法兰西第一共和国成立。革命的浪潮越来越激进……", scene: "第四幕 · 共和国", bg: "images/bg/palace_square.jpg" },
+      { speaker: null, text: "1792年，法兰西第一共和国成立。革命的浪潮越来越激进……", scene: "第四幕 · 共和国", bg: "images/bg/palace_square.webp" },
       { speaker: "robespierre", text: "路易十六勾结外国势力，企图复辟！1792年，法兰西第一共和国成立了！", scene: "第四幕 · 共和国", charLeft: "robespierre", charRight: "peasant" },
-      { speaker: null, text: "1793年1月21日，路易十六被送上了断头台……", scene: "第四幕 · 断头台", bg: "images/bg/execution.jpg" },
+      { speaker: null, text: "1793年1月21日，路易十六被送上了断头台……", scene: "第四幕 · 断头台", bg: "images/bg/execution.webp" },
       {
         type: "pressure_choice", timeout: 6, defaultChoice: 3,
         urgentText: "刑车已经出现，人群开始推搡。艾莉丝快被挤倒了！",
@@ -472,7 +472,7 @@
       { type: "knowledge", id: "k_louis_death", name: "👑 路易十六被处死", desc: "1793年1月21日，路易十六被送上断头台，标志着法国封建君主制的终结。他是第一个被以「法律名义」处死的欧洲国王，震惊了整个欧洲王室。这一事件也开启了恐怖统治的序幕。", category: "历史" },
       { type: "collectible", name: "路易十六的证词" },
       { speaker: "marie", text: "我从未说过「让他们吃蛋糕」。但就算我说了...那是因为我真的不懂饥饿是什么感觉。这是我的罪。", scene: "第四幕 · 断头台", charLeft: "marie" },
-      { speaker: "robespierre", text: "现在，我们要实行恐怖统治，严厉镇压所有反革命分子！", scene: "第四幕 · 恐怖统治", bg: "images/bg/national_assembly.jpg", charLeft: "robespierre" },
+      { speaker: "robespierre", text: "现在，我们要实行恐怖统治，严厉镇压所有反革命分子！", scene: "第四幕 · 恐怖统治", bg: "images/bg/national_assembly.webp", charLeft: "robespierre" },
       { type: "knowledge", id: "k_terror_rule", name: "💀 恐怖统治的教训", desc: "1793-1794年，罗伯斯庇尔领导的雅各宾派实行恐怖统治，以「保卫革命」为名大规模处决「嫌疑人」。巴黎革命法庭判处约1376人死刑，其中仅14%有确凿叛国证据。这段历史深刻警示：不受制约的权力，无论打着什么旗号，最终都会走向暴政。", category: "正义" },
       {
         type: "evidence",
@@ -530,7 +530,7 @@
 
       // ===== 第五幕：拿破仑的传奇 =====
       { type: "act_transition", actTitle: "第五程", actSubtitle: "拿破仑的传奇" },
-      { speaker: null, text: "1799年，拿破仑·波拿巴发动雾月政变，夺取了法国政权。", scene: "第五幕 · 拿破仑", bg: "images/bg/arc_de_triomphe.jpg" },
+      { speaker: null, text: "1799年，拿破仑·波拿巴发动雾月政变，夺取了法国政权。", scene: "第五幕 · 拿破仑", bg: "images/bg/arc_de_triomphe.webp" },
       { type: "knowledge", id: "k_brumaire", name: "⚔️ 雾月政变", desc: "1799年11月9日（雾月18日），拿破仑·波拿巴发动政变，推翻督政府，建立执政府，自任第一执政。这标志着法国从共和制向军事独裁的转变，也开启了拿破仑时代。政变说明：在动荡时期，强人往往能利用人们对「秩序」的渴望夺取权力。", category: "历史" },
       { speaker: "napoleon", text: "混乱结束了。法国需要秩序，需要法律，需要一个强有力的领导人。", scene: "第五幕 · 拿破仑", charLeft: "napoleon" },
       { speaker: "napoleon", text: "（独白）他们说我是暴君。可我给了法国秩序，给了欧洲法典。没有我，法国会怎样？大革命喊了十年自由平等，可自由平等喂不饱一个面包师的孩子。" },
@@ -593,7 +593,7 @@
           { text: "反思更深层的问题——「进步」是否有权以「牺牲」为代价？", effects: { freedom: 10, justice: 15 } }
         ]
       },
-      { speaker: null, text: "1815年，滑铁卢。拿破仑的帝国梦碎了。", scene: "第五幕 · 滑铁卢", bg: "images/bg/waterloo.jpg" },
+      { speaker: null, text: "1815年，滑铁卢。拿破仑的帝国梦碎了。", scene: "第五幕 · 滑铁卢", bg: "images/bg/waterloo.webp" },
       { type: "knowledge", id: "k_waterloo", name: "⚔️ 滑铁卢战役", desc: "1815年6月18日，拿破仑在比利时滑铁卢被反法联军击败，标志着拿破仑帝国的终结和法国大革命时代的结束。这场战役后，欧洲进入「维也纳体系」时期，封建势力短暂复辟。但大革命播下的自由民主种子已不可逆转。", category: "历史" },
       { speaker: "napoleon", text: "滑铁卢……我失败了。我用剑征服了欧洲，却无法征服时间。但我的法典，至今仍在守护着公平与正义。" },
       { type: "collectible", name: "拿破仑的证词" },

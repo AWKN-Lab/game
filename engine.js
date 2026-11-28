@@ -176,6 +176,8 @@ function saveProgressWithPresence() {
     npcFate: JSON.parse(JSON.stringify(npcFate)),
     choicesByAct: { ...choicesByAct },
     npcTrust: { ...npcTrust },
+    simulatedConsequences: [...simulatedConsequences],
+    npcEmotion: { ...npcEmotionState },
     currentAct: ''
   });
 }
@@ -475,7 +477,22 @@ function exportLearningSummary() {
     lines.push('</ul>');
   }
 
-  lines.push('<h2>四、知识测试</h2>');
+  lines.push('<h2>四、模拟后果（仅改变你的状态，不改史实）</h2>');
+  if (!simulatedConsequences.length) {
+    lines.push('<p>本机暂无由对话产生的模拟后果。</p>');
+  } else {
+    lines.push('<p style="color:#666">以下条目是<b>模拟</b>结果，用于复盘你的推理过程，不构成历史事实。</p>');
+    lines.push('<ul>');
+    simulatedConsequences.forEach(function (item) {
+      var npcName = (GAME_CONFIG.echoNpcNames || {})[item.npcId] || item.npcId;
+      lines.push('<li><strong>' + escapeHtmlText(npcName) + '</strong> · ' + escapeHtmlText(item.label)
+        + ' → ' + escapeHtmlText((GAME_CONFIG.valueLabels || {})[item.dim] || item.dim)
+        + ' ' + (item.delta > 0 ? '+' : '') + item.delta + '</li>');
+    });
+    lines.push('</ul>');
+  }
+
+  lines.push('<h2>五、知识测试</h2>');
   if (quizScore > 0) {
     lines.push('<p>测试得分：' + quizScore + ' 分。</p>');
   } else {
@@ -496,7 +513,7 @@ function escapeHtmlText(s) {
 // 立绘显示辅助（兼容 wrapper 结构和直接 img 结构）
 // ============================================================
 // 资源候选：优先 png，其次 jpg / webp；同一角色可能只有其中一种格式
-var CHAR_EXT_CANDIDATES = ['.png', '.jpg', '.jpeg', '.webp'];
+var CHAR_EXT_CANDIDATES = ['.webp', '.png', '.jpg', '.jpeg'];
 // 表情差分缺失时的兜底映射（部分角色没有准备全部表情）
 var CHAR_EXPR_FALLBACK = {
   sad: 'serious',
@@ -572,6 +589,8 @@ let gameValues = { ...GAME_CONFIG.values };
 let valueLabels = { ...GAME_CONFIG.valueLabels };
 let collectedItems = [];  // 收集品追踪
 let collectedKnowledge = [];  // 知识点碎片追踪
+let simulatedConsequences = [];  // 模拟后果台账（与史实严格分栏，不作为史实依据）
+let npcEmotionState = {};  // NPC 当前情绪
 let wrongChoices = [];  // 选错记录（用于论述题复习卡）
 let quizScore = 0;        // 知识测试得分
 let lastChoiceIndex = -1; // 记录玩家上次选择的选项索引
@@ -601,12 +620,14 @@ function initGameHUD() {
     if (savedProgress.npcFate) npcFate = savedProgress.npcFate;
     if (savedProgress.choicesByAct) choicesByAct = savedProgress.choicesByAct;
     if (savedProgress.npcTrust) npcTrust = savedProgress.npcTrust;
+    if (savedProgress.simulatedConsequences) simulatedConsequences = savedProgress.simulatedConsequences;
+    if (savedProgress.npcEmotion) npcEmotionState = savedProgress.npcEmotion;
   } else {
     dialogIndex = 0;
     gameValues = { ...GAME_CONFIG.values };
   }
   valueLabels = { ...GAME_CONFIG.valueLabels };
-  document.getElementById('gameScene').style.backgroundImage = "url('images/bg/opera_house.jpg')";
+  document.getElementById('gameScene').style.backgroundImage = "url('images/bg/opera_house.webp')";
   renderValueHUD();
   // 音频偏好与顶部控制条（静音 / 音量 / 语音 / 积分段位）
   applyAudioPrefs(loadAudioPrefs());
@@ -656,7 +677,8 @@ function showValueFloat(dim, delta) {
   var hud = document.getElementById('valueHud');
   var label = (GAME_CONFIG.valueLabels || {})[dim] || dim;
   var float = document.createElement('div');
-  float.textContent = label + ' ' + (delta > 0 ? '+' : '') + delta;
+  // 明确标注这是"模拟后果"，避免与史实混淆
+  float.textContent = '模拟·' + label + ' ' + (delta > 0 ? '+' : '') + delta;
   float.style.cssText = 'position:fixed;z-index:2100;color:' + (delta > 0 ? '#7ee787' : '#ff9a9a')
     + ';font-size:16px;font-weight:bold;text-shadow:0 2px 8px rgba(0,0,0,0.6);pointer-events:none'
     + ';transition:transform 1.1s ease-out,opacity 1.1s ease-out';
@@ -686,6 +708,7 @@ function applyNpcTrust(npcId, trust, tier, meta) {
 // 情绪可视化：切立绘表情
 function applyNpcEmotion(npcId, emotion, meta) {
   if (!emotion) return;
+  npcEmotionState[npcId] = emotion;
   var key = meta && meta.key;
   var cfg = key && GAME_CONFIG.charConfig ? GAME_CONFIG.charConfig[key] : null;
   if (!cfg) return;
@@ -694,7 +717,7 @@ function applyNpcEmotion(npcId, emotion, meta) {
   else if (currentCharKeys.right === key) side = 'right';
   if (!side) return;
   setCharSrc(side, cfg, emotionToExpressionLocal(emotion));
-  ttHook('npc.emotion_changed', { scriptId: GAME_CONFIG.scriptId, npcId: npcId, emotion: emotion });
+  ttHook('npc.emotion_changed', { scriptId: GAME_CONFIG.scriptId, npcId: npcId, emotion: emotion, kind: 'simulated' });
 }
 
 // AI 后果落到四维数值：轴 → 剧本维度映射由 GAME_CONFIG.consequenceAxes 决定
@@ -711,10 +734,21 @@ function applyNpcConsequence(npcId, consequence, meta) {
     updateValue(dim, delta);
     showValueFloat(dim, delta);
     changed.push((CONSEQUENCE_AXIS_LABELS[axis] || axis) + ' ' + (delta > 0 ? '+' : '') + delta);
-    ttHook('npc.consequence_applied', { scriptId: GAME_CONFIG.scriptId, npcId: npcId, axis: axis, delta: delta });
+    // 模拟后果台账：与史实分栏保存，便于复盘时区分「历史发生了什么」与「你改变了什么」
+    simulatedConsequences.push({
+      npcId: npcId,
+      axis: axis,
+      label: CONSEQUENCE_AXIS_LABELS[axis] || axis,
+      dim: dim,
+      delta: delta,
+      kind: 'simulated',
+      at: new Date().toISOString()
+    });
+    ttHook('npc.consequence_applied', { scriptId: GAME_CONFIG.scriptId, npcId: npcId, axis: axis, delta: delta, kind: 'simulated' });
   }
   if (changed.length) {
-    showTrustNarrativeToast('这番话带来的变化：' + changed.join(' / '));
+    saveProgressWithPresence();
+    showTrustNarrativeToast('模拟后果（仅改变你的状态，不改史实）：' + changed.join(' / '));
   }
 }
 
@@ -914,7 +948,7 @@ function updateValue(key, amount) {
     gameValues[key] = Math.max(0, Math.min(100, gameValues[key] + amount));
   }
   renderValueHUD();
-  DataStore.saveProgress({ scriptId: GAME_CONFIG.scriptId, dialogIndex, gameValues: {...gameValues}, collectedItems: [...collectedItems], currentAct: '' });
+  DataStore.saveProgress({ scriptId: GAME_CONFIG.scriptId, dialogIndex, gameValues: {...gameValues}, collectedItems: [...collectedItems], simulatedConsequences: [...simulatedConsequences], npcEmotion: { ...npcEmotionState }, currentAct: '' });
   // 数值变化音效
   if (typeof AudioManager !== 'undefined') {
     AudioManager.playSFX(amount > 0 ? AudioManager.SFX.VALUE_UP : AudioManager.SFX.VALUE_DOWN);
@@ -1213,33 +1247,33 @@ function showActTransition(title, subtitle, hookText) {
 // ============================================================
 // 收集品名称 → 美术资源映射（images/collectibles/）
 var COLLECTIBLE_IMAGE_MAP = {
-  '兴中会火种': 'fragment_spark_1.jpg',
-  '同盟会火种': 'fragment_spark_2.jpg',
-  '武昌起义火种': 'fragment_spark_3.jpg',
-  '清帝退位火种': 'fragment_spark_4.jpg',
-  '临时约法火种': 'fragment_spark_5.jpg',
-  '革命遗憾火种': 'fragment_spark_6.jpg',
-  '武昌起义的子弹壳': 'fragment_spark_6.jpg',
-  '公车上书残卷': 'fragment_scroll_1.jpg',
-  '光绪帝密诏（残）': 'fragment_scroll_2.jpg',
-  '谭嗣同绝笔': 'fragment_scroll_3.jpg',
-  '谭嗣同的血衣': 'fragment_diary_5.jpg',
-  '变法诏令残篇': 'fragment_scroll_4.jpg',
-  '玛丽阿姨的手摇纺车日记': 'fragment_diary_1.jpg',
-  '莉莉的工厂日记': 'fragment_diary_2.jpg',
-  '汤米的童工日记': 'fragment_diary_3.jpg',
-  '瓦特的晚年反思': 'fragment_diary_4.jpg',
-  '被拆迁村民的请愿书': 'fragment_scroll_1.jpg',
-  '《常识》节选': 'fragment_liberty_1.jpg',
-  '《独立宣言》手稿': 'fragment_liberty_2.jpg',
-  '士兵家书': 'fragment_liberty_3.jpg',
-  '《1787年宪法》草案': 'fragment_liberty_4.jpg',
-  '杰斐逊被删改的手稿': 'fragment_liberty_2.jpg',
-  '巴士底狱无名囚犯的证词': 'fragment_bastille_soul.jpg',
-  '路易十六的证词': 'fragment_louis_soul.jpg',
-  '无辜市民的亡魂碎片': 'fragment_innocent_soul_1.jpg',
-  '罗伯斯庇尔的证词': 'fragment_robespierre_soul.jpg',
-  '拿破仑的证词': 'fragment_napoleon_soul.jpg',
+  '兴中会火种': 'fragment_spark_1.webp',
+  '同盟会火种': 'fragment_spark_2.webp',
+  '武昌起义火种': 'fragment_spark_3.webp',
+  '清帝退位火种': 'fragment_spark_4.webp',
+  '临时约法火种': 'fragment_spark_5.webp',
+  '革命遗憾火种': 'fragment_spark_6.webp',
+  '武昌起义的子弹壳': 'fragment_spark_6.webp',
+  '公车上书残卷': 'fragment_scroll_1.webp',
+  '光绪帝密诏（残）': 'fragment_scroll_2.webp',
+  '谭嗣同绝笔': 'fragment_scroll_3.webp',
+  '谭嗣同的血衣': 'fragment_diary_5.webp',
+  '变法诏令残篇': 'fragment_scroll_4.webp',
+  '玛丽阿姨的手摇纺车日记': 'fragment_diary_1.webp',
+  '莉莉的工厂日记': 'fragment_diary_2.webp',
+  '汤米的童工日记': 'fragment_diary_3.webp',
+  '瓦特的晚年反思': 'fragment_diary_4.webp',
+  '被拆迁村民的请愿书': 'fragment_scroll_1.webp',
+  '《常识》节选': 'fragment_liberty_1.webp',
+  '《独立宣言》手稿': 'fragment_liberty_2.webp',
+  '士兵家书': 'fragment_liberty_3.webp',
+  '《1787年宪法》草案': 'fragment_liberty_4.webp',
+  '杰斐逊被删改的手稿': 'fragment_liberty_2.webp',
+  '巴士底狱无名囚犯的证词': 'fragment_bastille_soul.webp',
+  '路易十六的证词': 'fragment_louis_soul.webp',
+  '无辜市民的亡魂碎片': 'fragment_innocent_soul_1.webp',
+  '罗伯斯庇尔的证词': 'fragment_robespierre_soul.webp',
+  '拿破仑的证词': 'fragment_napoleon_soul.webp',
 };
 
 function collectibleImagePath(name) {
@@ -1252,7 +1286,7 @@ function showCollectibleNotification(name, desc) {
   if (typeof VoiceManager !== 'undefined') VoiceManager.stop();
   var isNew = !collectedItems.includes(name);
   if (isNew) collectedItems.push(name);
-  DataStore.saveProgress({ scriptId: GAME_CONFIG.scriptId, dialogIndex, gameValues: {...gameValues}, collectedItems: [...collectedItems], currentAct: '' });
+  DataStore.saveProgress({ scriptId: GAME_CONFIG.scriptId, dialogIndex, gameValues: {...gameValues}, collectedItems: [...collectedItems], simulatedConsequences: [...simulatedConsequences], npcEmotion: { ...npcEmotionState }, currentAct: '' });
   // 收集品音效
   if (typeof AudioManager !== 'undefined') {
     AudioManager.playSFX(AudioManager.SFX.COLLECTIBLE);
@@ -1480,15 +1514,15 @@ function showEnding() {
   if (allCollected && afterlifeValue >= GAME_CONFIG.endingConditions.afterlifeMinValue) {
     endingType = 'afterlife';
     endingDialog = afterlifeDialog;
-    endBg = 'images/bg/ending_afterlife.jpg';
+    endBg = 'images/bg/ending_afterlife.webp';
   } else if (highCount >= GAME_CONFIG.endingConditions.dramaticMinHighCount) {
     endingType = 'dramatic';
     endingDialog = dramaticDialog;
-    endBg = 'images/bg/ending_dramatic.jpg';
+    endBg = 'images/bg/ending_dramatic.webp';
   } else {
     endingType = 'historical';
     endingDialog = null;
-    endBg = 'images/bg/ending_historical.jpg';
+    endBg = 'images/bg/ending_historical.webp';
   }
 
   window._ttEndingType = endingType;
@@ -2115,7 +2149,7 @@ function openCardModal() {
     item.style.cursor = isUsed ? 'pointer' : 'default';
     item.innerHTML = `
       <div style="margin-bottom:10px;position:relative">
-        <img src="images/cards/card_${id}.jpg" style="width:80px;height:110px;object-fit:cover;border-radius:6px;${isUsed ? '' : 'filter:grayscale(100%)'}">
+        <img src="images/cards/card_${id}.webp" style="width:80px;height:110px;object-fit:cover;border-radius:6px;${isUsed ? '' : 'filter:grayscale(100%)'}">
         ${isUsed ? '<div style="position:absolute;top:-4px;right:-4px;background:#22c55e;color:#fff;font-size:10px;font-weight:bold;padding:1px 6px;border-radius:8px">已获取</div>' : ''}
       </div>
       <div class="card-name" style="${isUsed ? '' : 'color:#666'}">${card.name}</div>
@@ -2138,7 +2172,7 @@ function showCardDetail(cardId) {
   if (!el) return;
   el.innerHTML = `
     <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border:2px solid #6366f1;border-radius:16px;padding:24px;max-width:400px;text-align:center">
-      <div style="margin-bottom:12px"><img src="images/cards/card_${cardId}.jpg" style="width:120px;height:168px;object-fit:cover;border-radius:10px;box-shadow:0 4px 16px rgba(99,102,241,0.3)"></div>
+      <div style="margin-bottom:12px"><img src="images/cards/card_${cardId}.webp" style="width:120px;height:168px;object-fit:cover;border-radius:10px;box-shadow:0 4px 16px rgba(99,102,241,0.3)"></div>
       <div style="font-size:18px;color:#fff;font-weight:bold;margin-bottom:8px">${card.name}</div>
       <div style="font-size:14px;color:#c5c5d3;line-height:1.7;margin-bottom:16px">${card.description}</div>
       <div style="font-size:13px;color:#d4a574;margin-bottom:16px">📖 ${card.knowledge}</div>
@@ -2221,7 +2255,7 @@ function chooseCard(idx) {
     for (const [key, val] of Object.entries(card.effect)) {
         updateValue(key, val);
     }
-    DataStore.saveProgress({ scriptId: GAME_CONFIG.scriptId, dialogIndex, gameValues: {...gameValues}, collectedItems: [...collectedItems], currentAct: '' });
+    DataStore.saveProgress({ scriptId: GAME_CONFIG.scriptId, dialogIndex, gameValues: {...gameValues}, collectedItems: [...collectedItems], simulatedConsequences: [...simulatedConsequences], npcEmotion: { ...npcEmotionState }, currentAct: '' });
     document.getElementById('choicePanel').style.display = 'none';
 
     // 如果卡牌有立场台词和 NPC 反馈，显示立场表态动画

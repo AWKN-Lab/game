@@ -1,14 +1,36 @@
 {
   "version": 1,
   "updatedAt": "2026-11-28",
-  "note": "AI 对话的结构化后果词表。服务端与浏览器共用；剧本通过 GAME_CONFIG.consequenceAxes 把轴映射到自己的数值维度。",
+  "note": "AI 对话的结构化后果词表。后果属于\"模拟后果\"（simulated），与史实严格分栏：任何 consequence 只描述学生自身状态的变化，不得作为史实依据。",
+  "kind": "simulated",
+  "factsLabel": "史实",
+  "simulationLabel": "模拟后果",
   "axes": {
-    "insight": { "label": "洞察", "hint": "学生把因果想得更清楚" },
-    "resolve": { "label": "决心", "hint": "学生更愿意承担选择的后果" },
-    "sympathy": { "label": "共情", "hint": "学生更理解他人的处境" },
-    "pressure": { "label": "压力", "hint": "局势对学生形成压迫" }
+    "insight": {
+      "label": "洞察",
+      "hint": "学生把因果想得更清楚"
+    },
+    "resolve": {
+      "label": "决心",
+      "hint": "学生更愿意承担选择的后果"
+    },
+    "sympathy": {
+      "label": "共情",
+      "hint": "学生更理解他人的处境"
+    },
+    "pressure": {
+      "label": "压力",
+      "hint": "局势对学生形成压迫"
+    }
   },
-  "emotions": ["calm", "serious", "excited", "thinking", "sad", "hopeful"],
+  "emotions": [
+    "calm",
+    "serious",
+    "excited",
+    "thinking",
+    "sad",
+    "hopeful"
+  ],
   "maxAxes": 3,
   "maxDelta": 3,
   "minDelta": -3

@@ -8,7 +8,7 @@ window.SCRIPT_REGISTRY = {
     subtitle: '自由、平等、博爱——革命的代价与启示',
     era: '1789-1799', difficulty: '★★★★☆',
     collectibles: 5, knowledgePoints: 16,
-    bgImage: 'images/bg/french_revolution_card.jpg',
+    bgImage: 'images/bg/french_revolution_card.webp',
     facts: [
       '7月14日是法国的国庆日，纪念1789年攻占巴士底狱。',
       '法国大革命中，国民议会通过了《人权宣言》，宣告了人权、自由、平等的原则。',
@@ -22,7 +22,7 @@ window.SCRIPT_REGISTRY = {
     subtitle: '自由星火——从抗争到建国',
     era: '1775-1783', difficulty: '★★★☆☆',
     collectibles: 5, knowledgePoints: 10,
-    bgImage: 'images/bg/independence_hall.jpg',
+    bgImage: 'images/bg/independence_hall.webp',
     facts: [
       '1773年波士顿倾茶事件是美国独立战争的导火线。',
       '1776年7月4日《独立宣言》发表，宣告美利坚合众国诞生。',
@@ -36,7 +36,7 @@ window.SCRIPT_REGISTRY = {
     subtitle: '机器轰鸣下的进步与代价',
     era: '1760-1840', difficulty: '★★★☆☆',
     collectibles: 5, knowledgePoints: 13,
-    bgImage: 'images/bg/industrial_revolution_card.jpg',
+    bgImage: 'images/bg/industrial_revolution_card.webp',
     facts: [
       '工业革命最早开始于18世纪60年代的英国纺织业。',
       '瓦特改良蒸汽机是工业革命最重要的发明之一。',
@@ -50,7 +50,7 @@ window.SCRIPT_REGISTRY = {
     subtitle: '百日维新——变法图强的悲壮尝试',
     era: '1898', difficulty: '★★★☆☆',
     collectibles: 4, knowledgePoints: 10,
-    bgImage: 'images/bg/wuxu_study.jpg',
+    bgImage: 'images/bg/wuxu_study.webp',
     facts: [
       '1895年公车上书拉开了戊戌变法的序幕。',
       '戊戌变法从1898年6月11日到9月21日，仅持续103天，史称"百日维新"。',
@@ -64,7 +64,7 @@ window.SCRIPT_REGISTRY = {
     subtitle: '共和破晓——帝制的终结',
     era: '1911-1912', difficulty: '★★★★☆',
     collectibles: 6, knowledgePoints: 15,
-    bgImage: 'images/bg/wuchang_1911.jpg',
+    bgImage: 'images/bg/wuchang_1911.webp',
     facts: [
       '1911年10月10日武昌起义爆发，因农历辛亥年而得名"辛亥革命"。',
       '孙中山提出的三民主义是辛亥革命的指导思想。',

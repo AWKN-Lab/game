@@ -44,9 +44,25 @@
     }
   }
 
+  // 写入时按 eventId 与已存队列合并，而不是整体覆盖：
+  // 多标签页/多个 iframe 并发上报时不会互相抹掉对方刚入队的事件。
   function writeQueue(queue) {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(queue.slice(-MAX_QUEUE))); } catch (error) {}
+    try {
+      var byId = {};
+      readQueue().concat(queue || []).forEach(function (event) {
+        if (event && event.eventId) byId[event.eventId] = event;
+      });
+      var merged = Object.keys(byId).map(function (id) { return byId[id]; });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(merged.slice(-MAX_QUEUE)));
+    } catch (error) {}
   }
+
+  // 被 iframe 嵌入时不重复上报（编辑器预览会反复加载 index.html）
+  function isEmbedded() {
+    try { return global.self !== global.top; } catch (error) { return true; }
+  }
+
+  var embeddedAllowed = false;
 
   function sanitize(name, payload) {
     var keys = catalog[name];
@@ -115,6 +131,7 @@
 
   function track(name, payload) {
     if (!catalog[name]) return false;
+    if (isEmbedded() && !embeddedAllowed) return false;
     if (global.TTIdentity && !global.TTIdentity.isTrackingEnabled()) return false;
     var event = createEvent(name, payload);
     if (!event.payload) return false;
@@ -157,6 +174,9 @@
     track: track,
     flush: flush,
     inferScriptId: inferScriptId,
+    isEmbedded: isEmbedded,
+    // 预览/嵌入场景可显式放开上报（默认被 iframe 抑制，避免重复计数）
+    setEmbeddedAllowed: function (allowed) { embeddedAllowed = !!allowed; },
     getQueueSize: function () { return readQueue().length; },
     clearQueue: function () { writeQueue([]); },
     getCatalog: function () { return Object.keys(catalog); }

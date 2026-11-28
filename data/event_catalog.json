@@ -249,7 +249,8 @@
         "scriptId",
         "npcId",
         "axis",
-        "delta"
+        "delta",
+        "kind"
       ]
     },
     {
@@ -258,7 +259,8 @@
       "allowedPayloadKeys": [
         "scriptId",
         "npcId",
-        "emotion"
+        "emotion",
+        "kind"
       ]
     },
     {

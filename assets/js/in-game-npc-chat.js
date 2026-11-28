@@ -67,6 +67,7 @@
       '</div>',
       '<div id="inGameChatTabs" style="display:flex;gap:6px;padding:8px 12px;flex-wrap:wrap;border-bottom:1px solid rgba(255,255,255,0.07)"></div>',
       '<div id="inGameChatLog" style="height:230px;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px"></div>',
+      '<div style="padding:0 12px 6px;font-size:10px;color:#6f7590;line-height:1.5">AI 回复为角色演绎；对话带来的状态变化属于「模拟后果」，不构成史实依据。</div>',
       '<div id="inGameChatChips" style="display:flex;gap:6px;padding:0 12px 8px;flex-wrap:wrap"></div>',
       '<div style="display:flex;gap:8px;padding:10px 12px;border-top:1px solid rgba(255,255,255,0.07)">',
       '  <input id="inGameChatInput" placeholder="想对他说点什么…" maxlength="200" style="flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(239,189,138,0.3);border-radius:10px;padding:8px 10px;color:#fff;font-size:13px">',
@@ -189,7 +190,7 @@
         parts.push((global.TTConsequenceLabels && global.TTConsequenceLabels[key]) || key);
         parts.push(' ' + (delta > 0 ? '+' : '') + delta);
       }
-      extras.push('状态变化：' + parts.join(' / '));
+      extras.push('模拟变化（非史实）：' + parts.join(' / '));
     }
     pushMessage('npc', response.reply || '……', extras.join(' · '));
   }

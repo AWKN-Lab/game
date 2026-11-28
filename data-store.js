@@ -88,26 +88,42 @@
   /**
    * 保存游戏进度
    *
+   * 字段级增量合并：未显式传入的字段沿用上次存档，任何调用方都不会因为
+   * "少传了一个字段"而把其他字段清空（历史字段与新增字段一视同仁）。
+   *
    * @param {Object} data - 游戏进度数据
    * @param {string} data.scriptId - 剧本 ID
-   * @param {number} data.dialogIndex - 当前对话索引
+   * @param {number} [data.dialogIndex] - 当前对话索引
    * @param {Object} [data.gameValues] - 游戏变量键值对
    * @param {string[]} [data.collectedItems] - 已收集物品 ID 列表
    * @param {string} [data.currentAct] - 当前幕
+   * @param {Object} [data.npcFate] - NPC 命运
+   * @param {Object} [data.choicesByAct] - 各幕选择记录
+   * @param {Object} [data.npcTrust] - NPC 信任值
+   * @param {Object[]} [data.simulatedConsequences] - 模拟后果台账（与史实严格分栏）
+   * @param {Object} [data.npcEmotion] - NPC 情绪状态
+   * @param {string[]} [data.unlockedChoices] - 已解锁选项
    */
   DataStore.saveProgress = function (data) {
     if (!data || !data.scriptId) return;
-    // 增量合并：未传字段沿用上次存档，避免部分保存丢失 npcFate / choicesByAct / npcTrust
     var prev = _get('progress_' + data.scriptId, null) || {};
+
+    function pick(value, fallbackValue) {
+      return value !== undefined ? value : fallbackValue;
+    }
+
     _set('progress_' + data.scriptId, {
       scriptId: data.scriptId,
-      dialogIndex: data.dialogIndex || 0,
-      gameValues: data.gameValues || {},
-      collectedItems: data.collectedItems || [],
-      currentAct: data.currentAct || '',
-      npcFate: data.npcFate !== undefined ? data.npcFate : (prev.npcFate || null),
-      choicesByAct: data.choicesByAct !== undefined ? data.choicesByAct : (prev.choicesByAct || {}),
-      npcTrust: data.npcTrust !== undefined ? data.npcTrust : (prev.npcTrust || {}),
+      dialogIndex: pick(data.dialogIndex, prev.dialogIndex || 0),
+      gameValues: pick(data.gameValues, prev.gameValues || {}),
+      collectedItems: pick(data.collectedItems, prev.collectedItems || []),
+      currentAct: pick(data.currentAct, prev.currentAct || ''),
+      npcFate: pick(data.npcFate, prev.npcFate || null),
+      choicesByAct: pick(data.choicesByAct, prev.choicesByAct || {}),
+      npcTrust: pick(data.npcTrust, prev.npcTrust || {}),
+      simulatedConsequences: pick(data.simulatedConsequences, prev.simulatedConsequences || []),
+      npcEmotion: pick(data.npcEmotion, prev.npcEmotion || {}),
+      unlockedChoices: pick(data.unlockedChoices, prev.unlockedChoices || []),
       savedAt: Date.now()
     });
   };

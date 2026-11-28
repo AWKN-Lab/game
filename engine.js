@@ -495,6 +495,20 @@ function escapeHtmlText(s) {
 // ============================================================
 // 立绘显示辅助（兼容 wrapper 结构和直接 img 结构）
 // ============================================================
+// 资源候选：优先 png，其次 jpg / webp；同一角色可能只有其中一种格式
+var CHAR_EXT_CANDIDATES = ['.png', '.jpg', '.jpeg', '.webp'];
+// 表情差分缺失时的兜底映射（部分角色没有准备全部表情）
+var CHAR_EXPR_FALLBACK = {
+  sad: 'serious',
+  angry: 'serious',
+  determined: 'serious',
+  nervous: 'normal',
+  thinking: 'normal',
+  worried: 'normal',
+  hopeful: 'excited',
+  proud: 'excited'
+};
+
 function getCharEl(side) {
   var wrap = document.getElementById('char-' + side + '-wrap');
   return wrap || document.getElementById('char-' + side);
@@ -507,9 +521,45 @@ function hideCharEl(side) {
   var el = getCharEl(side);
   if (el) el.style.display = 'none';
 }
-function setCharSrc(side, src) {
+// 依据角色配置与表情名，生成按优先级排列的立绘候选路径
+function charCandidatePaths(cfg, expr) {
+  var dir = cfg.src || ('images/characters/' + (cfg.dir || 'npc'));
+  var exprs = [expr];
+  var fb = CHAR_EXPR_FALLBACK[expr];
+  if (fb && exprs.indexOf(fb) < 0) exprs.push(fb);
+  var exts = [];
+  if (cfg.ext) {
+    var e = String(cfg.ext);
+    exts.push(e.charAt(0) === '.' ? e : '.' + e);
+  }
+  CHAR_EXT_CANDIDATES.forEach(function (x) {
+    if (exts.indexOf(x) < 0) exts.push(x);
+  });
+  var out = [];
+  exprs.forEach(function (ex) {
+    exts.forEach(function (ext) {
+      var p = dir + '/' + ex + ext;
+      if (out.indexOf(p) < 0) out.push(p);
+    });
+  });
+  return out;
+}
+// 设置立绘；候选路径逐个回退，任一命中即显示，全部失败则隐藏
+function setCharSrc(side, cfg, expr) {
   var img = document.getElementById('char-' + side);
-  if (img) img.src = src;
+  if (!img || !cfg) return;
+  var candidates = charCandidatePaths(cfg, expr);
+  var idx = 0;
+  img.onerror = function () {
+    idx++;
+    if (idx < candidates.length) {
+      img.src = candidates[idx];
+    } else {
+      img.style.visibility = 'hidden';
+    }
+  };
+  img.style.visibility = '';
+  img.src = candidates[0];
 }
 
 // ============================================================
@@ -558,6 +608,9 @@ function initGameHUD() {
   valueLabels = { ...GAME_CONFIG.valueLabels };
   document.getElementById('gameScene').style.backgroundImage = "url('images/bg/opera_house.jpg')";
   renderValueHUD();
+  // 音频偏好与顶部控制条（静音 / 音量 / 语音 / 积分段位）
+  applyAudioPrefs(loadAudioPrefs());
+  renderControlBar();
   showDialogLine();
 
   // 播放BGM - 从 GAME_CONFIG.sceneBGM 读取第一个场景的 BGM
@@ -584,6 +637,150 @@ function initGameHUD() {
   }
 
   // 存档已在 initGameHUD 中恢复，此处无需重复
+}
+
+// ============================================================
+// 顶部控制条：音频（静音 / BGM / 音效 / 语音）+ 成长（积分与段位）
+// ============================================================
+var AUDIO_PREFS_KEY = 'st_audio_prefs';
+
+function loadAudioPrefs() {
+  var defaults = { muted: false, bgm: 0.5, sfx: 0.7, voice: false };
+  try {
+    var raw = localStorage.getItem(AUDIO_PREFS_KEY);
+    if (!raw) return defaults;
+    var p = JSON.parse(raw);
+    return {
+      muted: !!p.muted,
+      bgm: typeof p.bgm === 'number' ? Math.max(0, Math.min(1, p.bgm)) : defaults.bgm,
+      sfx: typeof p.sfx === 'number' ? Math.max(0, Math.min(1, p.sfx)) : defaults.sfx,
+      voice: !!p.voice
+    };
+  } catch (e) {
+    return defaults;
+  }
+}
+
+function saveAudioPrefs(p) {
+  try { localStorage.setItem(AUDIO_PREFS_KEY, JSON.stringify(p)); } catch (e) {}
+}
+
+// 把偏好应用到音频与语音管理器
+function applyAudioPrefs(p) {
+  if (typeof AudioManager !== 'undefined') {
+    if (typeof AudioManager.setBGMVolume === 'function') AudioManager.setBGMVolume(p.bgm);
+    if (typeof AudioManager.setSFXVolume === 'function') AudioManager.setSFXVolume(p.sfx);
+    if (typeof AudioManager.isMuted === 'function' && typeof AudioManager.toggleMute === 'function') {
+      if (AudioManager.isMuted() !== p.muted) AudioManager.toggleMute();
+    }
+  }
+  if (typeof VoiceManager !== 'undefined' && typeof VoiceManager.setVolume === 'function') {
+    VoiceManager.setVolume(p.sfx);
+  }
+}
+
+// 语音开关状态以 VoiceManager 为准（其内部持久化到 localStorage）
+function isVoiceEnabled() {
+  if (typeof VoiceManager === 'undefined' || typeof VoiceManager.isEnabled !== 'function') return false;
+  return VoiceManager.isEnabled();
+}
+
+// 初始化积分系统（沿用登录用户名，保证跨剧本累计同一份积分）
+function ensurePointsSystem() {
+  if (typeof PointsSystem === 'undefined') return null;
+  try {
+    if (!PointsSystem.getLevelInfo) return null;
+    var username = localStorage.getItem('st_username') || '';
+    PointsSystem.init(username);
+    return PointsSystem;
+  } catch (e) {
+    return null;
+  }
+}
+
+// 奖励发放 + 刷新段位显示
+function grantPoints(reason, detail) {
+  var ps = ensurePointsSystem();
+  if (!ps) return 0;
+  var amount = ps.earn(reason, detail);
+  if (amount) {
+    updatePointsBadge();
+    var toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;top:64px;right:16px;z-index:1900;background:rgba(16,26,58,0.92);border:1px solid #efbd8a;color:#efbd8a;padding:8px 14px;border-radius:10px;font-size:13px;box-shadow:0 6px 18px rgba(0,0,0,0.4)';
+    toast.textContent = '✦ +' + amount + ' 星轨积分';
+    document.body.appendChild(toast);
+    setTimeout(function () {
+      toast.style.transition = 'opacity .5s';
+      toast.style.opacity = '0';
+      setTimeout(function () { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 520);
+    }, 1600);
+  }
+  return amount;
+}
+
+function updatePointsBadge() {
+  var el = document.getElementById('ctlPoints');
+  if (!el) return;
+  var ps = ensurePointsSystem();
+  if (!ps) { el.textContent = ''; return; }
+  var info = ps.getLevelInfo();
+  el.innerHTML = '<span style="color:#efbd8a;font-weight:bold">' + info.title + '</span>'
+    + '<span style="color:#8f909d;margin-left:6px">Lv.' + info.level + '</span>'
+    + '<span style="color:#dbe1ff;margin-left:6px">' + info.balance + ' ✦</span>';
+}
+
+// 渲染顶部控制条
+function renderControlBar() {
+  var bar = document.getElementById('gameControlBar');
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = 'gameControlBar';
+    bar.style.cssText = 'position:fixed;top:12px;right:12px;z-index:1800;display:flex;gap:10px;align-items:center;background:rgba(16,26,58,0.82);border:1px solid rgba(239,189,138,0.4);border-radius:12px;padding:8px 12px;backdrop-filter:blur(12px);font-size:12px;color:#dbe1ff;box-shadow:0 8px 24px rgba(0,0,0,0.35)';
+    document.body.appendChild(bar);
+  }
+  var p = loadAudioPrefs();
+  bar.innerHTML = [
+    '<button id="ctlMute" title="静音" style="background:transparent;border:1px solid rgba(239,189,138,0.45);color:#efbd8a;width:30px;height:26px;border-radius:8px;cursor:pointer;font-size:14px;line-height:1">' + (p.muted ? '🔇' : '🔊') + '</button>',
+    '<label style="display:flex;align-items:center;gap:4px;color:#8f909d">BGM<input id="ctlBgm" type="range" min="0" max="100" value="' + Math.round(p.bgm * 100) + '" style="width:62px;accent-color:#efbd8a"></label>',
+    '<label style="display:flex;align-items:center;gap:4px;color:#8f909d">音效<input id="ctlSfx" type="range" min="0" max="100" value="' + Math.round(p.sfx * 100) + '" style="width:62px;accent-color:#efbd8a"></label>',
+    '<button id="ctlVoice" title="语音开关" style="background:transparent;border:1px solid rgba(239,189,138,0.45);color:' + (isVoiceEnabled() ? '#efbd8a' : '#5c6178') + ';padding:4px 9px;border-radius:8px;cursor:pointer;font-size:11px">语音</button>',
+    '<span id="ctlPoints" style="white-space:nowrap"></span>'
+  ].join('');
+
+  var muteBtn = document.getElementById('ctlMute');
+  muteBtn.addEventListener('click', function () {
+    var prefs = loadAudioPrefs();
+    prefs.muted = !prefs.muted;
+    saveAudioPrefs(prefs);
+    applyAudioPrefs(prefs);
+    muteBtn.textContent = prefs.muted ? '🔇' : '🔊';
+  });
+
+  var bgm = document.getElementById('ctlBgm');
+  bgm.addEventListener('input', function () {
+    var prefs = loadAudioPrefs();
+    prefs.bgm = Number(bgm.value) / 100;
+    saveAudioPrefs(prefs);
+    applyAudioPrefs(prefs);
+  });
+
+  var sfx = document.getElementById('ctlSfx');
+  sfx.addEventListener('input', function () {
+    var prefs = loadAudioPrefs();
+    prefs.sfx = Number(sfx.value) / 100;
+    saveAudioPrefs(prefs);
+    applyAudioPrefs(prefs);
+  });
+
+  var voiceBtn = document.getElementById('ctlVoice');
+  voiceBtn.addEventListener('click', function () {
+    if (typeof VoiceManager !== 'undefined' && typeof VoiceManager.toggle === 'function') {
+      VoiceManager.toggle();
+    }
+    voiceBtn.style.color = isVoiceEnabled() ? '#efbd8a' : '#5c6178';
+  });
+
+  updatePointsBadge();
 }
 
 // ============================================================
@@ -659,7 +856,7 @@ function showDialogLine() {
 
   // 处理收集品
   if (line.type === 'collectible') {
-    showCollectibleNotification(line.name);
+    showCollectibleNotification(line.name, line.desc);
     dialogIndex++;
     return;
   }
@@ -682,7 +879,7 @@ function showDialogLine() {
   // 处理条件收集品
   if (line.type === 'collectible_conditional') {
     if (line.condition && line.condition()) {
-      showCollectibleNotification(line.name);
+      showCollectibleNotification(line.name, line.desc);
       dialogIndex++;
       return;
     }
@@ -807,13 +1004,15 @@ function showDialogLine() {
 
   // NPC表情名 → charConfig key 的映射
   const npcExprToKey = { 'louis_king': 'louis', 'louis': 'louis', 'robespierre': 'robespierre', 'napoleon': 'napoleon', 'marie': 'marie' };
+  // 子衿可用表情（同一角色多表情时，charLeft 指向的就是她）
+  const zijinExprs = ['normal', 'serious', 'excited', 'curious', 'marie_royal', 'sad', 'hopeful', 'determined', 'thinking', 'proud', 'angry', 'nervous'];
 
   // 推断左侧角色
   if (line.charLeft) {
     let leftSpeaker = line.speaker;
     let leftExpr = line.charLeft;
     // 如果 charLeft 表情属于 fulina 系列
-    if (['excited', 'marie_royal', 'serious', 'normal'].includes(line.charLeft) && charConfig['fulina']) {
+    if (zijinExprs.includes(line.charLeft) && charConfig['fulina']) {
       leftSpeaker = 'fulina';
     }
     // 如果 charLeft 表情属于 NPC 系列
@@ -822,12 +1021,12 @@ function showDialogLine() {
     }
     const lCfg = charConfig[leftSpeaker];
     if (lCfg) {
-      setCharSrc('left', `images/characters/${lCfg.dir}/${leftExpr}.png`);
+      setCharSrc('left', lCfg, leftExpr);
       showCharEl('left');
     }
   } else if (line.speaker && charConfig[speakerKey] && (speakerKey === 'fulina' || npcExprToKey[speakerKey] !== undefined)) {
     const cfg = charConfig[speakerKey];
-    setCharSrc('left', `images/characters/${cfg.dir}/${cfg.defaultExpr}.png`);
+    setCharSrc('left', cfg, cfg.defaultExpr);
     showCharEl('left');
   } else {
     hideCharEl('left');
@@ -839,12 +1038,12 @@ function showDialogLine() {
     let rightExpr = line.charRight;
     const rCfg = charConfig[rightSpeaker];
     if (rCfg) {
-      setCharSrc('right', `images/characters/${rCfg.dir}/${rightExpr}.png`);
+      setCharSrc('right', rCfg, rightExpr);
       showCharEl('right');
     }
   } else if (line.speaker === 'hutao' && charConfig['hutao']) {
     const cfg = charConfig['hutao'];
-    setCharSrc('right', `images/characters/${cfg.dir}/${cfg.defaultExpr}.png`);
+    setCharSrc('right', cfg, cfg.defaultExpr);
     showCharEl('right');
   } else {
     hideCharEl('right');
@@ -908,14 +1107,54 @@ function showActTransition(title, subtitle, hookText) {
 // ============================================================
 // 收集品通知（动态创建版本）
 // ============================================================
-function showCollectibleNotification(name) {
+// 收集品名称 → 美术资源映射（images/collectibles/）
+var COLLECTIBLE_IMAGE_MAP = {
+  '兴中会火种': 'fragment_spark_1.jpg',
+  '同盟会火种': 'fragment_spark_2.jpg',
+  '武昌起义火种': 'fragment_spark_3.jpg',
+  '清帝退位火种': 'fragment_spark_4.jpg',
+  '临时约法火种': 'fragment_spark_5.jpg',
+  '革命遗憾火种': 'fragment_spark_6.jpg',
+  '武昌起义的子弹壳': 'fragment_spark_6.jpg',
+  '公车上书残卷': 'fragment_scroll_1.jpg',
+  '光绪帝密诏（残）': 'fragment_scroll_2.jpg',
+  '谭嗣同绝笔': 'fragment_scroll_3.jpg',
+  '谭嗣同的血衣': 'fragment_diary_5.jpg',
+  '变法诏令残篇': 'fragment_scroll_4.jpg',
+  '玛丽阿姨的手摇纺车日记': 'fragment_diary_1.jpg',
+  '莉莉的工厂日记': 'fragment_diary_2.jpg',
+  '汤米的童工日记': 'fragment_diary_3.jpg',
+  '瓦特的晚年反思': 'fragment_diary_4.jpg',
+  '被拆迁村民的请愿书': 'fragment_scroll_1.jpg',
+  '《常识》节选': 'fragment_liberty_1.jpg',
+  '《独立宣言》手稿': 'fragment_liberty_2.jpg',
+  '士兵家书': 'fragment_liberty_3.jpg',
+  '《1787年宪法》草案': 'fragment_liberty_4.jpg',
+  '杰斐逊被删改的手稿': 'fragment_liberty_2.jpg',
+  '巴士底狱无名囚犯的证词': 'fragment_bastille_soul.jpg',
+  '路易十六的证词': 'fragment_louis_soul.jpg',
+  '无辜市民的亡魂碎片': 'fragment_innocent_soul_1.jpg',
+  '罗伯斯庇尔的证词': 'fragment_robespierre_soul.jpg',
+  '拿破仑的证词': 'fragment_napoleon_soul.jpg',
+};
+
+function collectibleImagePath(name) {
+  var file = COLLECTIBLE_IMAGE_MAP[name];
+  return file ? 'images/collectibles/' + file : '';
+}
+
+function showCollectibleNotification(name, desc) {
   // 停止当前语音
   if (typeof VoiceManager !== 'undefined') VoiceManager.stop();
-  if (!collectedItems.includes(name)) collectedItems.push(name);
+  var isNew = !collectedItems.includes(name);
+  if (isNew) collectedItems.push(name);
   DataStore.saveProgress({ scriptId: GAME_CONFIG.scriptId, dialogIndex, gameValues: {...gameValues}, collectedItems: [...collectedItems], currentAct: '' });
   // 收集品音效
   if (typeof AudioManager !== 'undefined') {
     AudioManager.playSFX(AudioManager.SFX.COLLECTIBLE);
+  }
+  if (isNew) {
+    grantPoints('COLLECTIBLE_FOUND', '收集品：' + name);
   }
   let el = document.getElementById('collectibleToastDynamic');
   if (!el) {
@@ -924,7 +1163,18 @@ function showCollectibleNotification(name) {
     el.style.cssText = 'position:fixed;top:100px;left:50%;transform:translateX(-50%);background:rgba(26,42,90,0.9);border:2px solid #d4a574;padding:16px 30px;border-radius:12px;z-index:2000;text-align:center;opacity:0;transition:all 0.4s;pointer-events:none;backdrop-filter:blur(8px);box-shadow:0 8px 30px rgba(0,0,0,0.4)';
     document.body.appendChild(el);
   }
-  el.innerHTML = `<div style="font-size:20px;color:#d4a574;font-weight:bold">✨ 获得收集品！</div><div style="font-size:16px;color:#fff;margin-top:5px">${name}</div>`;
+  const imgPath = collectibleImagePath(name);
+  const imgHtml = imgPath
+    ? '<img src="' + imgPath + '" alt="' + name + '" onerror="this.style.display=\'none\'" style="width:96px;height:96px;object-fit:cover;border-radius:10px;border:1px solid #d4a574;margin-bottom:10px;display:block;margin-left:auto;margin-right:auto">'
+    : '';
+  const descHtml = desc
+    ? '<div style="font-size:13px;color:#c5c5d3;margin-top:8px;max-width:320px;line-height:1.7">' + desc + '</div>'
+    : '';
+  el.innerHTML = '<div style="font-size:20px;color:#d4a574;font-weight:bold">✨ 获得收集品！</div>'
+    + imgHtml
+    + '<div style="font-size:16px;color:#fff;margin-top:5px">' + name + '</div>'
+    + descHtml
+    + '<div style="font-size:11px;color:#8f909d;margin-top:8px">已收集 ' + collectedItems.length + ' 件</div>';
   el.style.opacity = '1';
   el.style.pointerEvents = 'auto';
   el.style.top = '100px';
@@ -933,7 +1183,7 @@ function showCollectibleNotification(name) {
     el.style.pointerEvents = 'none';
     el.style.top = '80px';
     setTimeout(() => showDialogLine(), 400);
-  }, 2500);
+  }, isNew ? 3200 : 2500);
 }
 
 // ============================================================
@@ -1139,6 +1389,9 @@ function showEnding() {
 
   window._ttEndingType = endingType;
   ttHook('script.ending', { endingType: endingType, learningTier: 'pending' });
+
+  // 通关积分
+  grantPoints('COMPLETE_SCRIPT', '完成《' + (GAME_CONFIG.title || '本剧本') + '》');
 
   DataStore.saveEnding(GAME_CONFIG.scriptId, endingType);
   DataStore.saveCollectibles(GAME_CONFIG.scriptId, collectedItems);
@@ -1402,6 +1655,14 @@ function showQuizResult() {
   const learningTier = pct >= 90 ? 'S' : pct >= 80 ? 'A' : pct >= 60 ? 'B' : 'C';
   ttHook('quiz.complete', { score: quizScore, total: total, pct: pct, learningTier: learningTier });
   ttHook('script.ending', { endingType: window._ttEndingType || 'unknown', learningTier: learningTier });
+  // 测试评级奖励
+  if (pct >= 100) {
+    grantPoints('QUIZ_PERFECT', '知识测试全对');
+  } else if (learningTier === 'S') {
+    grantPoints('MASTER_ASSESSMENT', '知识测试 S 级');
+  } else if (learningTier === 'A') {
+    grantPoints('EXCELLENT_ASSESSMENT', '知识测试 A 级');
+  }
   const dialogBox = document.querySelector('.dialog-box');
   dialogBox.innerHTML = `
     <div style="text-align:center;padding:20px;">

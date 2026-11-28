@@ -27,6 +27,15 @@
     extra_card: 100
   };
 
+  // 段位体系：依据累计获得积分（跨剧本累计，不因单局结算清零）
+  var LEVEL_CONFIG = [
+    { level: 1, title: '初窥星轨', min: 0 },
+    { level: 2, title: '星轨游侠', min: 300 },
+    { level: 3, title: '观星者', min: 700 },
+    { level: 4, title: '织梦师', min: 1200 },
+    { level: 5, title: '时空馆长', min: 2000 }
+  ];
+
   function _getStorage() {
     try {
       var raw = localStorage.getItem(_storageKey());
@@ -216,6 +225,32 @@
       referrals: data.referrals.length,
       historyCount: data.history.length
     };
+  };
+
+  // 当前段位信息：等级、称号、距下一段位所需积分
+  PointsSystem.getLevelInfo = function() {
+    var data = _getStorage();
+    var total = data ? (data.totalEarned || 0) : 0;
+    var current = LEVEL_CONFIG[0];
+    for (var i = 0; i < LEVEL_CONFIG.length; i++) {
+      if (total >= LEVEL_CONFIG[i].min) current = LEVEL_CONFIG[i];
+    }
+    var next = null;
+    for (var j = 0; j < LEVEL_CONFIG.length; j++) {
+      if (LEVEL_CONFIG[j].min > total) { next = LEVEL_CONFIG[j]; break; }
+    }
+    return {
+      level: current.level,
+      title: current.title,
+      totalEarned: total,
+      balance: data ? (data.balance || 0) : 0,
+      next: next ? { level: next.level, title: next.title, min: next.min } : null,
+      remain: next ? Math.max(0, next.min - total) : 0
+    };
+  };
+
+  PointsSystem.getLevelConfig = function() {
+    return LEVEL_CONFIG.map(function (l) { return { level: l.level, title: l.title, min: l.min }; });
   };
 
   window.PointsSystem = PointsSystem;

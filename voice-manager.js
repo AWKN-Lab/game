@@ -5,8 +5,19 @@
 (function() {
     'use strict';
 
+    // ---- 语音开关持久化 ----
+    var VOICE_ENABLED_KEY = 'st_voice_enabled';
+
+    function readVoiceEnabled() {
+        try { return localStorage.getItem(VOICE_ENABLED_KEY) === '1'; } catch(e) { return false; }
+    }
+
+    function writeVoiceEnabled(v) {
+        try { localStorage.setItem(VOICE_ENABLED_KEY, v ? '1' : '0'); } catch(e) {}
+    }
+
     // ---- 内部状态 ----
-    var _voiceEnabled = false;     // 语音总开关（默认关闭，等GPT-SoVITS配音就绪后开启）
+    var _voiceEnabled = readVoiceEnabled();     // 语音总开关（默认关闭；用户可在游戏内开启）
     var _voiceVolume = 0.8;        // 语音音量 (0-1)
     var _currentAudio = null;      // 当前播放的 Audio 对象
     var _currentIndex = -1;        // 当前播放的对话索引
@@ -144,6 +155,7 @@
         // 语音开关
         toggle: function() {
             _voiceEnabled = !_voiceEnabled;
+            writeVoiceEnabled(_voiceEnabled);
             if (!_voiceEnabled) _stopCurrent();
             return _voiceEnabled;
         },

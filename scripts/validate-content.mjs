@@ -122,6 +122,40 @@ for (const file of pageFiles) {
   }
 }
 
+// 史料账本：结构校验（sourceId 唯一、必填字段、corrections 引用存在）。
+const historySourcesPath = path.join(root, 'data', 'history_sources.json');
+if (!fs.existsSync(historySourcesPath)) {
+  errors.push('缺少 data/history_sources.json（史料账本）');
+} else {
+  try {
+    const hs = JSON.parse(fs.readFileSync(historySourcesPath, 'utf8'));
+    const sourceIds = new Set((hs.sources || []).map((s) => s.sourceId));
+    if (sourceIds.size !== (hs.sources || []).length) errors.push('history_sources.json：sourceId 重复');
+    for (const s of hs.sources || []) {
+      for (const field of ['sourceId', 'claim', 'status', 'reviewedBy', 'reviewedAt', 'references']) {
+        if (s[field] === undefined || s[field] === null || s[field] === '') {
+          errors.push(`history_sources.json：${s.sourceId || '未命名'} 缺少 ${field}`);
+        }
+      }
+      for (const ref of s.references || []) {
+        if (!ref.title || !ref.url) {
+          errors.push(`history_sources.json：${s.sourceId} 的 reference 缺少 title 或 url`);
+        }
+      }
+    }
+    for (const c of hs.corrections || []) {
+      if (!sourceIds.has(c.sourceId)) {
+        errors.push(`history_sources.json：corrections 引用了不存在的 sourceId「${c.sourceId}」`);
+      }
+      if (!c.file || !c.location || !c.after) {
+        errors.push(`history_sources.json：corrections 条目缺少 file/location/after`);
+      }
+    }
+  } catch (e) {
+    errors.push(`history_sources.json 解析失败：${e.message}`);
+  }
+}
+
 if (errors.length) {
   console.error('\n内容校验失败：');
   for (const error of errors) console.error(`- ${error}`);

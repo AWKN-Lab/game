@@ -1,0 +1,70 @@
+{
+  "version": "1.0.0",
+  "updatedAt": "2026-11-28",
+  "sources": [
+    {
+      "sourceId": "uk-factory-act-1833",
+      "title": "英国《工厂法》（1833年，4 Will. 4 c. 103）",
+      "claim": "1833年《工厂法》规定纺织厂禁止雇佣9岁以下童工；9-13岁每日工作不超过9小时；13-18岁不超过12小时；首次设立工厂监察官（4名）负责监督执行；要求童工接受教育。其历史地位是首创国家工厂监察制度，并非第一部限制工时的法律。",
+      "status": "verified",
+      "reviewedBy": "lingguang",
+      "reviewedAt": "2026-11-28",
+      "teacherReview": "pending",
+      "references": [
+        {
+          "title": "The 1833 Factory Act（法案原文全文）",
+          "url": "https://education-uk.org/documents/legislation/factory-act-1833.html",
+          "grade": "high",
+          "type": "primary"
+        },
+        {
+          "title": "英国工厂立法综述（中文secondary来源）",
+          "url": "https://history.zhaoguhong.com/",
+          "grade": "medium",
+          "type": "secondary"
+        }
+      ]
+    },
+    {
+      "sourceId": "uk-apprentices-act-1802",
+      "title": "英国《学徒健康与道德法》（1802年，42 Geo. 3. c. 73）",
+      "claim": "1802年6月22日御准的《学徒健康与道德法》规定棉纺织厂学徒每日工作不超过12小时、禁止夜工（21:00-06:00）、要求提供读写算基础教育，是首部工厂立法/限制工时法律，现代劳动法起源；但仅适用于学徒且执行不力。",
+      "status": "verified",
+      "reviewedBy": "lingguang",
+      "reviewedAt": "2026-11-28",
+      "teacherReview": "pending",
+      "references": [
+        {
+          "title": "Health and Morals of Apprentices Act 1802 - Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Health_and_Morals_of_Apprentices_Act_1802",
+          "grade": "high",
+          "type": "secondary"
+        },
+        {
+          "title": "世界近代史教材：英国工厂立法（学术教材页）",
+          "url": "https://www.1xuezhe.com/",
+          "grade": "high",
+          "type": "secondary"
+        }
+      ]
+    }
+  ],
+  "corrections": [
+    {
+      "file": "industrial_revolution.html",
+      "location": "第五幕旁白（原969行）",
+      "before": "1832年，英国议会通过了《工厂法》，限制童工的使用。",
+      "after": "1802年，英国议会通过《学徒健康与道德法》，首次限制纺织厂学徒的工作时间；1833年《工厂法》进一步规定9岁以下的儿童不得在纺织厂工作，还设立了工厂监察官。",
+      "sourceId": "uk-apprentices-act-1802",
+      "correctedAt": "2026-11-28"
+    },
+    {
+      "file": "industrial_revolution.html",
+      "location": "EV-IR-3 证物卡《工厂法》（1833年）（原1108行）",
+      "before": "这是世界上第一部限制工时的法律。",
+      "after": "首次设立工厂监察官，负责监督执行。限制工时的立法最早可追溯到1802年《学徒健康与道德法》。",
+      "sourceId": "uk-factory-act-1833",
+      "correctedAt": "2026-11-28"
+    }
+  ]
+}

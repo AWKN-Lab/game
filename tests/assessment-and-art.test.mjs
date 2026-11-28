@@ -76,29 +76,17 @@ test('原创生产计划覆盖台账里全部待替换资产', () => {
   }
 });
 
-test('音效不再复用同一文件冒充不同事件（占位复用已清理）', () => {
+test('音效常量指向的素材全部存在，且不保留效果不达标的合成音效', () => {
   const source = fs.readFileSync(path.join(root, 'audio-manager.js'), 'utf8');
   const sfxBlock = source.slice(source.indexOf('SFX: {'), source.indexOf('}', source.indexOf('SFX_WIND_GHOSTLY')));
   const pairs = [...sfxBlock.matchAll(/(\w+):\s*'audio\/sfx\/([^']+)'/g)];
-  const byFile = new Map();
-  for (const [, name, file] of pairs) {
-    if (!byFile.has(file)) byFile.set(file, []);
-    byFile.get(file).push(name);
+  assert.ok(pairs.length >= 15, 'SFX 常量数量异常');
+  for (const [, , file] of pairs) {
+    assert.ok(fs.existsSync(path.join(root, 'audio/sfx', file)), `音效文件缺失：${file}`);
   }
-  // 允许语义一致的复用（秋风/冷风、鬼风/冷风），但不允许"枪声=弓箭""欢呼=点击"这类错配
-  const forbidden = [
-    ['GUNFIRE', 'BOW'],
-    ['CHEERING', 'CLICK'],
-    ['SFX_OCEAN_WAVES', 'RAIN'],
-    ['SFX_BELL_TOLL', 'TRANSITION'],
-    ['SFX_CROWD_CHEER', 'CLICK']
-  ];
-  for (const [a, b] of forbidden) {
-    assert.notEqual(a, b, '占位复用仍然存在');
-  }
-  for (const [file, names] of byFile) {
-    for (const name of names) {
-      assert.ok(fs.existsSync(path.join(root, 'audio/sfx', file)), `音效文件缺失：${file}`);
-    }
+  // 上一轮程序合成的音效效果不达标，已整体撤回，不得残留在仓库
+  assert.ok(!fs.existsSync(path.join(root, 'scripts/generate-sfx.py')), '合成音效脚本仍在仓库');
+  for (const name of ['gunfire.wav', 'cheering.wav', 'bell_toll.wav', 'ocean_waves.wav']) {
+    assert.ok(!fs.existsSync(path.join(root, 'audio/sfx', name)), `合成音效残留：${name}`);
   }
 });

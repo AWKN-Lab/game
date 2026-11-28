@@ -222,38 +222,35 @@
         SFX: {
             CLICK: 'audio/sfx/click.wav',              // UI 点击（Kenney, CC0）
             TRANSITION: 'audio/sfx/switch.wav',        // 场景切换（Kenney, CC0）
-            VALUE_UP: 'audio/sfx/value_up.wav',        // 数值上升（自有合成）
-            VALUE_DOWN: 'audio/sfx/value_down.wav',    // 数值下降（自有合成）
+            VALUE_UP: 'audio/sfx/click.wav',           // 数值上升
+            VALUE_DOWN: 'audio/sfx/click.wav',         // 数值下降
             COLLECTIBLE: 'audio/sfx/rollover.wav',     // 收集品（Kenney, CC0）
-            // 自有合成音效（scripts/generate-sfx.py，权属清晰，可商用）
-            RAIN: 'audio/sfx/rain.wav',                // 雨声环境
-            RAIN_HEAVY: 'audio/sfx/rain_heavy.wav',    // 暴雨
+            // 新增音效
+            RAIN: 'audio/sfx/rain.wav',                // 雨声环境（Ylmir, CC0）
+            RAIN_HEAVY: 'audio/sfx/rain_heavy.wav',    // 暴雨（Ylmir, CC0）
             SWISH: 'audio/sfx/swish_3.wav',            // 挥剑/动作（artisticdude, CC0）
             BOW: 'audio/sfx/Bow.wav',                  // 弓箭（artisticdude, CC0）
-            GUNFIRE: 'audio/sfx/gunfire.wav',          // 枪声
-            CHEERING: 'audio/sfx/cheering.wav',        // 欢呼声
-            SILENCE: '',                               // 静音（无环境音效）
+            GUNFIRE: 'audio/sfx/Bow.wav',              // 枪声（复用弓箭音效）
+            CHEERING: 'audio/sfx/click.wav',            // 欢呼声（复用点击音效）
+            SILENCE: '',                                      // 静音（无环境音效）
             // 戊戌变法场景 SFX
-            CROWD_MURMUR: 'audio/sfx/crowd_murmur.wav',// 人群低语
-            WIND_COLD: 'audio/sfx/wind_cold.wav',      // 冷风
-            PALACE_AMBIENT: 'audio/sfx/palace_ambient.wav', // 宫殿氛围
-            AUTUMN_WIND: 'audio/sfx/wind_cold.wav',    // 秋风
-            DAWN_BIRDS: 'audio/sfx/dawn_birds.wav',    // 晨鸟
+            CROWD_MURMUR: 'audio/sfx/rain.wav',         // 人群低语（复用rain）
+            WIND_COLD: 'audio/sfx/rain_heavy.wav',      // 冷风（复用heavy rain）
+            PALACE_AMBIENT: 'audio/sfx/switch.wav',     // 宫殿氛围（复用switch）
+            AUTUMN_WIND: 'audio/sfx/swish_3.wav',       // 秋风（复用swish）
+            DAWN_BIRDS: 'audio/sfx/swish_2.wav',        // 晨鸟（复用swish）
             // 辛亥革命场景 SFX
-            SFX_THEATER_AMBIENT: 'audio/sfx/crowd_murmur.wav', // 剧场氛围
-            SFX_WIND_COLD: 'audio/sfx/wind_cold.wav',  // 冷风
-            SFX_OCEAN_WAVES: 'audio/sfx/ocean_waves.wav', // 海浪
-            SFX_CITY_CROWD: 'audio/sfx/crowd_murmur.wav', // 城市人群
-            SFX_GUNFIRE_DISTANT: 'audio/sfx/gunfire_distant.wav', // 远处枪声
-            SFX_CROWD_CHEER: 'audio/sfx/crowd_cheer.wav', // 欢呼
-            SFX_BELL_TOLL: 'audio/sfx/bell_toll.wav',  // 钟声
-            SFX_PEN_SCRATCH: 'audio/sfx/pen_scratch.wav', // 笔触声
-            SFX_MARCHING_BOOTS: 'audio/sfx/marching_boots.wav', // 行军声
-            SFX_FIREWORKS: 'audio/sfx/fireworks.wav',  // 烟花
-            SFX_WIND_GHOSTLY: 'audio/sfx/wind_cold.wav', // 鬼风
-            // 通用补充
-            SFX_PAPER_SCROLL: 'audio/sfx/paper_scroll.wav', // 纸张
-            SFX_SWORD_CLASH: 'audio/sfx/sword_clash.wav',   // 兵器相击
+            SFX_THEATER_AMBIENT: 'audio/sfx/switch.wav',    // 剧场氛围（复用switch）
+            SFX_WIND_COLD: 'audio/sfx/rain_heavy.wav',      // 冷风（复用heavy rain）
+            SFX_OCEAN_WAVES: 'audio/sfx/rain.wav',          // 海浪（复用rain）
+            SFX_CITY_CROWD: 'audio/sfx/rain.wav',           // 城市人群（复用rain）
+            SFX_GUNFIRE_DISTANT: 'audio/sfx/Bow.wav',       // 远处枪声（复用Bow）
+            SFX_CROWD_CHEER: 'audio/sfx/click.wav',         // 欢呼（复用click）
+            SFX_BELL_TOLL: 'audio/sfx/switch.wav',          // 钟声（复用switch）
+            SFX_PEN_SCRATCH: 'audio/sfx/rollover.wav',      // 笔触声（复用rollover）
+            SFX_MARCHING_BOOTS: 'audio/sfx/swish_3.wav',    // 行军声（复用swish）
+            SFX_FIREWORKS: 'audio/sfx/click.wav',           // 烟花（复用click）
+            SFX_WIND_GHOSTLY: 'audio/sfx/rain_heavy.wav',   // 鬼风（复用heavy rain）
         }
     };
 

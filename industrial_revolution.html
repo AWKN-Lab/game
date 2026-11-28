@@ -86,6 +86,12 @@
       title: '时空剧场 - 工业革命',
       values: { labor: 50, justice: 50, responsibility: 50, life: 50 },
       valueLabels: { labor: '劳动', justice: '正义', responsibility: '责任', life: '生命' },
+      consequenceAxes: { insight: 'justice', resolve: 'responsibility', sympathy: 'labor', pressure: 'life' },
+      chatNpcs: [
+        { key: 'fulina', npcId: 'npc_zijin', name: '子衿', trustEvents: { connect: 'student_connects_cause', dilemma: 'student_connects_cause', demand: 'student_demands_answer' } },
+        { key: 'hutao', npcId: 'npc_luoshu', name: '洛书', trustEvents: { connect: 'student_faces_dilemma', dilemma: 'student_faces_dilemma', demand: 'student_cites_standard_answer' } },
+        { key: 'tom', npcId: 'npc_tom', name: '汤姆', trustEvents: { connect: 'treat_as_equal', dilemma: 'ask_about_sister', demand: 'bring_outside_news' } }
+      ],
       valueColors: { labor: '#E67E22', justice: '#9B59B6', responsibility: '#1ABC9C', life: '#E74C3C' },
       charConfig: {
         fulina: { name: '子衿', color: '#6A5ACD', src: 'images/characters/zijin', defaultExpr: 'normal' },
@@ -1161,7 +1167,12 @@
 
 <!-- Game Engine -->
 <script src="assets/js/game-hooks.js?v=20260804"></script>
-<script src="engine.js?v=20260526e"></script>
+<script src="assets/js/api-client.js"></script>
+<script src="assets/js/identity-client.js"></script>
+<script src="assets/js/event-client.js"></script>
+<script src="assets/js/npc-chat-client.js"></script>
+<script src="assets/js/in-game-npc-chat.js"></script>
+<script src="engine.js?v=20261128a"></script>
 <script type="module" src="assets/js/npc-presence.js"></script>
 
 </body>

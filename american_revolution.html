@@ -86,6 +86,12 @@
       title: '时空剧场 - 美国独立战争',
       values: { freedom: 50, equality: 50, justice: 50, rule: 50 },
       valueLabels: { freedom: '自由', equality: '平等', justice: '正义', rule: '法治' },
+      consequenceAxes: { insight: 'freedom', resolve: 'equality', sympathy: 'justice', pressure: 'rule' },
+      chatNpcs: [
+        { key: 'fulina', npcId: 'npc_zijin', name: '子衿', trustEvents: { connect: 'student_connects_cause', dilemma: 'student_connects_cause', demand: 'student_demands_answer' } },
+        { key: 'hutao', npcId: 'npc_luoshu', name: '洛书', trustEvents: { connect: 'student_faces_dilemma', dilemma: 'student_faces_dilemma', demand: 'student_cites_standard_answer' } },
+        { key: 'jefferson', npcId: 'npc_captain_miller', name: '米勒上尉', trustEvents: { connect: 'show_courage', dilemma: 'care_for_wounded', demand: 'empty_rhetoric' } }
+      ],
       valueColors: { freedom: '#E74C3C', equality: '#3498DB', justice: '#F39C12', rule: '#2ECC71' },
       charConfig: {
         fulina: { name: '子衿', color: '#6A5ACD', src: 'images/characters/zijin', defaultExpr: 'normal' },
@@ -1225,7 +1231,12 @@
 
 <!-- Game Engine -->
 <script src="assets/js/game-hooks.js?v=20260804"></script>
-<script src="engine.js?v=20260526e"></script>
+<script src="assets/js/api-client.js"></script>
+<script src="assets/js/identity-client.js"></script>
+<script src="assets/js/event-client.js"></script>
+<script src="assets/js/npc-chat-client.js"></script>
+<script src="assets/js/in-game-npc-chat.js"></script>
+<script src="engine.js?v=20261128a"></script>
 <script type="module" src="assets/js/npc-presence.js"></script>
 
 </body>

@@ -640,6 +640,92 @@ function initGameHUD() {
 }
 
 // ============================================================
+// AI 对话结果接入：信任 / 情绪 / 后果落到游戏状态
+// ============================================================
+var CONSEQUENCE_AXIS_LABELS = { insight: '洞察', resolve: '决心', sympathy: '共情', pressure: '压力' };
+var currentCharKeys = { left: null, right: null };
+if (typeof window !== 'undefined') window.TTConsequenceLabels = CONSEQUENCE_AXIS_LABELS;
+
+function emotionToExpressionLocal(emotion) {
+  var map = { calm: 'normal', serious: 'serious', excited: 'excited', thinking: 'thinking', sad: 'sad', hopeful: 'hopeful' };
+  return map[emotion] || 'normal';
+}
+
+// 数值变化飘字：让玩家看见"这一句话换来了什么"
+function showValueFloat(dim, delta) {
+  var hud = document.getElementById('valueHud');
+  var label = (GAME_CONFIG.valueLabels || {})[dim] || dim;
+  var float = document.createElement('div');
+  float.textContent = label + ' ' + (delta > 0 ? '+' : '') + delta;
+  float.style.cssText = 'position:fixed;z-index:2100;color:' + (delta > 0 ? '#7ee787' : '#ff9a9a')
+    + ';font-size:16px;font-weight:bold;text-shadow:0 2px 8px rgba(0,0,0,0.6);pointer-events:none'
+    + ';transition:transform 1.1s ease-out,opacity 1.1s ease-out';
+  float.style.left = (window.innerWidth / 2 - 40) + 'px';
+  float.style.top = (window.innerHeight / 2 - 120) + 'px';
+  document.body.appendChild(float);
+  requestAnimationFrame(function () {
+    float.style.transform = 'translateY(-46px)';
+    float.style.opacity = '0';
+  });
+  setTimeout(function () { if (float.parentNode) float.parentNode.removeChild(float); }, 1200);
+}
+
+// 对话带来的信任变化：服务端信任为准，写回本地信任表（影响 minTrust 选项门槛）
+function applyNpcTrust(npcId, trust, tier, meta) {
+  if (typeof trust !== 'number' || !npcId) return;
+  var before = npcTrust[npcId] || 0;
+  npcTrust[npcId] = trust;
+  saveProgressWithPresence();
+  if (trust !== before) {
+    var name = (meta && meta.name) || echoNpcName(npcId);
+    showTrustNarrativeToast(name + (trust > before ? ' 对你更信任了一些。' : ' 对你多了几分提防。'));
+  }
+  ttHook('npc.trust_level_changed', { scriptId: GAME_CONFIG.scriptId, npcId: npcId, trust: trust, tier: tier || 'normal' });
+}
+
+// 情绪可视化：切立绘表情
+function applyNpcEmotion(npcId, emotion, meta) {
+  if (!emotion) return;
+  var key = meta && meta.key;
+  var cfg = key && GAME_CONFIG.charConfig ? GAME_CONFIG.charConfig[key] : null;
+  if (!cfg) return;
+  var side = null;
+  if (currentCharKeys.left === key) side = 'left';
+  else if (currentCharKeys.right === key) side = 'right';
+  if (!side) return;
+  setCharSrc(side, cfg, emotionToExpressionLocal(emotion));
+  ttHook('npc.emotion_changed', { scriptId: GAME_CONFIG.scriptId, npcId: npcId, emotion: emotion });
+}
+
+// AI 后果落到四维数值：轴 → 剧本维度映射由 GAME_CONFIG.consequenceAxes 决定
+function applyNpcConsequence(npcId, consequence, meta) {
+  if (!consequence || typeof consequence !== 'object') return;
+  var axes = GAME_CONFIG.consequenceAxes || {};
+  var changed = [];
+  for (var axis in consequence) {
+    if (!Object.prototype.hasOwnProperty.call(consequence, axis)) continue;
+    var dim = axes[axis];
+    if (!dim) continue;
+    var delta = consequence[axis];
+    if (!delta) continue;
+    updateValue(dim, delta);
+    showValueFloat(dim, delta);
+    changed.push((CONSEQUENCE_AXIS_LABELS[axis] || axis) + ' ' + (delta > 0 ? '+' : '') + delta);
+    ttHook('npc.consequence_applied', { scriptId: GAME_CONFIG.scriptId, npcId: npcId, axis: axis, delta: delta });
+  }
+  if (changed.length) {
+    showTrustNarrativeToast('这番话带来的变化：' + changed.join(' / '));
+  }
+}
+
+if (typeof window !== 'undefined') {
+  window.gameHooks = window.gameHooks || {};
+  window.gameHooks.applyNpcTrust = applyNpcTrust;
+  window.gameHooks.applyNpcEmotion = applyNpcEmotion;
+  window.gameHooks.applyNpcConsequence = applyNpcConsequence;
+}
+
+// ============================================================
 // 顶部控制条：音频（静音 / BGM / 音效 / 语音）+ 成长（积分与段位）
 // ============================================================
 var AUDIO_PREFS_KEY = 'st_audio_prefs';
@@ -743,6 +829,7 @@ function renderControlBar() {
     '<button id="ctlMute" title="静音" style="background:transparent;border:1px solid rgba(239,189,138,0.45);color:#efbd8a;width:30px;height:26px;border-radius:8px;cursor:pointer;font-size:14px;line-height:1">' + (p.muted ? '🔇' : '🔊') + '</button>',
     '<label style="display:flex;align-items:center;gap:4px;color:#8f909d">BGM<input id="ctlBgm" type="range" min="0" max="100" value="' + Math.round(p.bgm * 100) + '" style="width:62px;accent-color:#efbd8a"></label>',
     '<label style="display:flex;align-items:center;gap:4px;color:#8f909d">音效<input id="ctlSfx" type="range" min="0" max="100" value="' + Math.round(p.sfx * 100) + '" style="width:62px;accent-color:#efbd8a"></label>',
+    '<button id="ctlChat" title="与 NPC 对话" style="background:transparent;border:1px solid rgba(239,189,138,0.45);color:#efbd8a;padding:4px 9px;border-radius:8px;cursor:pointer;font-size:11px">对话</button>',
     '<button id="ctlVoice" title="语音开关" style="background:transparent;border:1px solid rgba(239,189,138,0.45);color:' + (isVoiceEnabled() ? '#efbd8a' : '#5c6178') + ';padding:4px 9px;border-radius:8px;cursor:pointer;font-size:11px">语音</button>',
     '<span id="ctlPoints" style="white-space:nowrap"></span>'
   ].join('');
@@ -771,6 +858,17 @@ function renderControlBar() {
     saveAudioPrefs(prefs);
     applyAudioPrefs(prefs);
   });
+
+  var chatBtn = document.getElementById('ctlChat');
+  if (chatBtn) {
+    chatBtn.addEventListener('click', function () {
+      if (window.TTInGameChat && typeof window.TTInGameChat.toggle === 'function') {
+        window.TTInGameChat.toggle();
+      } else {
+        showTrustNarrativeToast('对话功能还没接上。');
+      }
+    });
+  }
 
   var voiceBtn = document.getElementById('ctlVoice');
   voiceBtn.addEventListener('click', function () {
@@ -1023,13 +1121,16 @@ function showDialogLine() {
     if (lCfg) {
       setCharSrc('left', lCfg, leftExpr);
       showCharEl('left');
+      currentCharKeys.left = leftSpeaker;
     }
   } else if (line.speaker && charConfig[speakerKey] && (speakerKey === 'fulina' || npcExprToKey[speakerKey] !== undefined)) {
     const cfg = charConfig[speakerKey];
     setCharSrc('left', cfg, cfg.defaultExpr);
     showCharEl('left');
+    currentCharKeys.left = speakerKey;
   } else {
     hideCharEl('left');
+    currentCharKeys.left = null;
   }
 
   // 推断右侧角色
@@ -1040,13 +1141,16 @@ function showDialogLine() {
     if (rCfg) {
       setCharSrc('right', rCfg, rightExpr);
       showCharEl('right');
+      currentCharKeys.right = rightSpeaker;
     }
   } else if (line.speaker === 'hutao' && charConfig['hutao']) {
     const cfg = charConfig['hutao'];
     setCharSrc('right', cfg, cfg.defaultExpr);
     showCharEl('right');
+    currentCharKeys.right = 'hutao';
   } else {
     hideCharEl('right');
+    currentCharKeys.right = null;
   }
 
   // 旁白时隐藏角色

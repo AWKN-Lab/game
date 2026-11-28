@@ -86,6 +86,12 @@
       title: '时空剧场 - 辛亥革命',
       values: { democracy: 50, responsibility: 50, patriotism: 50, rule: 50 },
       valueLabels: { democracy: '民主', responsibility: '责任', patriotism: '爱国', rule: '法治' },
+      consequenceAxes: { insight: 'democracy', resolve: 'patriotism', sympathy: 'responsibility', pressure: 'rule' },
+      chatNpcs: [
+        { key: 'fulina', npcId: 'npc_zijin', name: '子衿', trustEvents: { connect: 'student_connects_cause', dilemma: 'student_connects_cause', demand: 'student_demands_answer' } },
+        { key: 'hutao', npcId: 'npc_luoshu', name: '洛书', trustEvents: { connect: 'student_faces_dilemma', dilemma: 'student_faces_dilemma', demand: 'student_cites_standard_answer' } },
+        { key: 'martyr_ghost', npcId: 'npc_lin_wenqing', name: '林文清', trustEvents: { connect: 'protect_source', dilemma: 'ask_about_family', demand: 'mock_scholars' } }
+      ],
       valueColors: { democracy: '#4fc3f7', responsibility: '#ffb74d', patriotism: '#ef5350', rule: '#66bb6a' },
       charConfig: {
         fulina: { name: '子衿', color: '#ff69b4', src: 'images/characters/zijin', defaultExpr: 'normal' },
@@ -638,7 +644,12 @@
 
 <!-- Game Engine -->
 <script src="assets/js/game-hooks.js?v=20260804"></script>
-<script src="engine.js?v=20260526e"></script>
+<script src="assets/js/api-client.js"></script>
+<script src="assets/js/identity-client.js"></script>
+<script src="assets/js/event-client.js"></script>
+<script src="assets/js/npc-chat-client.js"></script>
+<script src="assets/js/in-game-npc-chat.js"></script>
+<script src="engine.js?v=20261128a"></script>
 <script type="module" src="assets/js/npc-presence.js"></script>
 
 </body>

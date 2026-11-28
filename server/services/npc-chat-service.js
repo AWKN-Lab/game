@@ -11,7 +11,8 @@
  *  - DLP 过滤：入库前过滤手机号、证件号等敏感数字串。
  */
 
-import { loadPersonas, getPersona, trustTier, applyTrustEvent, buildSystemPrompt, preSpeakCheck, checkNumberGate } from '../../assets/js/npc-engine.js';
+import { loadPersonas, getPersona, trustTier, applyTrustEvent, buildSystemPrompt, preSpeakCheck, checkNumberGate,
+  buildStructuredInstruction, parseStructuredReply } from '../../assets/js/npc-engine.js';
 import { config, ROOT_DIR } from '../config.js';
 import { id, sha256, cleanText } from '../lib/security.js';
 import { json as toJson, parseJson } from '../db/database.js';
@@ -20,6 +21,12 @@ import path from 'node:path';
 
 const metadata = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'data/teaching_metadata.json'), 'utf8'));
 const knowledgePoints = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'data/knowledge_points.json'), 'utf8'));
+const consequenceConfig = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'data/npc_consequences.json'), 'utf8'));
+const CONSEQUENCE_AXES = consequenceConfig.axes || {};
+const CONSEQUENCE_EMOTIONS = consequenceConfig.emotions || [];
+const MAX_AXES = consequenceConfig.maxAxes || 3;
+const MAX_DELTA = consequenceConfig.maxDelta || 3;
+const MIN_DELTA = consequenceConfig.minDelta ?? -3;
 
 /** 审稿人 unsafe 拦截清单（最小集：现实威胁与自伤，不涉史实判断）。 */
 const UNSAFE_PATTERNS = [/我(要|会|去).{0,8}(杀|炸|毒|砍)/, /自(杀|残)/, /弄死/];
@@ -218,6 +225,8 @@ export async function npcChat(db, input, deps = {}) {
     personas, npcId: input.npcId, scriptId: input.scriptId, trust,
     session: view.session.map((t) => ({ role: t.role, text: t.text })),
     keyMemories: view.keyMemories.map((m) => ({ text: m.text, story_time: m.storyTime }))
+  }) + '\n\n' + buildStructuredInstruction({
+    axes: CONSEQUENCE_AXES, emotions: CONSEQUENCE_EMOTIONS, maxAxes: MAX_AXES, maxDelta: MAX_DELTA
   });
 
   // MOD-AI-06 审稿人旁路：unsafe 直接拦截不进对话；anachronism/factual_error 由 NPC 入戏回应
@@ -230,6 +239,7 @@ export async function npcChat(db, input, deps = {}) {
     return {
       reply: deflection, mode: 'rule', trust: blockedTrust, tier: trustTier(blockedTrust), stateVersion: blockedVersion,
       trustChanged, gateBlocked: false, retried: false, fallbackReason: 'FACT_CHECK_UNSAFE',
+      emotion: npc.emotion_baseline || 'calm', consequence: {}, unlockChoice: null,
       factCheck: review, turnRefs: [userTurn.memoryId, npcTurn.memoryId]
     };
   }
@@ -242,18 +252,38 @@ export async function npcChat(db, input, deps = {}) {
   let retried = false;
   let mode = 'ai';
   let fallbackReason = null;
+  let emotion = npc.emotion_baseline || 'calm';
+  let consequence = {};
+  let unlockChoice = null;
+  const parseOpts = {
+    axes: CONSEQUENCE_AXES, emotions: CONSEQUENCE_EMOTIONS,
+    maxAxes: MAX_AXES, maxDelta: MAX_DELTA, minDelta: MIN_DELTA
+  };
   try {
-    reply = await callAi(systemPrompt + reviewNote, view.session, input.message);
+    const raw = await callAi(systemPrompt + reviewNote, view.session, input.message);
+    let structured = parseStructuredReply(raw, parseOpts);
+    reply = structured.reply;
+    emotion = structured.emotion || emotion;
+    consequence = structured.consequence;
+    unlockChoice = structured.unlockChoice;
     gate = preSpeakCheck({ personas, npcId: input.npcId, scriptId: input.scriptId, text: reply, trust });
     if (!gate.ok) {
       retried = true;
       const correction = `${systemPrompt}\n\n【门禁警告】你上一条应答违规：${gate.violations.map((v) => `${v.gate}:${v.label || v.reason}`).join('；')}。请重新作答，不得出现上述内容。`;
-      reply = await callAi(correction, view.session, input.message);
+      const retryRaw = await callAi(correction, view.session, input.message);
+      structured = parseStructuredReply(retryRaw, parseOpts);
+      reply = structured.reply;
+      emotion = structured.emotion || emotion;
+      consequence = structured.consequence;
+      unlockChoice = structured.unlockChoice;
       gate = preSpeakCheck({ personas, npcId: input.npcId, scriptId: input.scriptId, text: reply, trust });
       if (!gate.ok) {
         mode = 'rule';
         fallbackReason = 'GATE_BLOCKED';
         reply = ruleReply(npc);
+        emotion = npc.emotion_baseline || 'calm';
+        consequence = {};
+        unlockChoice = null;
         gate = { ok: true, violations: [] };
       }
     }
@@ -262,6 +292,9 @@ export async function npcChat(db, input, deps = {}) {
     mode = 'rule';
     fallbackReason = error.code || 'AI_FAILED';
     reply = ruleReply(npc);
+    emotion = npc.emotion_baseline || 'calm';
+    consequence = {};
+    unlockChoice = null;
   }
 
   const userTurn = recordTurn(db, actorId, input.scriptId, input.npcId, 'user', input.message);
@@ -270,6 +303,7 @@ export async function npcChat(db, input, deps = {}) {
   return {
     reply, mode, trust: finalTrust, tier: trustTier(finalTrust), stateVersion: version,
     trustChanged, gateBlocked: retried && mode === 'rule', retried, fallbackReason,
+    emotion, consequence, unlockChoice,
     factCheck: review, turnRefs: [userTurn.memoryId, npcTurn.memoryId]
   };
 }

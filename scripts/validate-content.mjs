@@ -156,6 +156,20 @@ if (!fs.existsSync(historySourcesPath)) {
   }
 }
 
+// W03 题目稳定 ID 前置：注册剧本页必须显式声明 contentVersion（≥1 整数）；
+// 题目数据全量断言（证物/结业题 v1 映射与判分）由 tests/question-data.test.mjs 承担。
+for (const file of pageFiles) {
+  const pagePath = path.join(root, file);
+  if (!fs.existsSync(pagePath)) continue;
+  const html = fs.readFileSync(pagePath, 'utf8');
+  const cvMatch = html.match(/contentVersion:\s*(\d+)/);
+  if (!cvMatch) {
+    errors.push(`${file}：GAME_CONFIG 缺少显式 contentVersion（题意/答案/顺序算法变更必须提高版本）`);
+  } else if (!(Number(cvMatch[1]) >= 1)) {
+    errors.push(`${file}：contentVersion ${cvMatch[1]} 非法（须 ≥1 整数）`);
+  }
+}
+
 if (errors.length) {
   console.error('\n内容校验失败：');
   for (const error of errors) console.error(`- ${error}`);

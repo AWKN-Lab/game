@@ -1435,7 +1435,15 @@ function showEndingDialog(index) {
 // ============================================================
 // 知识测试
 // ============================================================
-const QUIZ_DATA = GAME_CONFIG.QUIZ_DATA;
+// W03: 剧本数据字段名兼容——american/wuxu/xinhai 旧数据用 question/options/answer/explanation，
+// 引擎统一读 q/opts/ans/explain；缺失字段回退映射，避免结业测验渲染 undefined
+const QUIZ_DATA = (GAME_CONFIG.QUIZ_DATA || []).map((q) => ({
+  ...q,
+  q: q.q !== undefined ? q.q : q.question,
+  opts: q.opts !== undefined ? q.opts : q.options,
+  ans: q.ans !== undefined ? q.ans : q.answer,
+  explain: q.explain !== undefined ? q.explain : q.explanation
+}));
 
 // ============================================================
 // 语音开关

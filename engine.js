@@ -822,12 +822,12 @@ function showDialogLine() {
     }
     const lCfg = charConfig[leftSpeaker];
     if (lCfg) {
-      setCharSrc('left', `images/characters/${lCfg.dir}/${leftExpr}.png`);
+      setCharSrc('left', `images/characters/${lCfg.dir}/${leftExpr}${lCfg.ext || '.png'}`);
       showCharEl('left');
     }
   } else if (line.speaker && charConfig[speakerKey] && (speakerKey === 'fulina' || npcExprToKey[speakerKey] !== undefined)) {
     const cfg = charConfig[speakerKey];
-    setCharSrc('left', `images/characters/${cfg.dir}/${cfg.defaultExpr}.png`);
+    setCharSrc('left', `images/characters/${cfg.dir}/${cfg.defaultExpr}${cfg.ext || '.png'}`);
     showCharEl('left');
   } else {
     hideCharEl('left');
@@ -839,12 +839,12 @@ function showDialogLine() {
     let rightExpr = line.charRight;
     const rCfg = charConfig[rightSpeaker];
     if (rCfg) {
-      setCharSrc('right', `images/characters/${rCfg.dir}/${rightExpr}.png`);
+      setCharSrc('right', `images/characters/${rCfg.dir}/${rightExpr}${rCfg.ext || '.png'}`);
       showCharEl('right');
     }
   } else if (line.speaker === 'hutao' && charConfig['hutao']) {
     const cfg = charConfig['hutao'];
-    setCharSrc('right', `images/characters/${cfg.dir}/${cfg.defaultExpr}.png`);
+    setCharSrc('right', `images/characters/${cfg.dir}/${cfg.defaultExpr}${cfg.ext || '.png'}`);
     showCharEl('right');
   } else {
     hideCharEl('right');

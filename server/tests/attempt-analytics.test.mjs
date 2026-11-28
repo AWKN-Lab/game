@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-const { classifyIdentity, aggregateAttempts, DEFAULT_AUTONOMY_N } = await import('../services/attempt-analytics.js');
+const { classifyIdentity, aggregateAttempts, validateEventIdentity, DEFAULT_AUTONOMY_N } = await import('../services/attempt-analytics.js');
 
 const UUID_A = 'a0000000-0000-4000-8000-000000000001';
 const UUID_B = 'b0000000-0000-4000-8000-000000000002';
@@ -165,4 +165,21 @@ test('孤立答题（无 start 的 quiz.answer）不计入首次答题口径', (
   ]);
   assert.equal(result.firstAnswers.length, 0);
   assert.deepEqual(result.isolated.unknownCompletions, []); // 仅答题不构成孤立完成
+});
+
+test('validateEventIdentity：身份成对合法放行，部分缺失/非法 UUID 拒绝，legacy 全缺放行', () => {
+  assert.equal(validateEventIdentity('script.start', { attemptId: UUID_A, contentVersion: '1' }), null);
+  assert.equal(validateEventIdentity('script.start', {}), null, '全缺为 legacy，放行');
+  assert.equal(validateEventIdentity('script.start', { attemptId: UUID_A }), 'INVALID_ATTEMPT_ID', '缺 contentVersion');
+  assert.equal(validateEventIdentity('script.start', { contentVersion: '1' }), 'INVALID_ATTEMPT_ID', '缺 attemptId');
+  assert.equal(validateEventIdentity('script.start', { attemptId: 'bad', contentVersion: '1' }), 'INVALID_ATTEMPT_ID');
+});
+
+test('validateEventIdentity：quiz.answer correct 须布尔；quiz.complete score/total/pct 须自洽', () => {
+  assert.equal(validateEventIdentity('quiz.answer', { correct: true }), null);
+  assert.equal(validateEventIdentity('quiz.answer', { correct: 1 }), 'INVALID_QUIZ_FIELDS');
+  assert.equal(validateEventIdentity('quiz.answer', {}), null, 'correct 缺省不校验');
+  assert.equal(validateEventIdentity('quiz.complete', { score: 8, total: 10, pct: 80 }), null);
+  assert.equal(validateEventIdentity('quiz.complete', { score: 8, total: 10, pct: 95 }), 'INVALID_QUIZ_FIELDS');
+  assert.equal(validateEventIdentity('quiz.complete', { score: 8, total: 10 }), null, 'pct 缺省不校验一致性');
 });

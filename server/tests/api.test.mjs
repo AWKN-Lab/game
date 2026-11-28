@@ -247,6 +247,14 @@ test('W05 attempt 聚合：新版身份字段入库不被清洗，/admin/analyti
 
   const dashboard = await jsonRequest('/api/v1/admin/dashboard', { headers: { Cookie: cookie } });
   assert.ok(dashboard.body.counts.newAttemptsToday >= 1, '运营卡必须并列展示新版尝试数');
+
+  const badBatch = await jsonRequest('/api/v1/events/batch', {
+    method: 'POST',
+    body: JSON.stringify({ events: [build('w05-bad', 'script.start', { scriptId: 'french_revolution', attemptId: 'not-a-uuid', contentVersion: '2' })] })
+  });
+  assert.equal(badBatch.response.status, 202);
+  assert.equal(badBatch.body.results[0].accepted, false, '非法 attemptId 必须被拒绝');
+  assert.equal(badBatch.body.results[0].code, 'INVALID_ATTEMPT_ID');
 });
 
 test('GitHub Issue 联动：管理员可关联 Issue，公开列表带出链接字段', async () => {

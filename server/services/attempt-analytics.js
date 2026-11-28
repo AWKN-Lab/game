@@ -39,6 +39,38 @@ function parsePayload(payload) {
 }
 
 /**
+ * 入库前身份与测验字段校验（ENG-14 §6 加固）：返回错误码或 null。
+ *  - attemptId 与 contentVersion 必须成对出现且格式合法（部分缺失或非法 UUID → INVALID_ATTEMPT_ID）；
+ *  - quiz.answer：correct 必须为布尔（INVALID_QUIZ_FIELDS）；
+ *  - quiz.complete：score/total/pct 齐全且 total>0 时，pct 与 score/total 一致性误差 ≤1。
+ *  两字段全缺视为 legacy 事件，直接放行（聚合侧按 legacy 计数隔离）。
+ * @param {string} name 事件名
+ * @param {object} payload 清洗后的载荷
+ * @returns {string|null}
+ */
+export function validateEventIdentity(name, payload) {
+  const attemptId = payload?.attemptId;
+  const contentVersion = payload?.contentVersion;
+  const hasAttempt = typeof attemptId === 'string' && attemptId.length > 0;
+  const hasVersion = typeof contentVersion === 'string' && contentVersion.length > 0;
+  if (hasAttempt && hasVersion) {
+    if (!UUID_RE.test(attemptId)) return 'INVALID_ATTEMPT_ID';
+  } else if (hasAttempt || hasVersion) {
+    return 'INVALID_ATTEMPT_ID'; // 部分缺失：拒绝，防半身份事件污染新版口径
+  }
+  if (name === 'quiz.answer' && payload?.correct !== undefined && typeof payload.correct !== 'boolean') {
+    return 'INVALID_QUIZ_FIELDS';
+  }
+  if (name === 'quiz.complete') {
+    const { score, total, pct } = payload || {};
+    if ([score, total, pct].every((value) => typeof value === 'number' && Number.isFinite(value)) && total > 0) {
+      if (Math.abs(Math.round((score / total) * 100) - pct) > 1) return 'INVALID_QUIZ_FIELDS';
+    }
+  }
+  return null;
+}
+
+/**
  * 身份三字段分类（ENG-14 §6）：new / legacy / invalid。
  * @param {{payload:object|string}} event 载荷含 attemptId/contentVersion
  * @returns {{kind:'new'|'legacy'|'invalid', attemptId:string|null, contentVersion:string|null}}

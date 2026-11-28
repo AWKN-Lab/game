@@ -162,6 +162,50 @@ test('管理员登录后可以查看总览', async () => {
   assert.equal(unauthorized.response.status, 401, '数据分析必须登录后才能访问');
 });
 
+test('D3 尝试聚合：自主有效探索率按（剧本×学习者）计算，N=3', async () => {
+  const at = () => new Date().toISOString();
+  const scriptId = 'french_revolution';
+
+  // 学习者A：script.start + 3 次自主探索（initiator 省略，靠服务端默认注入）→ 有自主探索
+  // 学习者B：script.start + 1 次自主探索 → 未达 N，不计入
+  // 学习者C：只有探索事件没有 script.start → 不算尝试
+  const build = (eventId, name, actor, session, payload) => ({
+    eventId, name, occurredAt: at(), anonymousId: actor, sessionId: session, role: 'student', page: '/game-scene.html', payload
+  });
+  const events = [
+    build('d3-a-start', 'script.start', 'actor-d3-a', 'session-d3-a', { scriptId, mode: 'normal' }),
+    build('d3-a-card', 'script.card', 'actor-d3-a', 'session-d3-a', { scriptId, cardId: 'c1', action: 'use' }),
+    build('d3-a-npc1', 'npc.message_sent', 'actor-d3-a', 'session-d3-a', { scriptId, npcId: 'n1' }),
+    build('d3-a-npc2', 'npc.free_input_submitted', 'actor-d3-a', 'session-d3-a', { scriptId, npcId: 'n1' }),
+    build('d3-b-start', 'script.start', 'actor-d3-b', 'session-d3-b', { scriptId, mode: 'normal' }),
+    build('d3-b-card', 'script.card', 'actor-d3-b', 'session-d3-b', { scriptId, cardId: 'c2', action: 'use' }),
+    build('d3-c-card', 'script.card', 'actor-d3-c', 'session-d3-c', { scriptId, cardId: 'c3', action: 'use' })
+  ];
+  const batch = await jsonRequest('/api/v1/events/batch', {
+    method: 'POST',
+    body: JSON.stringify({ events })
+  });
+  assert.equal(batch.response.status, 202);
+  assert.equal(batch.body.accepted, events.length, 'D3 测试事件必须全部入库');
+
+  const login = await jsonRequest('/api/v1/admin/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ email: 'admin@test.local', password: 'testing-password-123' })
+  });
+  const cookie = login.response.headers.get('set-cookie').split(';')[0];
+  const analytics = await jsonRequest('/api/v1/admin/analytics', { headers: { Cookie: cookie } });
+  assert.equal(analytics.response.status, 200);
+
+  const autonomy = analytics.body.autonomy;
+  assert.ok(autonomy, '分析结果必须带 autonomy 聚合');
+  assert.equal(autonomy.n, 3, 'N 值按 ENG-15 建议口径为 3');
+  const row = autonomy.byScript.find((item) => item.scriptId === scriptId);
+  assert.ok(row, '自主探索率必须按剧本聚合');
+  assert.equal(row.attempts, 2, '只有 script.start 过的学习者算尝试（学习者C 不算）');
+  assert.equal(row.autonomousAttempts, 1, '学习者A 达 N=3 计入，学习者B 不计入');
+  assert.equal(row.autonomousRate, 0.5);
+});
+
 test('GitHub Issue 联动：管理员可关联 Issue，公开列表带出链接字段', async () => {
   const actor = 'actor-issue';
   const created = await jsonRequest('/api/v1/wishes', {

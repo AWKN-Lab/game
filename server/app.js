@@ -539,7 +539,33 @@ function handleAdminAnalytics(url, response, db) {
     FROM product_events WHERE name='quiz.answer' AND json_extract(payload_json,'$.scriptId') IS NOT NULL
     GROUP BY script_id, question_id ORDER BY wrong DESC, total DESC LIMIT 200`).all();
 
-  sendJson(response, 200, { success: true, funnel, funnelByScript, dropoff, choiceDistribution, wrongHeatmap });
+  // D3 尝试聚合：北极星「自主有效探索率」——（剧本×学习者）聚为一次尝试，
+  // 尝试内玩家自主探索事件（initiator='player'）≥ N 记为有自主探索；N=3 为 ENG-15 建议口径
+  const AUTONOMY_N = 3;
+  const autonomyRows = db.prepare(`
+    SELECT script_id, COUNT(*) attempts,
+           SUM(CASE WHEN player_events >= ? THEN 1 ELSE 0 END) autonomous_attempts
+    FROM (
+      SELECT json_extract(payload_json,'$.scriptId') script_id,
+             COALESCE(session_id, actor_id) learner_id,
+             SUM(CASE WHEN name='script.start' THEN 1 ELSE 0 END) starts,
+             SUM(CASE WHEN name IN ('script.card','npc.message_sent','npc.free_input_submitted')
+                       AND json_extract(payload_json,'$.initiator')='player' THEN 1 ELSE 0 END) player_events
+      FROM product_events
+      WHERE name IN ('script.start','script.card','npc.message_sent','npc.free_input_submitted')
+        AND json_extract(payload_json,'$.scriptId') IS NOT NULL
+      GROUP BY script_id, learner_id
+      HAVING starts >= 1
+    )
+    GROUP BY script_id`).all(AUTONOMY_N);
+  const autonomyByScript = autonomyRows.map((row) => ({
+    scriptId: row.script_id,
+    attempts: row.attempts,
+    autonomousAttempts: row.autonomous_attempts,
+    autonomousRate: row.attempts ? Math.round((row.autonomous_attempts / row.attempts) * 100) / 100 : 0
+  }));
+
+  sendJson(response, 200, { success: true, funnel, funnelByScript, dropoff, choiceDistribution, wrongHeatmap, autonomy: { n: AUTONOMY_N, byScript: autonomyByScript } });
 }
 
 function serveStatic(url, response) {

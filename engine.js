@@ -132,6 +132,13 @@ let ttAttempt = null;
 function ttAttemptRuntime() {
   return (typeof window !== 'undefined' && window.TTAttemptRuntime) ? window.TTAttemptRuntime : null;
 }
+// W03 题目运行时桥：依赖 assets/js/question-runtime.js（window.TTQuestionRuntime），缺失时静默降级 D1 行为
+function ttQuestionRuntime() {
+  return (typeof window !== 'undefined' && window.TTQuestionRuntime) ? window.TTQuestionRuntime : null;
+}
+function ttCurrentAttemptId() {
+  return ttAttempt ? ttAttempt.attemptId : 'legacy-no-attempt';
+}
 // 增量持久化 attempt 字段（saveProgress 未传字段沿用旧值，进度本体不受影响）
 function ttAttemptPersist() {
   if (!ttAttempt) return;
@@ -1472,8 +1479,17 @@ function renderQuizQuestion() {
     return;
   }
   const q = QUIZ_DATA[quizIndex];
-  // W03 随机化：结业测验选项每次展示洗牌，消除 ans 位置泄漏（判分跟随对象引用，见 selectAnswer）
-  window._currentQuizOptions = shuffleQuizOptions(q.opts);
+  // W03 稳定 ID：question-runtime 可用时按（版本,题目,attemptId）种子定序、按 optionId 判分；缺失时降级 D1 洗牌
+  const qrt = ttQuestionRuntime();
+  if (qrt) {
+    const nq = qrt.normalizeQuestion(q, 1, q.id || ((GAME_CONFIG.scriptId || 'script') + '_quiz_' + (quizIndex + 1)));
+    const order = qrt.getDisplayOrder(nq, ttCurrentAttemptId());
+    window._currentQuizCtx = { normalized: nq, order, answered: false };
+    window._currentQuizOptions = order.map((oid) => nq.options.find((o) => o.optionId === oid).text);
+  } else {
+    window._currentQuizCtx = null;
+    window._currentQuizOptions = shuffleQuizOptions(q.opts);
+  }
   const dialogBox = document.querySelector('.dialog-box');
   dialogBox.innerHTML = `
     <div style="padding:16px;">
@@ -1501,19 +1517,36 @@ function isQuizOptionCorrect(q, shuffled, displayIdx) {
 
 function selectAnswer(idx) {
   const q = QUIZ_DATA[quizIndex];
-  const shuffled = window._currentQuizOptions || q.opts;
-  const chosen = shuffled[idx];
-  const correct = isQuizOptionCorrect(q, shuffled, idx);
+  const ctx = window._currentQuizCtx;
+  let chosen, correct, correctText, optionId = null, correctOptionId = null;
+  if (ctx) {
+    // W03: 重复回调只首次结算；按 optionId 判分，与显示顺序无关
+    if (ctx.answered) return;
+    ctx.answered = true;
+    optionId = ctx.order[idx];
+    const res = window.TTQuestionRuntime.evaluate(ctx.normalized, optionId);
+    correct = res.correct;
+    correctOptionId = res.correctOptionId;
+    chosen = ctx.normalized.options.find((o) => o.optionId === optionId).text;
+    correctText = ctx.normalized.options.find((o) => o.optionId === res.correctOptionId).text;
+  } else {
+    const shuffled = window._currentQuizOptions || q.opts;
+    chosen = shuffled[idx];
+    correct = isQuizOptionCorrect(q, shuffled, idx);
+    correctText = String(q.opts[q.ans]);
+  }
   if (correct) quizScore++;
 
-  ttHook('quiz.answer', {
+  const answerPayload = {
     questionId: q.id || ('q' + (quizIndex + 1)),
     choiceIndex: idx,
     choiceText: String(chosen),
-    correctText: String(q.opts[q.ans]),
+    correctText: correctText,
     correct: correct,
     knowledgeId: q.knowledgeId || ''
-  });
+  };
+  if (optionId) answerPayload.optionId = optionId;
+  ttHook('quiz.answer', answerPayload);
 
   // 正确/错误音效
   if (correct) { playCorrectSFX(); } else { playWrongSFX(); }
@@ -1529,10 +1562,11 @@ function selectAnswer(idx) {
     });
   }
 
-  // Disable all buttons and show feedback（按洗牌后对象引用定位正确项）
+  // Disable all buttons and show feedback（ctx 模式按 optionId 定位正确项；降级模式按洗牌后对象引用）
   document.querySelectorAll('#quizOptions button').forEach((btn, i) => {
     btn.style.pointerEvents = 'none';
-    if (isQuizOptionCorrect(q, shuffled, i)) {
+    const btnCorrect = ctx ? ctx.order[i] === correctOptionId : isQuizOptionCorrect(q, window._currentQuizOptions || q.opts, i);
+    if (btnCorrect) {
       btn.style.background = 'rgba(34,197,94,0.2)';
       btn.style.borderColor = '#22c55e';
       btn.style.color = '#22c55e';
@@ -2201,6 +2235,25 @@ function showEvidence(line) {
       <div class="ev-content">${item.content}</div>
     </div>
   `).join('');
+  // W03 稳定 ID：question-runtime 可用时按（版本,题目,attemptId）种子定序、按 optionId 判分；
+  // 缺失时降级 D1 洗牌。状态计算必须先于 optionsHtml 组装——修复旧版引用上一题选项数组的缺陷。
+  window._currentEvidence = line;
+  const evQrt = ttQuestionRuntime();
+  if (evQrt) {
+    const nq = evQrt.normalizeQuestion(
+      { opts: line.options.map((o) => o.text), ans: line.options[0].correctIndex },
+      1,
+      line.id || ('evidence_' + dialogIndex)
+    );
+    const order = evQrt.getDisplayOrder(nq, ttCurrentAttemptId());
+    window._currentEvidenceCtx = { normalized: nq, order, answered: false };
+    // v1 旧数据 optionId 固定 o{i+1}（question-runtime 索引派生），按其映射回原始选项对象
+    window._currentEvidenceOptions = order.map((oid) => line.options[parseInt(oid.slice(1), 10) - 1]);
+  } else {
+    window._currentEvidenceCtx = null;
+    // D1 随机化：每次展示洗牌，消除 correctIndex 位置泄漏（判分跟随对象引用，见 selectEvidenceOption）
+    window._currentEvidenceOptions = shuffleEvidenceOptions(line.options);
+  }
   const optionsHtml = window._currentEvidenceOptions.map((opt, i) => `
     <button class="evidence-option-btn" onclick="selectEvidenceOption(${i})">${opt.text}</button>
   `).join('');
@@ -2215,9 +2268,6 @@ function showEvidence(line) {
       <button class="evidence-close-btn" id="evidenceCloseBtn" style="display:none" onclick="closeEvidence()">继续 →</button>
     </div>
   `;
-  window._currentEvidence = line;
-  // D1 随机化：每次展示洗牌，消除 correctIndex 位置泄漏（判分跟随对象引用，见 selectEvidenceOption）
-  window._currentEvidenceOptions = shuffleEvidenceOptions(line.options);
   ttHook('script.evidence_open', {
     nodeId: 'evidence_' + dialogIndex,
     evidenceId: line.id || ('evidence_' + dialogIndex),
@@ -2245,23 +2295,41 @@ function isEvidenceOptionCorrect(line, shuffled, displayIdx) {
 function selectEvidenceOption(idx) {
   const line = window._currentEvidence;
   if (!line) return;
-  const shuffled = window._currentEvidenceOptions;
-  const opt = shuffled[idx];
-  const correct = isEvidenceOptionCorrect(line, shuffled, idx);
-  recordNodeChoice(line.id || ('evidence_' + dialogIndex), idx);
-  ttHook('quiz.answer', {
+  const ctx = window._currentEvidenceCtx;
+  let opt, correct, optionId = null, correctOptionId = null;
+  if (ctx) {
+    // W03: 重复回调只首次结算；按 optionId 判分，与显示顺序无关
+    if (ctx.answered) return;
+    ctx.answered = true;
+    optionId = ctx.order[idx];
+    const res = window.TTQuestionRuntime.evaluate(ctx.normalized, optionId);
+    correct = res.correct;
+    correctOptionId = res.correctOptionId;
+    // _currentEvidenceOptions 已按展示顺序排列，直接取原始选项对象（含 feedback/effects）
+    opt = window._currentEvidenceOptions[idx];
+  } else {
+    const shuffled = window._currentEvidenceOptions;
+    opt = shuffled[idx];
+    correct = isEvidenceOptionCorrect(line, shuffled, idx);
+  }
+  // recordNodeChoice 传原始索引：ctx 模式按 v1 稳定 optionId o{i+1} 还原；降级模式沿用 D1 显示索引
+  recordNodeChoice(line.id || ('evidence_' + dialogIndex), optionId ? parseInt(optionId.slice(1), 10) - 1 : idx);
+  const answerPayload = {
     questionId: 'evidence_' + dialogIndex,
     choiceIndex: idx,
     correct,
     knowledgeId: line.id || ''
-  });
+  };
+  if (optionId) answerPayload.optionId = optionId;
+  ttHook('quiz.answer', answerPayload);
   const btns = document.querySelectorAll('#evidenceOptions .evidence-option-btn');
   const feedbackEl = document.getElementById('evidenceFeedback');
   const closeBtn = document.getElementById('evidenceCloseBtn');
   // 禁用所有按钮
   btns.forEach((b, i) => {
     b.style.pointerEvents = 'none';
-    if (isEvidenceOptionCorrect(line, shuffled, i)) b.classList.add('correct');
+    const btnCorrect = ctx ? ctx.order[i] === correctOptionId : isEvidenceOptionCorrect(line, window._currentEvidenceOptions, i);
+    if (btnCorrect) b.classList.add('correct');
     if (i === idx && !correct) b.classList.add('wrong');
   });
   if (correct) {

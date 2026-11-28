@@ -127,14 +127,65 @@ function ttCurrentAct() {
   return el ? String(el.textContent || '').trim() : '';
 }
 
+// W04 attempt 身份桥：依赖 assets/js/attempt-runtime.js（window.TTAttemptRuntime），缺失时静默降级
+let ttAttempt = null;
+function ttAttemptRuntime() {
+  return (typeof window !== 'undefined' && window.TTAttemptRuntime) ? window.TTAttemptRuntime : null;
+}
+// 增量持久化 attempt 字段（saveProgress 未传字段沿用旧值，进度本体不受影响）
+function ttAttemptPersist() {
+  if (!ttAttempt) return;
+  try {
+    DataStore.saveProgress({
+      scriptId: GAME_CONFIG.scriptId,
+      attemptId: ttAttempt.attemptId,
+      attemptState: ttAttempt.attemptState,
+      contentVersion: ttAttempt.contentVersion
+    });
+  } catch (error) { /* 存储异常不阻塞游戏 */ }
+}
+
 function ttHook(name, payload) {
   try {
     if (!window.GameHooks || typeof window.GameHooks.emit !== 'function') return false;
     payload = payload || {};
     if (!payload.scriptId) payload.scriptId = (window.GAME_CONFIG && GAME_CONFIG.scriptId) || '';
+    if (!payload.attemptId && ttAttempt) {
+      payload.attemptId = ttAttempt.attemptId;
+      payload.contentVersion = ttAttempt.contentVersion;
+    }
     return window.GameHooks.emit(name, payload);
   } catch (error) {
     return false;
+  }
+}
+
+// attempt 入口分流：续玩（同 ID 不重发 start）/ 旧档迁移（新 ID 标观测不完整，不重发）/ 全新开始（新 ID + script.start）
+// restartGame 已自行建好新 attempt 后再调 initGameHUD，此处凭 ttAttempt 已存在直接跳过，防重复创建
+function ttInitAttempt(savedProgress) {
+  var R = ttAttemptRuntime();
+  if (!R || ttAttempt) return;
+  try {
+    if (savedProgress && savedProgress.dialogIndex > 0 && savedProgress.attemptId) {
+      ttAttempt = R.resumeAttempt({
+        attemptId: savedProgress.attemptId,
+        attemptState: savedProgress.attemptState,
+        scriptId: GAME_CONFIG.scriptId,
+        contentVersion: savedProgress.contentVersion || '1'
+      });
+      return; // 续玩不重发 script.start
+    }
+    ttAttempt = R.createAttempt({
+      scriptId: GAME_CONFIG.scriptId,
+      observedIncomplete: Boolean(savedProgress && savedProgress.dialogIndex > 0)
+    });
+    R.transition(ttAttempt, 'start');
+    if (!savedProgress || !(savedProgress.dialogIndex > 0)) {
+      ttHook('script.start', { mode: 'engine' }); // 全新开始才发；旧档迁移的开始事件已丢失，不补发
+    }
+    ttAttemptPersist();
+  } catch (error) {
+    ttAttempt = null; // attempt 层异常不阻塞游戏
   }
 }
 
@@ -168,7 +219,7 @@ function echoNpcName(npcId) {
 }
 
 function saveProgressWithPresence() {
-  DataStore.saveProgress({
+  var patch = {
     scriptId: GAME_CONFIG.scriptId,
     dialogIndex,
     gameValues: { ...gameValues },
@@ -177,7 +228,14 @@ function saveProgressWithPresence() {
     choicesByAct: { ...choicesByAct },
     npcTrust: { ...npcTrust },
     currentAct: ''
-  });
+  };
+  // W04：随进度一并持久化 attempt 身份（未建 attempt 时不传，沿用旧值）
+  if (ttAttempt) {
+    patch.attemptId = ttAttempt.attemptId;
+    patch.attemptState = ttAttempt.attemptState;
+    patch.contentVersion = ttAttempt.contentVersion;
+  }
+  DataStore.saveProgress(patch);
 }
 
 // 记录玩家选择（按幕次归一化），供后续幕次回响回读
@@ -639,6 +697,8 @@ function initGameHUD() {
     dialogIndex = 0;
     gameValues = { ...GAME_CONFIG.values };
   }
+  // W04 attempt 分流：续玩同 ID / 旧档迁移 / 全新开始（restartGame 重开时 ttAttempt 已就绪，此处自动跳过）
+  ttInitAttempt(savedProgress);
   valueLabels = { ...GAME_CONFIG.valueLabels };
   document.getElementById('gameScene').style.backgroundImage = "url('images/bg/opera_house.jpg')";
   renderValueHUD();
@@ -1530,6 +1590,20 @@ function restartGame() {
   endingDialogIndex = 0;
   initNpcFate();
   clearPressureEffects();
+
+  // W04 显式重开：清存档 attempt 字段（保留进度本体），建全新 attempt 并重发 script.start
+  try { DataStore.resetAttempt(GAME_CONFIG.scriptId); } catch (error) { /* 存储异常不阻塞游戏 */ }
+  var Rt = ttAttemptRuntime();
+  if (Rt) {
+    try {
+      ttAttempt = Rt.restartAttempt({ scriptId: GAME_CONFIG.scriptId });
+      Rt.transition(ttAttempt, 'start');
+      ttHook('script.start', { mode: 'engine' });
+      ttAttemptPersist();
+    } catch (error) {
+      ttAttempt = null; // attempt 层异常不阻塞游戏
+    }
+  }
 
   document.querySelector('.dialog-box').innerHTML = `
     <div class="dialog-speaker" id="dialogSpeaker" style="display:none;">

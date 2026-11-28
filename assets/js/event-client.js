@@ -56,6 +56,19 @@
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(queue.slice(-MAX_QUEUE))); } catch (error) {}
   }
 
+  // W04 §5.3：按最新队列按 eventId 结算本批——有服务端结果即结算（送达/重复确认/永久拒绝均不再重试），无结果保留，避免旧快照覆盖请求期间新增记录
+  function settleQueue(batchIds, resultMap) {
+    var fresh = readQueue();
+    var idSet = {};
+    batchIds.forEach(function (id) { idSet[id] = true; });
+    var kept = fresh.filter(function (item) {
+      if (!item || !idSet[item.eventId]) return true;
+      return !resultMap[item.eventId];
+    });
+    if (kept.length !== fresh.length) writeQueue(kept);
+    return fresh.length - kept.length;
+  }
+
   function sanitize(name, payload) {
     var keys = catalog[name];
     if (!keys) return null;
@@ -87,30 +100,44 @@
   async function flush(options) {
     options = options || {};
     if (flushing) return;
-    if (global.TTIdentity && !global.TTIdentity.isTrackingEnabled()) return;
+    // W04 §5.3：撤回授权即清除待发记录，不追传关闭期间事件
+    if (global.TTIdentity && !global.TTIdentity.isTrackingEnabled()) {
+      if (readQueue().length) writeQueue([]);
+      return;
+    }
     var queue = readQueue();
     if (!queue.length) return;
     flushing = true;
     var batch = queue.slice(0, MAX_BATCH);
+    var batchIds = batch.map(function (item) { return item.eventId; });
     var body = JSON.stringify({ events: batch });
 
     try {
       if (options.beacon && navigator.sendBeacon) {
-        var sent = navigator.sendBeacon('/api/v1/events/batch', new Blob([body], { type: 'application/json' }));
-        if (sent) {
-          writeQueue(queue.slice(batch.length));
-          retryDelay = 5000;
-        }
+        // W04 §5.3：sendBeacon true 仅代表浏览器已排队，不代表送达——保留原 ID 不删，下次 flush 验证上传，服务端按 eventId 幂等去重
+        navigator.sendBeacon('/api/v1/events/batch', new Blob([body], { type: 'application/json' }));
         return;
       }
       if (!global.TTApi) throw new Error('API client unavailable');
-      await global.TTApi.post('/events/batch', { events: batch }, { timeoutMs: 5000 });
-      writeQueue(queue.slice(batch.length));
+      var response = await global.TTApi.post('/events/batch', { events: batch }, { timeoutMs: 5000 });
+      var resultMap = {};
+      if (response && Array.isArray(response.results)) {
+        response.results.forEach(function (item) { if (item && item.eventId) resultMap[item.eventId] = item; });
+      }
+      settleQueue(batchIds, resultMap);
       retryDelay = 5000;
       if (readQueue().length) setTimeout(function () { flush(); }, 50);
     } catch (error) {
-      retryDelay = Math.min(retryDelay * 2, 300000);
-      setTimeout(function () { flush(); }, retryDelay);
+      // W04 §5.3：区分可重试与永久拒绝——4xx（429 除外）重试无意义，整批丢弃防坏事件卡住队列；网络/5xx/429 退避重试
+      var status = error && error.status || 0;
+      if (status >= 400 && status < 500 && status !== 429) {
+        var rejectedMap = {};
+        batchIds.forEach(function (id) { rejectedMap[id] = { accepted: false }; });
+        settleQueue(batchIds, rejectedMap);
+      } else {
+        retryDelay = Math.min(retryDelay * 2, 300000);
+        setTimeout(function () { flush(); }, retryDelay);
+      }
     } finally {
       flushing = false;
     }

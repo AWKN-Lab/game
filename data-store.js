@@ -46,6 +46,33 @@
     return PREFIX + key;
   }
 
+  // ---------------------------------------------------------------------------
+  // D2 存档互斥：同剧本跨标签页写锁（ENG-15 D2 建议口径——禁止静默覆盖）
+  // 锁结构 {tabId, ts} 存于 st_lock_<scriptId>；新鲜度 TTL 内视为他签活跃
+  // ---------------------------------------------------------------------------
+  var LOCK_TTL_MS = 8000;
+  var _tabId = (function () {
+    var id = 'tab_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+    try {
+      var saved = sessionStorage.getItem('st_tab_id');
+      if (saved) return saved;
+      sessionStorage.setItem('st_tab_id', id);
+    } catch (e) { /* sessionStorage 不可用时每次刷新换新 id，互斥退化为单页内生效 */ }
+    return id;
+  })();
+
+  function _readLock(scriptId) {
+    return _get('lock_' + scriptId, null);
+  }
+
+  function _writeLock(scriptId) {
+    _set('lock_' + scriptId, { tabId: _tabId, ts: Date.now() });
+  }
+
+  function _lockIsFresh(lock) {
+    return !!(lock && lock.tabId && (Date.now() - lock.ts) < LOCK_TTL_MS);
+  }
+
   /**
    * 安全地将 JSON 字符串解析为对象
    * @param {string} str - JSON 字符串
@@ -97,6 +124,15 @@
    */
   DataStore.saveProgress = function (data) {
     if (!data || !data.scriptId) return;
+    // D2 存档互斥守卫：其他标签页持有新鲜写锁时拒绝写入，禁止静默覆盖（ENG-15 D2）
+    var lock = _get('lock_' + data.scriptId, null);
+    if (lock && lock.tabId && lock.tabId !== _tabId && (Date.now() - lock.ts) < LOCK_TTL_MS) {
+      DataStore._blockedSaves = (DataStore._blockedSaves || 0) + 1;
+      if (typeof DataStore.onSaveBlocked === 'function') {
+        try { DataStore.onSaveBlocked(data.scriptId, lock.tabId); } catch (e) { /* 提示层异常不阻断存档流程 */ }
+      }
+      return;
+    }
     // 增量合并：未传字段沿用上次存档，避免部分保存丢失 npcFate / choicesByAct / npcTrust
     var prev = _get('progress_' + data.scriptId, null) || {};
     _set('progress_' + data.scriptId, {
@@ -120,6 +156,56 @@
    */
   DataStore.loadProgress = function (scriptId) {
     return _get('progress_' + scriptId, null);
+  };
+
+  // ---------------------------------------------------------------------------
+  // D2 存档互斥公开 API：获取/续期/释放/查询剧本写锁
+  // ---------------------------------------------------------------------------
+
+  /**
+   * 尝试获取剧本写锁（同剧本跨标签互斥）
+   * @param {string} scriptId - 剧本 ID
+   * @param {Object} [opts]
+   * @param {boolean} [opts.force] - 显式接管：无视他签新鲜锁直接夺锁（ENG-15 D2「显式接管」）
+   * @returns {{acquired: boolean, holderTabId: string|null, takeover: boolean}}
+   *          takeover=true 表示从失效/过期锁手中接管
+   */
+  DataStore.acquireScriptLock = function (scriptId, opts) {
+    var lock = _readLock(scriptId);
+    var isMine = !!(lock && lock.tabId === _tabId);
+    if (isMine || !_lockIsFresh(lock) || (opts && opts.force)) {
+      _writeLock(scriptId);
+      return {
+        acquired: true,
+        holderTabId: lock ? lock.tabId : null,
+        takeover: !!(lock && lock.tabId !== _tabId)
+      };
+    }
+    return { acquired: false, holderTabId: lock.tabId, takeover: false };
+  };
+
+  /** 续期自己持有的写锁（心跳调用）；非持锁方调用不生效并返回 false */
+  DataStore.refreshScriptLock = function (scriptId) {
+    var lock = _readLock(scriptId);
+    if (lock && lock.tabId === _tabId) {
+      _writeLock(scriptId);
+      return true;
+    }
+    return false;
+  };
+
+  /** 释放自己持有的写锁（页面卸载时调用）；非持锁方调用不释放他签锁 */
+  DataStore.releaseScriptLock = function (scriptId) {
+    var lock = _readLock(scriptId);
+    if (lock && lock.tabId === _tabId) {
+      _storage.removeItem(_key('lock_' + scriptId));
+    }
+  };
+
+  /** 当前标签页是否持有该剧本写锁 */
+  DataStore.holdsScriptLock = function (scriptId) {
+    var lock = _readLock(scriptId);
+    return !!(lock && lock.tabId === _tabId);
   };
 
   /**

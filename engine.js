@@ -555,9 +555,77 @@ function confirmMenu() {
 window._gameStartTime = window._gameStartTime || Date.now();
 
 // ============================================================
+// D2 存档互斥：同剧本跨标签页写锁（ENG-15 D2——禁止静默覆盖）
+// 他签持锁时本页保存被 DataStore 拒绝，弹横幅提示「关闭或显式接管」
+// ============================================================
+var _scriptLockTimer = null;
+var _lockBannerEl = null;
+
+function startScriptLockHeartbeat() {
+  if (_scriptLockTimer || typeof DataStore.refreshScriptLock !== 'function') return;
+  _scriptLockTimer = setInterval(function () {
+    DataStore.refreshScriptLock(GAME_CONFIG.scriptId);
+  }, 3000);
+}
+
+function hideLockBanner() {
+  if (_lockBannerEl && _lockBannerEl.parentNode) _lockBannerEl.parentNode.removeChild(_lockBannerEl);
+  _lockBannerEl = null;
+}
+
+function showLockBanner() {
+  if (_lockBannerEl || typeof document === 'undefined' || !document.body) return;
+  var banner = document.createElement('div');
+  banner.className = 'save-lock-banner';
+  banner.style.cssText = 'position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:9999;background:rgba(20,20,28,.92);color:#f5e6c8;padding:12px 16px;border-radius:10px;font-size:14px;box-shadow:0 4px 16px rgba(0,0,0,.4);max-width:92vw;text-align:center;';
+  banner.textContent = '检测到另一个标签页正在玩这个剧本，本页进度暂不保存，避免互相覆盖。';
+  var takeBtn = document.createElement('button');
+  takeBtn.textContent = '接管，在此页继续';
+  takeBtn.style.cssText = 'margin:6px 6px 0;padding:6px 14px;border:none;border-radius:6px;background:#c9a227;color:#fff;cursor:pointer;';
+  takeBtn.onclick = function () {
+    if (typeof DataStore.acquireScriptLock === 'function') {
+      DataStore.acquireScriptLock(GAME_CONFIG.scriptId, { force: true });
+    }
+    startScriptLockHeartbeat();
+    hideLockBanner();
+  };
+  var dismissBtn = document.createElement('button');
+  dismissBtn.textContent = '知道了';
+  dismissBtn.style.cssText = 'margin:6px 6px 0;padding:6px 14px;border:none;border-radius:6px;background:#555;color:#eee;cursor:pointer;';
+  dismissBtn.onclick = hideLockBanner;
+  banner.appendChild(takeBtn);
+  banner.appendChild(dismissBtn);
+  document.body.appendChild(banner);
+  _lockBannerEl = banner;
+}
+
+function ensureScriptLock() {
+  if (typeof DataStore.acquireScriptLock !== 'function') return true; // 旧版 DataStore 降级：跳过互斥
+  var res = DataStore.acquireScriptLock(GAME_CONFIG.scriptId);
+  if (res.acquired) {
+    startScriptLockHeartbeat();
+    return true;
+  }
+  showLockBanner();
+  return false;
+}
+
+// 他签持锁期间本页保存被拒时，重新弹提示（禁止静默覆盖的可见化）
+DataStore.onSaveBlocked = function () { showLockBanner(); };
+
+if (typeof window.addEventListener === 'function') {
+  window.addEventListener('beforeunload', function () {
+    if (typeof DataStore.releaseScriptLock === 'function') DataStore.releaseScriptLock(GAME_CONFIG.scriptId);
+    if (_scriptLockTimer) { clearInterval(_scriptLockTimer); _scriptLockTimer = null; }
+  });
+}
+
+// ============================================================
 // 初始化游戏HUD
 // ============================================================
 function initGameHUD() {
+  // D2 存档互斥：开局先抢同剧本写锁，抢不到则弹接管提示（进度仍可玩但不保存）
+  ensureScriptLock();
   // 先检查存档，有存档则恢复进度
   var savedProgress = DataStore.loadProgress(GAME_CONFIG.scriptId);
   if (savedProgress && savedProgress.dialogIndex > 0) {

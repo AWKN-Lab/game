@@ -115,6 +115,7 @@
 <script src="script-registry.js"></script>
 <script src="assets/js/api-client.js"></script>
 <script src="assets/js/identity-client.js"></script>
+<script src="assets/js/event-client.js"></script>
 <script>
 (function () {
   'use strict';
@@ -127,6 +128,9 @@
   ];
   var session = null;
   var $ = function (id) { return document.getElementById(id); };
+  function report(name, payload) {
+    try { if (globalThis.TTEvents) globalThis.TTEvents.track(name, payload || {}); } catch (e) { /* 埋点失败不影响课堂操作 */ }
+  }
 
   // 剧本下拉
   var scriptSelect = $('script-select');
@@ -172,6 +176,7 @@
     try {
       var result = await window.TTApi.patch('/classroom/' + session.joinCode, body);
       session = result.session;
+      report('director.pacing_changed', { scriptId: session.scriptId, actId: body.actId || '', status: body.status || '' });
       renderWorkspace();
     } catch (error) {
       alert(error && error.message ? error.message : '操作失败，请重试');
@@ -190,6 +195,7 @@
       session = result.session;
       resetTallyRows();
       renderWorkspace();
+      report('director.class_started', { scriptId: session.scriptId });
       showMsg('', true);
     } catch (error) {
       showMsg(error && error.message ? error.message : '创建失败，请重试', false);
@@ -206,6 +212,7 @@
       session = result.session;
       resetTallyRows();
       renderWorkspace();
+      report('director.session_resumed', { scriptId: session.scriptId });
       showMsg('', true);
     } catch (error) {
       showMsg(error && error.message ? error.message : '课堂不存在或口令有误', false);
@@ -260,6 +267,7 @@
         topic: $('tally-topic').value.trim() || null,
         entries: entries
       });
+      report('director.tally_submitted', { scriptId: session.scriptId, rows: entries.length });
       renderTally(result.tally);
     } catch (error) {
       alert(error && error.message ? error.message : '录入失败，请重试');
@@ -319,6 +327,7 @@
         topic: $('mod-topic').value.trim() || null,
         statements: statements
       });
+      report('director.moderation_submitted', { scriptId: session.scriptId, lines: statements.length, factFlags: (result.factFlags || []).length });
       renderModeration(result);
     } catch (error) {
       alert(error && error.message ? error.message : '主持失败，请重试');

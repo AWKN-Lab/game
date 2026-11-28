@@ -2043,7 +2043,7 @@ function showEvidence(line) {
       <div class="ev-content">${item.content}</div>
     </div>
   `).join('');
-  const optionsHtml = line.options.map((opt, i) => `
+  const optionsHtml = window._currentEvidenceOptions.map((opt, i) => `
     <button class="evidence-option-btn" onclick="selectEvidenceOption(${i})">${opt.text}</button>
   `).join('');
   overlay.innerHTML = `
@@ -2058,6 +2058,8 @@ function showEvidence(line) {
     </div>
   `;
   window._currentEvidence = line;
+  // D1 随机化：每次展示洗牌，消除 correctIndex 位置泄漏（判分跟随对象引用，见 selectEvidenceOption）
+  window._currentEvidenceOptions = shuffleEvidenceOptions(line.options);
   ttHook('script.evidence_open', {
     nodeId: 'evidence_' + dialogIndex,
     evidenceId: line.id || ('evidence_' + dialogIndex),
@@ -2066,15 +2068,33 @@ function showEvidence(line) {
   requestAnimationFrame(() => overlay.classList.add('show'));
 }
 
+// D1: Fisher-Yates 洗牌（可注入 rng 便于固定种子测试）；不修改原数组
+function shuffleEvidenceOptions(options, rng = Math.random) {
+  const arr = options.slice();
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// D1: 判定某显示位选项是否为正确项——跟随对象引用而非显示索引
+function isEvidenceOptionCorrect(line, shuffled, displayIdx) {
+  const opt = shuffled[displayIdx];
+  return line.options[opt.correctIndex] === opt;
+}
+
 function selectEvidenceOption(idx) {
   const line = window._currentEvidence;
   if (!line) return;
-  const opt = line.options[idx];
+  const shuffled = window._currentEvidenceOptions;
+  const opt = shuffled[idx];
+  const correct = isEvidenceOptionCorrect(line, shuffled, idx);
   recordNodeChoice(line.id || ('evidence_' + dialogIndex), idx);
   ttHook('quiz.answer', {
     questionId: 'evidence_' + dialogIndex,
     choiceIndex: idx,
-    correct: idx === opt.correctIndex,
+    correct,
     knowledgeId: line.id || ''
   });
   const btns = document.querySelectorAll('#evidenceOptions .evidence-option-btn');
@@ -2083,10 +2103,10 @@ function selectEvidenceOption(idx) {
   // 禁用所有按钮
   btns.forEach((b, i) => {
     b.style.pointerEvents = 'none';
-    if (i === opt.correctIndex) b.classList.add('correct');
-    if (i === idx && idx !== opt.correctIndex) b.classList.add('wrong');
+    if (isEvidenceOptionCorrect(line, shuffled, i)) b.classList.add('correct');
+    if (i === idx && !correct) b.classList.add('wrong');
   });
-  if (idx === opt.correctIndex) {
+  if (correct) {
     feedbackEl.className = 'evidence-feedback correct';
     feedbackEl.textContent = opt.correctFeedback || '✅ 回答正确！你的推理很准确。';
     playCorrectSFX();

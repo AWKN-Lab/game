@@ -66,3 +66,6 @@ scripts/_tmp_*.mjs
 docs/.nfs*
 
 .nfs*
+
+# 音效候选试听素材（由 scripts/fetch-sfx-candidates.mjs 下载，不入库）
+docs/audition/sfx/audio/

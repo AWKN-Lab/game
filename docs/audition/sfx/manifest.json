@@ -1,0 +1,356 @@
+[
+  {
+    "event": "枪声",
+    "file": "oga_枪声_0_guns.mp3",
+    "source": "OpenGameArt",
+    "url": "https://opengameart.org/sites/default/files/guns.mp3"
+  },
+  {
+    "event": "枪声",
+    "file": "oga_枪声_2_Preview_1.ogg",
+    "source": "OpenGameArt",
+    "url": "https://opengameart.org/sites/default/files/Preview_1.ogg"
+  },
+  {
+    "event": "枪声",
+    "file": "oga_枪声_3_gunshots.mp3",
+    "source": "OpenGameArt",
+    "url": "https://opengameart.org/sites/default/files/gunshots.mp3"
+  },
+  {
+    "event": "钟声",
+    "file": "oga_钟声_0_churchbell.mp3",
+    "source": "OpenGameArt",
+    "url": "https://opengameart.org/sites/default/files/churchbell.mp3"
+  },
+  {
+    "event": "钟声",
+    "file": "oga_钟声_1_death_bell_sound_effect.mp3",
+    "source": "OpenGameArt",
+    "url": "https://opengameart.org/sites/default/files/death_bell_sound_effect.mp3"
+  },
+  {
+    "event": "雨声",
+    "file": "oga_雨声_0_montageAudio-20120408_1436.mp3",
+    "source": "OpenGameArt",
+    "url": "https://opengameart.org/sites/default/files/montageAudio-20120408@143621.mp3"
+  },
+  {
+    "event": "雨声",
+    "file": "oga_雨声_2_rain_thunder_loop.wav",
+    "source": "OpenGameArt",
+    "url": "https://opengameart.org/sites/default/files/rain_thunder_loop.wav"
+  },
+  {
+    "event": "雨声",
+    "file": "oga_雨声_3_rain-gutter-loop_0.mp3",
+    "source": "OpenGameArt",
+    "url": "https://opengameart.org/sites/default/files/rain-gutter-loop_0.mp3"
+  },
+  {
+    "event": "海浪",
+    "file": "oga_海浪_0_jasinski-wave-prev.ogg",
+    "source": "OpenGameArt",
+    "url": "https://opengameart.org/sites/default/files/jasinski-wave-prev.ogg"
+  },
+  {
+    "event": "海浪",
+    "file": "oga_海浪_1_transitking-wave-prev.ogg",
+    "source": "OpenGameArt",
+    "url": "https://opengameart.org/sites/default/files/transitking-wave-prev.ogg"
+  },
+  {
+    "event": "海浪",
+    "file": "oga_海浪_2_wind_0.ogg",
+    "source": "OpenGameArt",
+    "url": "https://opengameart.org/sites/default/files/wind_0.ogg"
+  },
+  {
+    "event": "海浪",
+    "file": "oga_海浪_3_ship_destroyed.ogg",
+    "source": "OpenGameArt",
+    "url": "https://opengameart.org/sites/default/files/ship_destroyed.ogg"
+  },
+  {
+    "event": "风声",
+    "file": "oga_风声_0_ambenv_3.mp3",
+    "source": "OpenGameArt",
+    "url": "https://opengameart.org/sites/default/files/ambenv_3.mp3"
+  },
+  {
+    "event": "风声",
+    "file": "oga_风声_1_montageAudio-20120408_1436.mp3",
+    "source": "OpenGameArt",
+    "url": "https://opengameart.org/sites/default/files/montageAudio-20120408@143621.mp3"
+  },
+  {
+    "event": "风声",
+    "file": "oga_风声_2_preview_13.ogg",
+    "source": "OpenGameArt",
+    "url": "https://opengameart.org/sites/default/files/preview_13.ogg"
+  },
+  {
+    "event": "风声",
+    "file": "oga_风声_3_nature_ambient_pack_vol_1.mp3",
+    "source": "OpenGameArt",
+    "url": "https://opengameart.org/sites/default/files/nature_ambient_pack_vol_1.mp3"
+  },
+  {
+    "event": "风声",
+    "file": "oga_风声_4_windy_ambiance.ogg",
+    "source": "OpenGameArt",
+    "url": "https://opengameart.org/sites/default/files/windy_ambiance.ogg"
+  },
+  {
+    "event": "鸟鸣_自然",
+    "file": "oga_鸟鸣_自然_0_birds-isaiah658.ogg",
+    "source": "OpenGameArt",
+    "url": "https://opengameart.org/sites/default/files/birds-isaiah658.ogg"
+  },
+  {
+    "event": "鸟鸣_自然",
+    "file": "oga_鸟鸣_自然_3_ambience.ogg",
+    "source": "OpenGameArt",
+    "url": "https://opengameart.org/sites/default/files/ambience.ogg"
+  },
+  {
+    "event": "烟花_爆响",
+    "file": "oga_烟花_爆响_0_applause_fireworks.mp3",
+    "source": "OpenGameArt",
+    "url": "https://opengameart.org/sites/default/files/applause_fireworks.mp3"
+  },
+  {
+    "event": "烟花_爆响",
+    "file": "oga_烟花_爆响_1_packsmithy-sfx-sampler-pre.ogg",
+    "source": "OpenGameArt",
+    "url": "https://opengameart.org/sites/default/files/packsmithy-sfx-sampler-preview.ogg"
+  },
+  {
+    "event": "烟花_爆响",
+    "file": "oga_烟花_爆响_2_childrens_game_app_ending.mp3",
+    "source": "OpenGameArt",
+    "url": "https://opengameart.org/sites/default/files/childrens_game_app_ending.mp3"
+  },
+  {
+    "event": "烟花_爆响",
+    "file": "oga_烟花_爆响_3_bangs_prev.ogg",
+    "source": "OpenGameArt",
+    "url": "https://opengameart.org/sites/default/files/bangs_prev.ogg"
+  },
+  {
+    "event": "金属_兵器",
+    "file": "oga_金属_兵器_0_montage-sfx-20130922_03414.ogg",
+    "source": "OpenGameArt",
+    "url": "https://opengameart.org/sites/default/files/montage-sfx-20130922@034143.ogg"
+  },
+  {
+    "event": "金属_兵器",
+    "file": "oga_金属_兵器_1_pre-woo.mp3",
+    "source": "OpenGameArt",
+    "url": "https://opengameart.org/sites/default/files/pre-woo.mp3"
+  },
+  {
+    "event": "金属_兵器",
+    "file": "oga_金属_兵器_2_bing1.wav",
+    "source": "OpenGameArt",
+    "url": "https://opengameart.org/sites/default/files/bing1.wav"
+  },
+  {
+    "event": "金属_兵器",
+    "file": "oga_金属_兵器_3_424911-impactshort78.wav",
+    "source": "OpenGameArt",
+    "url": "https://opengameart.org/sites/default/files/424911-impactshort78.wav"
+  },
+  {
+    "event": "金属_兵器",
+    "file": "oga_金属_兵器_4_montageAudio-20120408_1423.mp3",
+    "source": "OpenGameArt",
+    "url": "https://opengameart.org/sites/default/files/montageAudio-20120408@142312.mp3"
+  },
+  {
+    "event": "脚步",
+    "file": "oga_脚步_0_Footsteps.wav",
+    "source": "OpenGameArt",
+    "url": "https://opengameart.org/sites/default/files/Footsteps.wav"
+  },
+  {
+    "event": "脚步",
+    "file": "oga_脚步_1_fallfantozi.ogg",
+    "source": "OpenGameArt",
+    "url": "https://opengameart.org/sites/default/files/fallfantozi.ogg"
+  },
+  {
+    "event": "脚步",
+    "file": "oga_脚步_2_preview_1_1.mp3",
+    "source": "OpenGameArt",
+    "url": "https://opengameart.org/sites/default/files/preview_1_1.mp3"
+  },
+  {
+    "event": "脚步",
+    "file": "oga_脚步_3_montage-sfx-20121205_00541.ogg",
+    "source": "OpenGameArt",
+    "url": "https://opengameart.org/sites/default/files/montage-sfx-20121205@005411.ogg"
+  },
+  {
+    "event": "脚步",
+    "file": "oga_脚步_4_montageAudio-20120408_1509.mp3",
+    "source": "OpenGameArt",
+    "url": "https://opengameart.org/sites/default/files/montageAudio-20120408@150929.mp3"
+  },
+  {
+    "event": "纸张",
+    "file": "oga_纸张_0_snd_use_map.mp3",
+    "source": "OpenGameArt",
+    "url": "https://opengameart.org/sites/default/files/snd_use_map.mp3"
+  },
+  {
+    "event": "纸张",
+    "file": "oga_纸张_1_Samples.mp3",
+    "source": "OpenGameArt",
+    "url": "https://opengameart.org/sites/default/files/Samples.mp3"
+  },
+  {
+    "event": "现有素材_对照",
+    "file": "现有_Bow.wav",
+    "source": "仓库现状",
+    "url": "",
+    "note": "旧弓箭(被当枪声)"
+  },
+  {
+    "event": "现有素材_对照",
+    "file": "现有_click.wav",
+    "source": "仓库现状",
+    "url": "",
+    "note": "旧点击(被当欢呼)"
+  },
+  {
+    "event": "现有素材_对照",
+    "file": "现有_switch.wav",
+    "source": "仓库现状",
+    "url": "",
+    "note": "旧切换(被当钟声)"
+  },
+  {
+    "event": "现有素材_对照",
+    "file": "现有_rollover.wav",
+    "source": "仓库现状",
+    "url": "",
+    "note": "旧收集品音"
+  },
+  {
+    "event": "现有素材_对照",
+    "file": "现有_rain.wav",
+    "source": "仓库现状",
+    "url": "",
+    "note": "旧雨声"
+  },
+  {
+    "event": "现有素材_对照",
+    "file": "现有_rain_heavy.wav",
+    "source": "仓库现状",
+    "url": "",
+    "note": "旧暴雨"
+  },
+  {
+    "event": "现有素材_对照",
+    "file": "现有_swish_2.wav",
+    "source": "仓库现状",
+    "url": "",
+    "note": "旧风声"
+  },
+  {
+    "event": "现有素材_对照",
+    "file": "现有_swish_3.wav",
+    "source": "仓库现状",
+    "url": "",
+    "note": "旧挥剑"
+  },
+  {
+    "event": "Kenney_CC0",
+    "file": "kenney_低频爆炸.ogg",
+    "source": "Kenney CC0",
+    "pack": "opengameart-kenney-sound-effect",
+    "zipPath": "sci-fi-sounds/sci-fi_sounds/Audio/lowFrequency_explosion_000.ogg",
+    "url": ""
+  },
+  {
+    "event": "Kenney_CC0",
+    "file": "kenney_切换音.wav",
+    "source": "Kenney CC0",
+    "pack": "opengameart-kenney-sound-effect",
+    "zipPath": "51-ui-sound-effects-buttons-switches-and-clicks/UI_SFX_Set/switch5.wav",
+    "url": ""
+  },
+  {
+    "event": "Kenney_CC0",
+    "file": "kenney_劈砍.ogg",
+    "source": "Kenney CC0",
+    "pack": "opengameart-kenney-sound-effect",
+    "zipPath": "50-rpg-sound-effects/RPGsounds_Kenney/OGG/chop.ogg",
+    "url": ""
+  },
+  {
+    "event": "Kenney_CC0",
+    "file": "kenney_开关音.ogg",
+    "source": "Kenney CC0",
+    "pack": "opengameart-kenney-sound-effect",
+    "zipPath": "interface-sounds/kenney_interfaceSounds/Audio/toggle_002.ogg",
+    "url": ""
+  },
+  {
+    "event": "Kenney_CC0",
+    "file": "kenney_悬停音.wav",
+    "source": "Kenney CC0",
+    "pack": "opengameart-kenney-sound-effect",
+    "zipPath": "51-ui-sound-effects-buttons-switches-and-clicks/UI_SFX_Set/rollover2.wav",
+    "url": ""
+  },
+  {
+    "event": "Kenney_CC0",
+    "file": "kenney_点击音.wav",
+    "source": "Kenney CC0",
+    "pack": "opengameart-kenney-sound-effect",
+    "zipPath": "51-ui-sound-effects-buttons-switches-and-clicks/UI_SFX_Set/click3.wav",
+    "url": ""
+  },
+  {
+    "event": "Kenney_CC0",
+    "file": "kenney_爆裂.ogg",
+    "source": "Kenney CC0",
+    "pack": "opengameart-kenney-sound-effect",
+    "zipPath": "sci-fi-sounds/sci-fi_sounds/Audio/explosionCrunch_002.ogg",
+    "url": ""
+  },
+  {
+    "event": "Kenney_CC0",
+    "file": "kenney_确认音.ogg",
+    "source": "Kenney CC0",
+    "pack": "opengameart-kenney-sound-effect",
+    "zipPath": "interface-sounds/kenney_interfaceSounds/Audio/confirmation_002.ogg",
+    "url": ""
+  },
+  {
+    "event": "Kenney_CC0",
+    "file": "kenney_纸页翻动.ogg",
+    "source": "Kenney CC0",
+    "pack": "opengameart-kenney-sound-effect",
+    "zipPath": "50-rpg-sound-effects/RPGsounds_Kenney/OGG/bookFlip2.ogg",
+    "url": ""
+  },
+  {
+    "event": "Kenney_CC0",
+    "file": "kenney_脚步.ogg",
+    "source": "Kenney CC0",
+    "pack": "opengameart-kenney-sound-effect",
+    "zipPath": "50-rpg-sound-effects/RPGsounds_Kenney/OGG/footstep09.ogg",
+    "url": ""
+  },
+  {
+    "event": "Kenney_CC0",
+    "file": "kenney_金属撞击.ogg",
+    "source": "Kenney CC0",
+    "pack": "opengameart-kenney-sound-effect",
+    "zipPath": "sci-fi-sounds/sci-fi_sounds/Audio/impactMetal_002.ogg",
+    "url": ""
+  }
+]

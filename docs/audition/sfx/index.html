@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>音效候选试听 · 时空剧场</title>
+<style>
+  :root{ --bg:#041133; --panel:#0d1a3c; --card:#121e40; --gold:#efbd8a; --blue:#b6c4ff; --dim:#8f909d; }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1200px 700px at 70% -10%,#152453 0%,var(--bg) 60%);color:#e6e9f7;
+       font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;padding:24px 20px 60px}
+  h1{font-size:22px;color:var(--gold);margin:0 0 6px;font-family:"Noto Serif",serif}
+  p.sub{color:var(--dim);font-size:13px;margin:0 0 18px;line-height:1.7}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+  button.play{background:linear-gradient(135deg,var(--gold),#5a3912);color:#472a03;border:none;border-radius:9px;
+       padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;min-width:104px;text-align:left}
+  button.play:active{transform:translateY(1px)}
+  button.play.playing{outline:2px solid #fff}
+  button.ghost{background:transparent;border:1px solid rgba(239,189,138,.45);color:var(--gold);border-radius:9px;padding:7px 14px;font-size:13px;cursor:pointer}
+  section{margin:0 0 18px;background:rgba(18,30,64,.72);border:1px solid rgba(239,189,138,.18);border-radius:14px;padding:14px 16px}
+  h2{font-size:14px;color:var(--blue);letter-spacing:.08em;margin:0 0 10px;text-transform:uppercase}
+  .row{display:flex;align-items:center;gap:12px;padding:6px 0;border-top:1px solid rgba(255,255,255,.05)}
+  .row:first-of-type{border-top:none}
+  .name{flex:1;font-size:13px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .src{color:var(--dim);font-size:11px;margin-left:8px}
+  audio{height:30px;width:190px;opacity:.85}
+  .tag{display:inline-block;font-size:10px;color:#0b1430;background:var(--blue);border-radius:10px;padding:1px 7px;margin-right:6px}
+  .note{color:var(--dim);font-size:11px}
+</style>
+</head>
+<body>
+<h1>音效候选试听</h1>
+<p class="sub">这些是<strong>候选素材</strong>（OpenGameArt / Kenney CC0 + 仓库现有素材对照），<strong>尚未替换仓库任何文件</strong>。<br>
+音频文件不随仓库提交：先执行 <code>node scripts/fetch-sfx-candidates.mjs</code> 下载到 <code>.cache/sfx-audition/audio</code>，再用静态服务器打开本目录的 index.html。<br>
+听到满意的一组再告诉我编号，我才会动仓库里的 audio/sfx。带「现有」的是当前线上素材，用来对比。</p>
+
+<div class="toolbar">
+  <button class="ghost" id="stopAll">停止全部</button>
+  <span class="note">逐个点播放；同一事件下挑最贴的一条。</span>
+</div>
+
+<div id="app"></div>
+
+<script>
+const events = {};
+async function load() {
+  const res = await fetch('manifest.json');
+  const list = await res.json();
+  const app = document.getElementById('app');
+  for (const item of list) {
+    const key = item.event;
+    events[key] = events[key] || [];
+    events[key].push(item);
+  }
+  const order = ['现有素材_对照','枪声','欢呼_人群','人群环境','钟声','金属_兵器','脚步声','纸张','雨声','海浪','风声','鸟鸣_自然','烟花_爆响','Kenney_CC0'];
+  const keys = Object.keys(events).sort((a,b)=>{
+    const ia=order.indexOf(a), ib=order.indexOf(b);
+    return (ia<0?99:ia)-(ib<0?99:ib);
+  });
+  for (const key of keys) {
+    const sec = document.createElement('section');
+    const h = document.createElement('h2');
+    h.textContent = key;
+    sec.appendChild(h);
+    events[key].forEach((item, i) => {
+      const row = document.createElement('div');
+      row.className = 'row';
+      const btn = document.createElement('button');
+      btn.className = 'play';
+      btn.textContent = '▶ ' + key.replace(/^现有素材_对照|^Kenney_CC0/,'') + ' #' + (i+1);
+      const name = document.createElement('div');
+      name.className = 'name';
+      name.innerHTML = '<span class="tag">' + (item.source||'') + '</span>' + item.file + (item.note? ' <span class="note">('+item.note+')</span>':'');
+      const audio = document.createElement('audio');
+      audio.src = 'audio/' + item.file;
+      audio.preload = 'none';
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('audio').forEach(a => { if (a !== audio) a.pause(); });
+        audio.currentTime = 0;
+        audio.play();
+        btn.classList.add('playing');
+        audio.onended = () => btn.classList.remove('playing');
+      });
+      row.appendChild(btn); row.appendChild(name); row.appendChild(audio);
+      sec.appendChild(row);
+    });
+    app.appendChild(sec);
+  }
+}
+document.getElementById('stopAll').addEventListener('click', () => {
+  document.querySelectorAll('audio').forEach(a => a.pause());
+  document.querySelectorAll('button.play').forEach(b => b.classList.remove('playing'));
+});
+load();
+</script>
+</body>
+</html>

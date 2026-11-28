@@ -37,7 +37,19 @@
     var statuses = safeCall(function () { return store.getKnowledgeStatuses(); }, {}) || {};
     var wrong = normalizeWrongAnswers(scriptId, safeCall(function () { return store.getWrongAnswers(); }, []));
     var progress = safeCall(function () { return store.loadProgress(scriptId); }, null);
+    // 知识点归属：按映射表判定该知识点属于哪个剧本
+    // （旧逻辑用 "key 以 scriptId 开头" 判断，而账本 id 形如 k_xingzhonghui / ir_h1，
+    //   永远匹配不上，导致复盘里的「我已经会了」永远是空的）
+    var ledger = (global.TTKnowledgeLink && global.TTKnowledgeLink.getLink && global.TTKnowledgeLink.getLink()) || null;
+    var scriptLedgerIds = {};
+    if (ledger && ledger.scripts && ledger.scripts[scriptId]) {
+      var nodes = ledger.scripts[scriptId].nodes || [];
+      nodes.forEach(function (item) { scriptLedgerIds[item.ledgerId] = true; });
+      (ledger.scripts[scriptId].quiz || []).forEach(function (item) { scriptLedgerIds[item.ledgerId] = true; });
+    }
     var knowledgeSummary = Object.keys(statuses).filter(function (key) {
+      if (scriptLedgerIds[key]) return true;
+      if (ledger) return false; // 有映射表时严格按剧本过滤
       return key.indexOf(scriptId) === 0 || Object.keys(statuses).length <= 20;
     }).map(function (key) {
       var value = statuses[key];
@@ -78,7 +90,10 @@
       tier: assessment.bestTier || assessment.tier || 'completed',
       attemptCount: Number(assessment.attemptCount || 0),
       wrongAnswers: wrong,
-      knowledgeSummary: knowledgeSummary.slice(0, 30)
+      knowledgeSummary: knowledgeSummary.slice(0, 30),
+      // 模拟后果（由 AI 对话产生，与史实分栏，不作为史实依据）
+      simulatedConsequences: Array.isArray(progress && progress.simulatedConsequences) ? progress.simulatedConsequences : [],
+      npcEmotion: (progress && progress.npcEmotion) || {}
     };
   }
 

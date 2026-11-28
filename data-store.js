@@ -226,12 +226,68 @@
   /**
    * 保存知识点掌握状态
    *
+   * 兼容两种写入方式：
+   *   saveKnowledgeStatus(id, true)                      → 旧调用，布尔值
+   *   saveKnowledgeStatus(id, true, { title, correct, wrong }) → 新调用，结构化记录
+   * 结构化记录字段：mastered / correct / wrong / touched / title / lastAt
+   *
    * @param {string} knowledgeId - 知识点 ID
    * @param {boolean} mastered - 是否已掌握
+   * @param {Object} [meta] - 附加信息（title / correct / wrong / touched）
    */
-  DataStore.saveKnowledgeStatus = function (knowledgeId, mastered) {
+  DataStore.saveKnowledgeStatus = function (knowledgeId, mastered, meta) {
     var statuses = DataStore.getKnowledgeStatuses();
-    statuses[knowledgeId] = !!mastered;
+    if (!meta) {
+      statuses[knowledgeId] = !!mastered;
+      _set('knowledge_statuses', statuses);
+      return;
+    }
+    var prev = statuses[knowledgeId];
+    var prevRecord = (prev && typeof prev === 'object') ? prev : { mastered: !!prev, correct: 0, wrong: 0, touched: false };
+    statuses[knowledgeId] = {
+      mastered: !!mastered || !!prevRecord.mastered,
+      correct: Number(prevRecord.correct || 0) + Number(meta.correct || 0),
+      wrong: Number(prevRecord.wrong || 0) + Number(meta.wrong || 0),
+      touched: !!prevRecord.touched || !!meta.touched,
+      title: meta.title || prevRecord.title || knowledgeId,
+      lastAt: Date.now()
+    };
+    _set('knowledge_statuses', statuses);
+  };
+
+  /**
+   * 记录一次作答结果到知识点（答对即视为掌握）
+   *
+   * @param {string} knowledgeId - 知识点 ID
+   * @param {boolean} correct - 是否答对
+   * @param {string} [title] - 知识点标题
+   */
+  DataStore.recordKnowledgeAnswer = function (knowledgeId, correct, title) {
+    if (!knowledgeId) return;
+    DataStore.saveKnowledgeStatus(knowledgeId, !!correct, {
+      correct: correct ? 1 : 0,
+      wrong: correct ? 0 : 1,
+      touched: true,
+      title: title || knowledgeId
+    });
+  };
+
+  /**
+   * 标记知识点"已接触"（学生打开过知识点卡片）
+   */
+  DataStore.markKnowledgeTouched = function (knowledgeId, title) {
+    if (!knowledgeId) return;
+    var statuses = DataStore.getKnowledgeStatuses();
+    var prev = statuses[knowledgeId];
+    var prevRecord = (prev && typeof prev === 'object') ? prev : { mastered: !!prev, correct: 0, wrong: 0, touched: false };
+    statuses[knowledgeId] = {
+      mastered: !!prevRecord.mastered,
+      correct: Number(prevRecord.correct || 0),
+      wrong: Number(prevRecord.wrong || 0),
+      touched: true,
+      title: title || prevRecord.title || knowledgeId,
+      lastAt: Date.now()
+    };
     _set('knowledge_statuses', statuses);
   };
 

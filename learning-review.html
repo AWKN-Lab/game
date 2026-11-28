@@ -112,6 +112,10 @@
         <h3 class="font-headline text-lg text-on-surface mt-4">我容易混淆</h3><ul id="confusions" class="tt-list"></ul>
         <h3 class="font-headline text-lg text-on-surface mt-4">我为什么会错</h3><div id="whyWrong" class="text-sm text-on-surface-variant font-body bg-surface-container/60 rounded-lg p-3"></div>
         <h3 class="font-headline text-lg text-on-surface mt-4">接下来只做三件事</h3><ol id="actions" class="tt-list"></ol>
+        <h3 class="font-headline text-lg text-on-surface mt-4">知识点掌握（史实）</h3>
+        <div id="masteryBoard" class="text-sm text-on-surface-variant font-body bg-surface-container/60 rounded-lg p-3"></div>
+        <h3 class="font-headline text-lg text-on-surface mt-4">模拟后果（对话产生，非史实）</h3>
+        <div id="simulatedBoard" class="text-sm text-on-surface-variant font-body bg-surface-container/60 rounded-lg p-3"></div>
         <div id="nextScriptBlock" hidden><h3 class="font-headline text-lg text-on-surface mt-4">下一站</h3><div id="nextScript" class="text-sm text-primary font-body bg-primary/10 rounded-lg p-3"></div></div>
         <div class="flex flex-wrap gap-3 mt-4 no-print">
           <button class="glass-card ornate-corner px-4 py-2 rounded-lg text-on-surface text-sm font-label" type="button" onclick="window.print()">打印</button>
@@ -148,7 +152,8 @@
 <script src="assets/js/event-client.js"></script>
 <script src="assets/js/privacy-consent.js"></script>
 <script src="assets/js/teaching-rules.js"></script>
-<script src="assets/js/learning-data-adapter.js"></script>
+<script src="assets/js/learning-data-adapter.js?v=20261128"></script>
+<script src="assets/js/knowledge-link.js?v=20261128b"></script>
 <script src="assets/js/ai-teaching-assistant.js"></script>
 <script>
   (function () {
@@ -193,6 +198,8 @@
       fillList(document.getElementById('confusions'), review.confusions, '暂时没有检测到明确混淆点。');
       document.getElementById('whyWrong').textContent = review.whyWrong;
       fillList(document.getElementById('actions'), review.actions, '先完成一次知识测试。');
+      renderMasteryBoard();
+      renderSimulatedBoard();
       var block = document.getElementById('nextScriptBlock');
       if (review.nextScript) {
         block.hidden = false;
@@ -200,6 +207,45 @@
       } else block.hidden = true;
       document.getElementById('replayLink').href = 'ai-mvp.html?play=' + select.value;
       localStorage.setItem('tt_last_learning_review', JSON.stringify({ scriptId: select.value, result: review }));
+    }
+    function renderMasteryBoard() {
+      var board = document.getElementById('masteryBoard');
+      if (!board) return;
+      var ctx = context() || {};
+      var rows = (ctx.knowledgeSummary || []).filter(function (item) { return item && item.knowledgeId; });
+      if (!rows.length) {
+        board.textContent = '暂无知识点记录：完成一次知识测试，或在剧情中打开知识点碎片。';
+        return;
+      }
+      var html = '<div class="grid gap-2">';
+      rows.forEach(function (item) {
+        var state = item.mastered ? '已掌握' : (item.wrong > 0 ? '待复习' : '已接触');
+        var color = item.mastered ? '#10b981' : (item.wrong > 0 ? '#ef4444' : '#8f909d');
+        html += '<div style="display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid rgba(255,255,255,.05);padding:4px 0">'
+          + '<span>' + (item.title || item.knowledgeId) + '</span>'
+          + '<span style="color:' + color + ';white-space:nowrap">' + state
+          + (item.correct ? ' · 对 ' + item.correct : '') + (item.wrong ? ' · 错 ' + item.wrong : '') + '</span></div>';
+      });
+      html += '</div>';
+      board.innerHTML = html;
+    }
+    function renderSimulatedBoard() {
+      var board = document.getElementById('simulatedBoard');
+      if (!board) return;
+      var ctx = context() || {};
+      var rows = ctx.simulatedConsequences || [];
+      if (!rows.length) {
+        board.textContent = '暂无模拟后果：与 NPC 的对话尚未改变你的状态。';
+        return;
+      }
+      var html = '<div class="grid gap-2">';
+      rows.forEach(function (item) {
+        html += '<div style="display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid rgba(255,255,255,.05);padding:4px 0">'
+          + '<span>' + (item.label || item.axis) + '</span>'
+          + '<span style="color:#b6c4ff;white-space:nowrap">' + (item.delta > 0 ? '+' : '') + item.delta + '</span></div>';
+      });
+      html += '</div><div class="text-[11px] text-on-surface-variant mt-2">以上为 AI 对话带来的模拟变化，只反映你的推理状态，不构成历史事实。</div>';
+      board.innerHTML = html;
     }
     async function generate() {
       var button = document.getElementById('generateButton'); var status = document.getElementById('status');

@@ -1,0 +1,115 @@
+{
+  "version": 1,
+  "updatedAt": "2026-11-28",
+  "note": "知识点映射表：剧本内的知识节点 id（或节点名）↔ data/knowledge_points.json 的账本 id；以及各剧本测试题对应的账本 id。用于把答题结果落到具体知识点上，让学习复盘真正有数据。",
+  "scripts": {
+    "xinhai_revolution": {
+      "nodes": [
+        { "nodeId": "k_xingzhonghui", "ledgerId": "k_xingzhonghui", "title": "兴中会" },
+        { "nodeId": "k_tongmenghui", "ledgerId": "k_tongmenghui", "title": "中国同盟会" },
+        { "nodeId": "k_sanminzhuyi", "ledgerId": "k_sanminzhuyi", "title": "三民主义" },
+        { "nodeId": "k_wuchang", "ledgerId": "k_wuchang", "title": "武昌起义" },
+        { "nodeId": "k_zhonghua_minguo", "ledgerId": "k_zhonghua_minguo", "title": "中华民国临时政府" },
+        { "nodeId": "k_qingdi_tuiwei", "ledgerId": "k_qingdi_tuiwei", "title": "清帝退位" },
+        { "nodeId": "k_linshi_yuefa", "ledgerId": "k_linshi_yuefa", "title": "《中华民国临时约法》" },
+        { "nodeId": "k_minzhu_gonghe", "ledgerId": "k_minzhu_gonghe", "title": "民主共和观念" },
+        { "nodeId": "k_yuan_shikai", "ledgerId": "k_yuan_shikai", "title": "袁世凯窃取革命果实" },
+        { "nodeId": "k_juxianxing", "ledgerId": "k_juxianxing", "title": "辛亥革命的局限性" }
+      ],
+      "quiz": [
+        { "index": 0, "ledgerId": "k_sanminzhuyi" },
+        { "index": 1, "ledgerId": "k_wuchang" },
+        { "index": 2, "ledgerId": "k_linshi_yuefa" },
+        { "index": 3, "ledgerId": "k_minzhu_gonghe" },
+        { "index": 4, "ledgerId": "k_juxianxing" }
+      ]
+    },
+    "wuxu_reform": {
+      "nodes": [
+        { "nodeId": "k_wuxu_01", "ledgerId": "k_wuxu_01", "title": "公车上书" },
+        { "nodeId": "k_wuxu_02", "ledgerId": "k_wuxu_02", "title": "马关条约与民族危机" },
+        { "nodeId": "k_wuxu_03", "ledgerId": "k_wuxu_03", "title": "维新思想传播" },
+        { "nodeId": "k_wuxu_04", "ledgerId": "k_wuxu_04", "title": "戊戌变法内容" },
+        { "nodeId": "k_wuxu_05", "ledgerId": "k_wuxu_05", "title": "百日维新的时间" },
+        { "nodeId": "k_wuxu_06", "ledgerId": "k_wuxu_06", "title": "戊戌六君子" },
+        { "nodeId": "k_wuxu_07", "ledgerId": "k_wuxu_07", "title": "戊戌政变" },
+        { "nodeId": "k_wuxu_08", "ledgerId": "k_wuxu_08", "title": "戊戌变法的性质" },
+        { "nodeId": "k_wuxu_09", "ledgerId": "k_wuxu_09", "title": "戊戌变法的历史意义" },
+        { "nodeId": "k_wuxu_10", "ledgerId": "k_wuxu_10", "title": "改革创新与社会发展" }
+      ],
+      "quiz": [
+        { "index": 0, "ledgerId": "k_wuxu_01" },
+        { "index": 1, "ledgerId": "k_wuxu_05" },
+        { "index": 2, "ledgerId": "k_wuxu_06" },
+        { "index": 3, "ledgerId": "k_wuxu_08" },
+        { "index": 4, "ledgerId": "k_wuxu_04" }
+      ]
+    },
+    "industrial_revolution": {
+      "nodes": [
+        { "nodeId": "珍妮纺纱机", "ledgerId": "ir_h1", "title": "珍妮纺纱机" },
+        { "nodeId": "劳动创造价值", "ledgerId": "ir_d1", "title": "劳动创造价值" },
+        { "nodeId": "生命的尊严与价值", "ledgerId": "ir_h6", "title": "生命的尊严与价值" },
+        { "nodeId": "公平与社会正义", "ledgerId": "ir_d6", "title": "公平与社会正义" },
+        { "nodeId": "科技发展与社会责任", "ledgerId": "ir_d3", "title": "科技发展与社会责任" },
+        { "nodeId": "环境保护与可持续发展", "ledgerId": "ir_d5", "title": "环境保护与可持续发展" },
+        { "nodeId": "法律保护弱者", "ledgerId": "ir_d2", "title": "法律保护弱者" }
+      ],
+      "quiz": [
+        { "index": 0, "ledgerId": "ir_h8" },
+        { "index": 1, "ledgerId": "ir_h1" },
+        { "index": 2, "ledgerId": "ir_d2" },
+        { "index": 3, "ledgerId": "ir_h6" },
+        { "index": 4, "ledgerId": "ir_d5" }
+      ]
+    },
+    "american_revolution": {
+      "nodes": [
+        { "nodeId": "k_boston_tea", "ledgerId": "k_boston_tea", "title": "波士顿倾茶事件" },
+        { "nodeId": "k_root_cause", "ledgerId": "k_root_cause", "title": "独立战争根本原因" },
+        { "nodeId": "k_lexington", "ledgerId": "k_lexington", "title": "莱克星顿的枪声" },
+        { "nodeId": "k_continental_army", "ledgerId": "k_continental_army", "title": "大陆军与华盛顿" },
+        { "nodeId": "k_declaration", "ledgerId": "k_declaration", "title": "《独立宣言》" },
+        { "nodeId": "k_saratoga", "ledgerId": "k_saratoga", "title": "萨拉托加大捷" },
+        { "nodeId": "k_yorktown", "ledgerId": "k_yorktown", "title": "约克镇战役" },
+        { "nodeId": "k_constitution", "ledgerId": "k_constitution", "title": "1787年宪法" },
+        { "nodeId": "k_separation", "ledgerId": "k_separation", "title": "三权分立" },
+        { "nodeId": "k_war_nature", "ledgerId": "k_war_nature", "title": "战争的双重性质" },
+        { "nodeId": "k_legacy", "ledgerId": "k_legacy", "title": "独立战争的历史意义" }
+      ],
+      "quiz": [
+        { "index": 0, "ledgerId": "k_root_cause" },
+        { "index": 1, "ledgerId": "k_boston_tea" },
+        { "index": 2, "ledgerId": "k_declaration" },
+        { "index": 3, "ledgerId": "k_saratoga" },
+        { "index": 4, "ledgerId": "k_constitution" }
+      ]
+    },
+    "french_revolution": {
+      "nodes": [
+        { "nodeId": "k_estates", "ledgerId": "fr_h1", "title": "三级会议与封建等级制度" },
+        { "nodeId": "k_bastille", "ledgerId": "fr_h3", "title": "攻占巴士底狱的历史意义" },
+        { "nodeId": "k_declaration", "ledgerId": "fr_h4", "title": "《人权宣言》的核心精神" },
+        { "nodeId": "k_freedom_law", "ledgerId": "fr_d2", "title": "自由与法律的边界" },
+        { "nodeId": "k_equality", "ledgerId": "fr_d3", "title": "平等的真正含义" },
+        { "nodeId": "k_louis_death", "ledgerId": "fr_h7", "title": "路易十六被处死" },
+        { "nodeId": "k_terror_rule", "ledgerId": "fr_h8", "title": "恐怖统治的教训" },
+        { "nodeId": "k_thermidor", "ledgerId": "fr_h9", "title": "热月政变" },
+        { "nodeId": "k_fair", "ledgerId": "fr_d4", "title": "公平与正义的区别" },
+        { "nodeId": "k_justice", "ledgerId": "fr_d5", "title": "正义的边界" },
+        { "nodeId": "k_power_limit", "ledgerId": "fr_d6", "title": "权力需要制约" },
+        { "nodeId": "k_brumaire", "ledgerId": "fr_h6", "title": "雾月政变" },
+        { "nodeId": "k_napoleon_code", "ledgerId": "fr_h10", "title": "《拿破仑法典》的双重遗产" },
+        { "nodeId": "k_napoleon_war", "ledgerId": "fr_h11", "title": "拿破仑对外战争的双重性" },
+        { "nodeId": "k_world_impact", "ledgerId": "fr_h12", "title": "法国大革命的世界影响" }
+      ],
+      "quiz": [
+        { "index": 0, "ledgerId": "fr_h3" },
+        { "index": 1, "ledgerId": "fr_h4" },
+        { "index": 2, "ledgerId": "fr_d2" },
+        { "index": 3, "ledgerId": "fr_d3" },
+        { "index": 4, "ledgerId": "fr_d1" }
+      ]
+    }
+  }
+}

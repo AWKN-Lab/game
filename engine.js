@@ -631,6 +631,10 @@ function initGameHUD() {
   renderValueHUD();
   // 音频偏好与顶部控制条（静音 / 音量 / 语音 / 积分段位）
   applyAudioPrefs(loadAudioPrefs());
+  try {
+    var savedScale = Number(localStorage.getItem(FONT_KEY) || 1) || 1;
+    if (savedScale !== 1) applyFontScale(savedScale);
+  } catch (error) { /* 忽略 */ }
   renderControlBar();
   showDialogLine();
 
@@ -658,6 +662,21 @@ function initGameHUD() {
   }
 
   // 存档已在 initGameHUD 中恢复，此处无需重复
+}
+
+// ============================================================
+// 知识点掌握度：把作答与知识点接触映射到账本并落库
+// ============================================================
+function recordKnowledgeOutcome(nodeId, correct, title) {
+  if (!nodeId) return;
+  if (typeof window.TTKnowledgeLink === 'undefined') return;
+  window.TTKnowledgeLink.recordOutcome(GAME_CONFIG.scriptId, nodeId, !!correct, title);
+}
+
+function markKnowledgeTouched(nodeId, title) {
+  if (!nodeId) return;
+  if (typeof window.TTKnowledgeLink === 'undefined') return;
+  window.TTKnowledgeLink.markTouched(GAME_CONFIG.scriptId, nodeId, title);
 }
 
 // ============================================================
@@ -863,6 +882,8 @@ function renderControlBar() {
     '<button id="ctlMute" title="静音" style="background:transparent;border:1px solid rgba(239,189,138,0.45);color:#efbd8a;width:30px;height:26px;border-radius:8px;cursor:pointer;font-size:14px;line-height:1">' + (p.muted ? '🔇' : '🔊') + '</button>',
     '<label style="display:flex;align-items:center;gap:4px;color:#8f909d">BGM<input id="ctlBgm" type="range" min="0" max="100" value="' + Math.round(p.bgm * 100) + '" style="width:62px;accent-color:#efbd8a"></label>',
     '<label style="display:flex;align-items:center;gap:4px;color:#8f909d">音效<input id="ctlSfx" type="range" min="0" max="100" value="' + Math.round(p.sfx * 100) + '" style="width:62px;accent-color:#efbd8a"></label>',
+    '<button id="ctlJourney" title="学习旅程" style="background:transparent;border:1px solid rgba(239,189,138,0.45);color:#efbd8a;padding:4px 9px;border-radius:8px;cursor:pointer;font-size:11px">进度</button>',
+    '<button id="ctlFont" title="正文字号" style="background:transparent;border:1px solid rgba(239,189,138,0.45);color:#efbd8a;padding:4px 9px;border-radius:8px;cursor:pointer;font-size:11px">Aa</button>',
     '<button id="ctlChat" title="与 NPC 对话" style="background:transparent;border:1px solid rgba(239,189,138,0.45);color:#efbd8a;padding:4px 9px;border-radius:8px;cursor:pointer;font-size:11px">对话</button>',
     '<button id="ctlVoice" title="语音开关" style="background:transparent;border:1px solid rgba(239,189,138,0.45);color:' + (isVoiceEnabled() ? '#efbd8a' : '#5c6178') + ';padding:4px 9px;border-radius:8px;cursor:pointer;font-size:11px">语音</button>',
     '<span id="ctlPoints" style="white-space:nowrap"></span>'
@@ -893,6 +914,16 @@ function renderControlBar() {
     applyAudioPrefs(prefs);
   });
 
+  var journeyBtn = document.getElementById('ctlJourney');
+  if (journeyBtn) {
+    journeyBtn.addEventListener('click', function () { toggleJourneyPanel(); });
+  }
+
+  var fontBtn = document.getElementById('ctlFont');
+  if (fontBtn) {
+    fontBtn.addEventListener('click', function () { cycleFontScale(); });
+  }
+
   var chatBtn = document.getElementById('ctlChat');
   if (chatBtn) {
     chatBtn.addEventListener('click', function () {
@@ -913,6 +944,116 @@ function renderControlBar() {
   });
 
   updatePointsBadge();
+}
+
+// ============================================================
+// 学习旅程：幕级进度地图 + 掌握度 + 收集品（历史学习的"进程感"）
+// ============================================================
+var JOURNEY_META = null;
+var FONT_SCALES = [1, 1.15, 1.3];
+var FONT_KEY = 'st_font_scale';
+
+function loadJourneyMeta(callback) {
+  if (JOURNEY_META) { callback(JOURNEY_META); return; }
+  try {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', 'data/teaching_metadata.json', true);
+    xhr.onload = function () {
+      if (xhr.status === 200) {
+        try {
+          var data = JSON.parse(xhr.responseText);
+          var script = (data.scripts || {})[GAME_CONFIG.scriptId] || {};
+          JOURNEY_META = { acts: script.acts || [], objectives: script.objectives || [] };
+        } catch (error) { JOURNEY_META = { acts: [], objectives: [] }; }
+      } else { JOURNEY_META = { acts: [], objectives: [] }; }
+      callback(JOURNEY_META);
+    };
+    xhr.onerror = function () { JOURNEY_META = { acts: [], objectives: [] }; callback(JOURNEY_META); };
+    xhr.send();
+  } catch (error) {
+    JOURNEY_META = { acts: [], objectives: [] };
+    callback(JOURNEY_META);
+  }
+}
+
+function masterySnapshot() {
+  var out = { total: 0, mastered: 0, touched: 0 };
+  try {
+    if (typeof DataStore === 'undefined') return out;
+    var statuses = DataStore.getKnowledgeStatuses() || {};
+    var link = (window.TTKnowledgeLink && window.TTKnowledgeLink.getLink && window.TTKnowledgeLink.getLink()) || null;
+    var ids = null;
+    if (link && link.scripts && link.scripts[GAME_CONFIG.scriptId]) {
+      ids = {};
+      (link.scripts[GAME_CONFIG.scriptId].nodes || []).forEach(function (n) { ids[n.ledgerId] = true; });
+    }
+    for (var key in statuses) {
+      if (ids && !ids[key]) continue;
+      var value = statuses[key];
+      out.total++;
+      if (value && typeof value === 'object') {
+        if (value.mastered) out.mastered++;
+        else if (value.touched) out.touched++;
+      } else if (value) { out.mastered++; }
+    }
+  } catch (error) { /* 忽略 */ }
+  return out;
+}
+
+function toggleJourneyPanel() {
+  var panel = document.getElementById('journeyPanel');
+  if (panel && panel.style.display !== 'none') { panel.style.display = 'none'; return; }
+  loadJourneyMeta(function (meta) {
+    if (!panel) {
+      panel = document.createElement('div');
+      panel.id = 'journeyPanel';
+      panel.style.cssText = 'position:fixed;top:58px;right:12px;z-index:1850;width:320px;max-width:calc(100vw - 24px);'
+        + 'background:rgba(10,18,44,0.94);border:1px solid rgba(239,189,138,0.4);border-radius:14px;padding:14px 16px;'
+        + 'color:#e6e9f7;font-size:13px;line-height:1.7;backdrop-filter:blur(12px);box-shadow:0 14px 40px rgba(0,0,0,0.5)';
+      document.body.appendChild(panel);
+    }
+    var acts = meta.acts || [];
+    var currentIdx = -1;
+    for (var i = 0; i < acts.length; i++) {
+      if (ttCurrentActId && acts[i].id === ttCurrentActId) { currentIdx = i; break; }
+    }
+    var mastery = masterySnapshot();
+    var html = '<div style="color:#efbd8a;font-weight:bold;margin-bottom:8px">学习旅程 · ' + (GAME_CONFIG.title || '').replace('时空剧场 - ', '') + '</div>';
+    if (!acts.length) {
+      html += '<div style="color:#8f909d">暂无幕次数据</div>';
+    } else {
+      html += '<ol style="margin:0 0 10px;padding-left:18px">';
+      acts.forEach(function (act, index) {
+        var state = index < currentIdx ? '已完成' : (index === currentIdx ? '进行中' : '未开始');
+        var color = index < currentIdx ? '#7ee787' : (index === currentIdx ? '#efbd8a' : '#5c6178');
+        html += '<li style="color:' + color + '">' + act.title + '<span style="float:right;font-size:11px">' + state + '</span></li>';
+      });
+      html += '</ol>';
+    }
+    html += '<div style="border-top:1px solid rgba(255,255,255,.08);padding-top:8px;color:#b6c4ff">'
+      + '知识点掌握：' + mastery.mastered + ' / ' + mastery.total
+      + '（已接触 ' + mastery.touched + '）<br>'
+      + '收集品：' + collectedItems.length + ' 件<br>'
+      + '模拟后果：' + simulatedConsequences.length + ' 条（不改史实）'
+      + '</div>';
+    panel.innerHTML = html;
+    panel.style.display = 'block';
+  });
+}
+
+// 正文字号（课堂投屏常用）：三档循环
+function applyFontScale(scale) {
+  try { document.documentElement.style.fontSize = (16 * scale) + 'px'; } catch (error) { /* 忽略 */ }
+  try { localStorage.setItem(FONT_KEY, String(scale)); } catch (error) { /* 忽略 */ }
+}
+
+function cycleFontScale() {
+  var current = 1;
+  try { current = Number(localStorage.getItem(FONT_KEY) || 1) || 1; } catch (error) { current = 1; }
+  var idx = FONT_SCALES.indexOf(current);
+  idx = (idx + 1) % FONT_SCALES.length;
+  applyFontScale(FONT_SCALES[idx]);
+  return FONT_SCALES[idx];
 }
 
 // ============================================================
@@ -995,6 +1136,7 @@ function showDialogLine() {
 
   // 处理知识点碎片
   if (line.type === 'knowledge') {
+    markKnowledgeTouched(line.id || line.name, line.name);
     if (!collectedKnowledge) collectedKnowledge = [];
     if (!collectedKnowledge.find(k => k.id === line.id)) {
       collectedKnowledge.push({ id: line.id, name: line.name, desc: line.desc, category: line.category });
@@ -1675,7 +1817,39 @@ function showEndingDialog(index) {
 // ============================================================
 // 知识测试
 // ============================================================
-const QUIZ_DATA = GAME_CONFIG.QUIZ_DATA;
+const QUIZ_DATA = (GAME_CONFIG.QUIZ_DATA || []).map(normalizeQuizQuestion);
+
+/**
+ * 统一题目结构：历史上剧本页存在两套 schema——
+ *   { q, opts, ans, explain } 与 { question, options, answer, explanation }。
+ * 引擎只读前一套，导致辛亥/戊戌/美国三个剧本的知识测试读不到题干与选项。
+ * 这里做一次归一化，两套写法都可用。
+ */
+function normalizeQuizQuestion(raw, index) {
+  var item = raw || {};
+  var options = item.opts || item.options || [];
+  var answer = item.ans !== undefined ? item.ans : item.answer;
+  var explanation = item.explain || item.explanation || '';
+  var text = item.q || item.question || '';
+  return {
+    id: item.id || ('q' + (index + 1)),
+    q: text,
+    opts: options,
+    ans: typeof answer === 'number' ? answer : 0,
+    explain: explanation,
+    knowledgeId: item.knowledgeId || item.knowledge_id || ''
+  };
+}
+
+/**
+ * 题目 → 知识点：优先题目自带 knowledgeId；
+ * 其次按 data/knowledge_link.json 的序号映射（剧本页多数没有 knowledgeId）。
+ */
+function resolveQuizKnowledgeId(index, explicitId) {
+  if (explicitId) return explicitId;
+  if (typeof window.TTKnowledgeLink === 'undefined') return '';
+  return window.TTKnowledgeLink.quizLedgerId(GAME_CONFIG.scriptId, index) || '';
+}
 
 // ============================================================
 // 语音开关
@@ -1748,6 +1922,9 @@ function selectAnswer(idx) {
 
   // 正确/错误音效
   if (correct) { playCorrectSFX(); } else { playWrongSFX(); }
+
+  // 知识点掌握度：把这次作答记到对应知识点上（此前从未写入，复盘页永远为空）
+  recordKnowledgeOutcome(resolveQuizKnowledgeId(quizIndex, q.knowledgeId), correct, q.q);
 
   if (!correct) {
     DataStore.saveWrongAnswer({

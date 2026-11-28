@@ -54,7 +54,12 @@ if (!fs.existsSync(ledgerPath)) {
       execFileSync('git', ['ls-files'], { cwd: root, encoding: 'utf8' })
         .split('\n').map((line) => line.trim()).filter(Boolean)
     );
-    const codeFiles = [...tracked].filter((file) => /\.(html|js|mjs|css)$/.test(file));
+    // 测试文件里出现的资产路径通常是"断言这些死重已被删除"，不算引用
+    const codeFiles = [...tracked].filter((file) =>
+      /\.(html|js|mjs|css)$/.test(file) &&
+      !/(^|\/)(tests?)\//.test(file) &&
+      !/\.test\.mjs$/.test(file)
+    );
     const referenced = new Set();
     for (const file of codeFiles) {
       let source = '';
@@ -68,6 +73,20 @@ if (!fs.existsSync(ledgerPath)) {
         // 动态拼接的路径（模板字符串）不在台账里，只提示不报错
         warnings.push(`代码引用了未登记资产：${file}`);
       }
+    }
+
+    // 待替换的非原创资产必须进入原创生产计划，避免"知道要换但没人排期"
+    const planPath = path.join(root, 'assets/original-art-plan.json');
+    if (fs.existsSync(planPath)) {
+      const plan = JSON.parse(fs.readFileSync(planPath, 'utf8'));
+      const targets = (plan.items || []).map((item) => item.target).filter(Boolean);
+      for (const entry of entries) {
+        if (entry.status !== 'replace-original') continue;
+        const covered = targets.some((target) => entry.path.startsWith(target));
+        if (!covered) errors.push(`待替换资产没有进入原创生产计划：${entry.path}`);
+      }
+    } else {
+      errors.push('缺少 assets/original-art-plan.json（原创生产计划）');
     }
 
     // 内容重复（非角色表情同名同图）

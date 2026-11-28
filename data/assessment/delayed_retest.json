@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "updatedAt": "2026-11-28",
+  "note": "延迟测安排：学习增益不能用「当场答对」证明，必须有延迟复测。",
+  "schedule": {
+    "t0": { "offsetDays": 0, "label": "前测（进入剧本前）", "itemsRef": "parallel_items" },
+    "t1": { "offsetDays": 1, "label": "即时测（完成剧本后 24 小时内）", "itemsRef": "parallel_items" },
+    "t2": { "offsetDays": 7, "label": "延迟测（7 日后）", "itemsRef": "parallel_items" }
+  },
+  "gainDefinition": {
+    "primary": "t2 相对 t0 的提升（延迟保持增益）",
+    "secondary": "t1 相对 t0 的提升（即时增益）",
+    "retentionRatio": "（t2 得分 - t0 得分）/（t1 得分 - t0 得分），衡量保持率"
+  },
+  "guards": [
+    "t0 必须在进入剧本前完成，否则前测被剧本内容污染",
+    "t2 必须在第 7 日窗口（7±1 天）内完成，超窗样本单独报告",
+    "同一学生在三次测评中使用不同题序（题目顺序随机化）",
+    "全部题目在史料审校完成前仅可用于内部流程验证，不得进入对外结论"
+  ]
+}

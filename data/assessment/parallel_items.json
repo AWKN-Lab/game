@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "updatedAt": "2026-11-28",
+  "note": "外部独立测题（parallel items）：与游戏内题目不同源、只测理解不测记忆，用于测「学习增益」。本文件所有条目在完成史料审校前一律视为 draft，禁止直接用于对外结论。",
+  "status": "draft-pending-fact-review",
+  "rubric": "data/assessment/blind_rubric.json",
+  "delayedRetest": "data/assessment/delayed_retest.json",
+  "scripts": {
+    "industrial_revolution": {
+      "items": [
+        {
+          "id": "ir_p1",
+          "type": "single_choice",
+          "stem": "工业革命首先发生在哪个国家，其开始的重要标志之一是什么？",
+          "options": [
+            "英国——珍妮机的发明",
+            "英国——瓦特改良蒸汽机",
+            "法国——珍妮机的发明",
+            "英国——内燃机的发明"
+          ],
+          "answerIndex": 0,
+          "explanation": "工业革命首先在英国开始；珍妮机（1765 年，哈格里夫斯发明）被视为开始标志之一，而瓦特改良蒸汽机（1785 年投入使用）标志进入蒸汽时代。",
+          "knowledgeIds": ["ir_h1", "ir_h2"],
+          "difficulty": "basic",
+          "reviewStatus": "pending"
+        },
+        {
+          "id": "ir_p2",
+          "type": "single_choice",
+          "stem": "下列关于「发明」与「改良」的说法，哪一项最准确？",
+          "options": [
+            "蒸汽机是瓦特发明的",
+            "珍妮机是哈格里夫斯发明的，蒸汽机是瓦特改良的",
+            "珍妮机是瓦特改良的，蒸汽机是哈格里夫斯发明的",
+            "两者都是瓦特的作品"
+          ],
+          "answerIndex": 1,
+          "explanation": "关键区分：发明 ≠ 改良。这是工业革命单元最常见的混淆点。",
+          "knowledgeIds": ["ir_h1", "ir_h2"],
+          "difficulty": "basic",
+          "reviewStatus": "pending"
+        },
+        {
+          "id": "ir_p3",
+          "type": "short_answer",
+          "stem": "童工汤姆说：「我想上学，但妈妈说如果我不去工厂，弟弟们就要挨饿。」请用一句话说明：技术进步与社会代价之间的关系。",
+          "rubricRef": "ir_q1",
+          "scoringPoints": [
+            "承认技术进步带来的生产力提升",
+            "指出代价由弱势群体承担（童工、妇女）",
+            "指出二者可以同时成立，不是否定进步"
+          ],
+          "knowledgeIds": ["ir_d4"],
+          "difficulty": "advanced",
+          "reviewStatus": "pending"
+        }
+      ]
+    }
+  }
+}

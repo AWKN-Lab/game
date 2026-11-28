@@ -536,6 +536,7 @@
 
   // EV-WR-1：变法为什么失败
   {
+    id: "wx_ev_failure",
     type: "evidence",
     items: [
       { type: "📜 诏书", title: "光绪帝变法诏令（1898年6月-9月）",
@@ -847,11 +848,12 @@
         charRight: "normal"
       },
       {
-        type: "collectible",
+        type: "collectible_conditional",
         id: "wuxu_scroll_4",
         name: "变法诏令残篇",
         desc: "被慈禧政变后废止的变法诏令，以'被划掉'的形式呈现",
-        scene: "第四幕 · 变法的失败与反思"
+        scene: "第四幕 · 变法的失败与反思",
+        condition: () => choseAtNode('wx_ev_failure')
       },
       {
         type: "choice",

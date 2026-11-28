@@ -704,6 +704,7 @@
 
   // EV-IR-2：工厂制度对工人的影响
   {
+    id: "ir_ev_factory",
     type: "evidence",
     items: [
       { type: "📋 报告", title: "英国工厂调查委员会报告（1832年）",
@@ -794,9 +795,10 @@
     },
 
   {
-    type: "collectible",
+    type: "collectible_conditional",
     name: "瓦特的晚年反思",
     desc: "'我改良了蒸汽机，让人类进入了新时代。但新时代里的人，真的比以前更幸福吗？'",
+    condition: () => choseAtNode('ir_ev_factory')
   },
 
   {

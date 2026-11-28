@@ -400,12 +400,11 @@
 
       { speaker: "子衿", text: "答对了！《临时约法》是中国历史上第一部具有资产阶级共和国宪法性质的文件。", scene: "provisional_government", bg: "images/bg/provisional_government.jpg", charLeft: 'excited' },
 
-      { type: "collectible", name: "临时约法火种" },
-
       { type: "knowledge", id: "k_linshi_yuefa", name: "🛡️ 《中华民国临时约法》", desc: "1912年3月颁布，中国历史上第一部具有资产阶级共和国宪法性质的文件，规定主权属于全体国民。", category: "历史" },
-    
+
   // EV-XR-1：辛亥革命为什么能成功
   {
+    id: "xr_ev_success",
     type: "evidence",
     items: [
       { type: "📜 宣言", title: "同盟会宣言（1905年）",
@@ -462,12 +461,13 @@
       { speaker: "子衿", text: "从某种意义上说，是的。袁世凯建立了北洋军阀的独裁统治。", scene: "beijing", bg: "images/bg/beijing.jpg", charLeft: 'serious' },
       { speaker: "子衿", text: "辛亥革命没有完成反帝反封建的革命任务，没有改变中国半殖民地半封建社会的性质。", scene: "beijing", bg: "images/bg/beijing.jpg", charLeft: 'serious' },
 
-      { type: "collectible", name: "革命遗憾火种" },
+      { type: "collectible_conditional", name: "革命遗憾火种", condition: () => choseAtNode('xr_ev_success') },
 
       { type: "knowledge", id: "k_yuan_shikai", name: "🛡️ 袁世凯窃取革命果实", desc: "袁世凯凭借手中掌握的军权和帝国主义的支持，窃取了辛亥革命的胜利果实，建立了北洋军阀的独裁统治。", category: "历史" },
     
   // EV-XR-2：辛亥革命的局限性
   {
+    id: "xr_ev_limits",
     type: "evidence",
     items: [
       { type: "📜 文献", title: "《中华民国临时约法》",
@@ -488,6 +488,8 @@
         effects: { justice: 10, rule: 5 } }
     ]
   },
+
+  { type: "collectible_conditional", name: "临时约法火种", condition: () => choseAtNode('xr_ev_limits') },
 
   // PC-XR-3：清帝退位——如何对待满清皇室
   {

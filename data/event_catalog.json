@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "events": [
     {
       "name": "page.view",
@@ -8,7 +8,9 @@
         "page",
         "referrerPath",
         "scriptId",
-        "role"
+        "role",
+        "attemptId",
+        "contentVersion"
       ]
     },
     {
@@ -16,7 +18,9 @@
       "critical": false,
       "allowedPayloadKeys": [
         "scriptId",
-        "source"
+        "source",
+        "attemptId",
+        "contentVersion"
       ]
     },
     {
@@ -24,7 +28,9 @@
       "critical": true,
       "allowedPayloadKeys": [
         "scriptId",
-        "mode"
+        "mode",
+        "attemptId",
+        "contentVersion"
       ]
     },
     {
@@ -33,7 +39,9 @@
       "allowedPayloadKeys": [
         "scriptId",
         "actId",
-        "actTitle"
+        "actTitle",
+        "attemptId",
+        "contentVersion"
       ]
     },
     {
@@ -46,7 +54,9 @@
         "choiceText",
         "actId",
         "timed",
-        "initiator"
+        "initiator",
+        "attemptId",
+        "contentVersion"
       ]
     },
     {
@@ -57,7 +67,9 @@
         "nodeId",
         "evidenceId",
         "evidenceTitle",
-        "initiator"
+        "initiator",
+        "attemptId",
+        "contentVersion"
       ]
     },
     {
@@ -67,7 +79,9 @@
         "scriptId",
         "knowledgeId",
         "title",
-        "initiator"
+        "initiator",
+        "attemptId",
+        "contentVersion"
       ]
     },
     {
@@ -77,7 +91,9 @@
         "scriptId",
         "cardId",
         "action",
-        "initiator"
+        "initiator",
+        "attemptId",
+        "contentVersion"
       ]
     },
     {
@@ -91,7 +107,9 @@
         "correctText",
         "correct",
         "knowledgeId",
-        "initiator"
+        "initiator",
+        "attemptId",
+        "contentVersion"
       ]
     },
     {
@@ -103,7 +121,9 @@
         "total",
         "pct",
         "learningTier",
-        "initiator"
+        "initiator",
+        "attemptId",
+        "contentVersion"
       ]
     },
     {
@@ -113,7 +133,9 @@
         "scriptId",
         "endingType",
         "learningTier",
-        "initiator"
+        "initiator",
+        "attemptId",
+        "contentVersion"
       ]
     },
     {
@@ -123,7 +145,9 @@
         "scriptId",
         "duration",
         "studentLevel",
-        "usageMode"
+        "usageMode",
+        "attemptId",
+        "contentVersion"
       ]
     },
     {
@@ -133,7 +157,9 @@
         "scriptId",
         "mode",
         "durationMs",
-        "success"
+        "success",
+        "attemptId",
+        "contentVersion"
       ]
     },
     {
@@ -142,7 +168,9 @@
       "allowedPayloadKeys": [
         "scriptId",
         "quizPct",
-        "completed"
+        "completed",
+        "attemptId",
+        "contentVersion"
       ]
     },
     {
@@ -152,7 +180,9 @@
         "scriptId",
         "mode",
         "durationMs",
-        "success"
+        "success",
+        "attemptId",
+        "contentVersion"
       ]
     },
     {
@@ -161,7 +191,9 @@
       "allowedPayloadKeys": [
         "category",
         "contextType",
-        "scriptId"
+        "scriptId",
+        "attemptId",
+        "contentVersion"
       ]
     },
     {
@@ -170,7 +202,9 @@
       "allowedPayloadKeys": [
         "wishType",
         "scriptId",
-        "grade"
+        "grade",
+        "attemptId",
+        "contentVersion"
       ]
     },
     {
@@ -178,7 +212,9 @@
       "critical": false,
       "allowedPayloadKeys": [
         "wishId",
-        "active"
+        "active",
+        "attemptId",
+        "contentVersion"
       ]
     },
     {
@@ -186,7 +222,9 @@
       "critical": false,
       "allowedPayloadKeys": [
         "scriptId",
-        "npcId"
+        "npcId",
+        "attemptId",
+        "contentVersion"
       ]
     },
     {
@@ -195,7 +233,9 @@
       "allowedPayloadKeys": [
         "scriptId",
         "npcId",
-        "initiator"
+        "initiator",
+        "attemptId",
+        "contentVersion"
       ]
     },
     {
@@ -206,7 +246,9 @@
         "npcId",
         "mode",
         "durationMs",
-        "retried"
+        "retried",
+        "attemptId",
+        "contentVersion"
       ]
     },
     {
@@ -215,7 +257,9 @@
       "allowedPayloadKeys": [
         "scriptId",
         "npcId",
-        "fallbackReason"
+        "fallbackReason",
+        "attemptId",
+        "contentVersion"
       ]
     },
     {
@@ -224,7 +268,9 @@
       "allowedPayloadKeys": [
         "scriptId",
         "npcId",
-        "initiator"
+        "initiator",
+        "attemptId",
+        "contentVersion"
       ]
     },
     {
@@ -232,7 +278,9 @@
       "critical": false,
       "allowedPayloadKeys": [
         "scriptId",
-        "npcId"
+        "npcId",
+        "attemptId",
+        "contentVersion"
       ]
     },
     {
@@ -241,7 +289,9 @@
       "allowedPayloadKeys": [
         "scriptId",
         "npcId",
-        "initiator"
+        "initiator",
+        "attemptId",
+        "contentVersion"
       ]
     },
     {
@@ -252,21 +302,27 @@
         "npcId",
         "trust",
         "tier",
-        "initiator"
+        "initiator",
+        "attemptId",
+        "contentVersion"
       ]
     },
     {
       "name": "director.class_started",
       "critical": false,
       "allowedPayloadKeys": [
-        "scriptId"
+        "scriptId",
+        "attemptId",
+        "contentVersion"
       ]
     },
     {
       "name": "director.session_resumed",
       "critical": false,
       "allowedPayloadKeys": [
-        "scriptId"
+        "scriptId",
+        "attemptId",
+        "contentVersion"
       ]
     },
     {
@@ -275,7 +331,9 @@
       "allowedPayloadKeys": [
         "scriptId",
         "actId",
-        "status"
+        "status",
+        "attemptId",
+        "contentVersion"
       ]
     },
     {
@@ -283,7 +341,9 @@
       "critical": false,
       "allowedPayloadKeys": [
         "scriptId",
-        "rows"
+        "rows",
+        "attemptId",
+        "contentVersion"
       ]
     },
     {
@@ -292,14 +352,18 @@
       "allowedPayloadKeys": [
         "scriptId",
         "lines",
-        "factFlags"
+        "factFlags",
+        "attemptId",
+        "contentVersion"
       ]
     },
     {
       "name": "light_mode.auto_enabled",
       "critical": false,
       "allowedPayloadKeys": [
-        "reason"
+        "reason",
+        "attemptId",
+        "contentVersion"
       ]
     },
     {
@@ -307,7 +371,9 @@
       "critical": false,
       "allowedPayloadKeys": [
         "mode",
-        "source"
+        "source",
+        "attemptId",
+        "contentVersion"
       ]
     }
   ]

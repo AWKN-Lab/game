@@ -206,6 +206,49 @@ test('D3 尝试聚合：自主有效探索率按（剧本×学习者）计算，
   assert.equal(row.autonomousRate, 0.5);
 });
 
+test('W05 attempt 聚合：新版身份字段入库不被清洗，/admin/analytics 并列输出 attempt 口径', async () => {
+  const at = () => new Date().toISOString();
+  const attemptId = 'd5000000-0000-4000-8000-00000000000a';
+  const build = (eventId, name, payload) => ({
+    eventId, name, occurredAt: at(), anonymousId: 'actor-w05', sessionId: 'session-w05', role: 'student', page: '/game-scene.html', payload
+  });
+  const events = [
+    build('w05-start', 'script.start', { scriptId: 'french_revolution', mode: 'normal', attemptId, contentVersion: '2' }),
+    build('w05-card1', 'script.card', { scriptId: 'french_revolution', cardId: 'c1', action: 'use', initiator: 'player', attemptId, contentVersion: '2' }),
+    build('w05-card2', 'script.card', { scriptId: 'french_revolution', cardId: 'c2', action: 'use', initiator: 'player', attemptId, contentVersion: '2' }),
+    build('w05-card3', 'script.card', { scriptId: 'french_revolution', cardId: 'c3', action: 'use', initiator: 'player', attemptId, contentVersion: '2' }),
+    build('w05-end', 'script.ending', { scriptId: 'french_revolution', attemptId, contentVersion: '2' })
+  ];
+  const batch = await jsonRequest('/api/v1/events/batch', { method: 'POST', body: JSON.stringify({ events }) });
+  assert.equal(batch.response.status, 202);
+  assert.equal(batch.body.accepted, events.length, 'W05 测试事件必须全部入库');
+
+  const stored = db.prepare("SELECT payload_json FROM product_events WHERE event_id='w05-start'").get();
+  const storedPayload = JSON.parse(stored.payload_json);
+  assert.equal(storedPayload.attemptId, attemptId, 'attemptId 必须入库（目录已放行，不得清洗）');
+  assert.equal(storedPayload.contentVersion, '2', 'contentVersion 必须入库');
+
+  const login = await jsonRequest('/api/v1/admin/auth/login', {
+    method: 'POST', body: JSON.stringify({ email: 'admin@test.local', password: 'testing-password-123' })
+  });
+  const cookie = login.response.headers.get('set-cookie').split(';')[0];
+  const analytics = await jsonRequest('/api/v1/admin/analytics', { headers: { Cookie: cookie } });
+  assert.equal(analytics.response.status, 200);
+  assert.ok(analytics.body.autonomy, 'legacy 会话口径必须保留（并列展示）');
+  const attempt = analytics.body.attempt;
+  assert.ok(attempt, '分析结果必须带 attempt 聚合（新版口径）');
+  assert.ok(attempt.totals.validStarts >= 1, '新版合法开始必须计入分母');
+  const detail = attempt.attemptsDetail.find((item) => item.attemptId === attemptId);
+  assert.ok(detail, '测试尝试必须出现在明细中');
+  assert.equal(detail.contentVersion, '2');
+  assert.equal(detail.storyComplete, true);
+  assert.equal(detail.autonomous, true, '3 次 player 探索达 N=3');
+  assert.ok(attempt.isolated.legacyEvents >= 1, 'legacy 事件必须计数隔离，不进新版口径');
+
+  const dashboard = await jsonRequest('/api/v1/admin/dashboard', { headers: { Cookie: cookie } });
+  assert.ok(dashboard.body.counts.newAttemptsToday >= 1, '运营卡必须并列展示新版尝试数');
+});
+
 test('GitHub Issue 联动：管理员可关联 Issue，公开列表带出链接字段', async () => {
   const actor = 'actor-issue';
   const created = await jsonRequest('/api/v1/wishes', {

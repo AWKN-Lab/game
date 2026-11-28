@@ -107,4 +107,15 @@ if (initiatorMissing.length) {
   process.exit(1);
 }
 
-console.log(`事件目录校验通过（engine.js 正式钩子 ${REQUIRED_ENGINE_HOOKS.length} 项齐全，initiator 声明 ${INITIATOR_REQUIRED.length} 项齐全）`);
+// --- 尝试身份字段必须全量声明（W05/ENG-14：attemptId+contentVersion 随每个事件上报，入库不得清洗） ---
+const catalogAll = JSON.parse(fs.readFileSync(target, 'utf8'));
+const identityMissing = (catalogAll.events || [])
+  .filter((event) => !['attemptId', 'contentVersion'].every((key) => (event.allowedPayloadKeys || []).includes(key)))
+  .map((event) => event.name);
+if (identityMissing.length) {
+  console.error('\n事件目录校验失败：以下事件缺少 attemptId/contentVersion 身份字段声明');
+  for (const name of identityMissing) console.error(`- ${name}`);
+  process.exit(1);
+}
+
+console.log(`事件目录校验通过（engine.js 正式钩子 ${REQUIRED_ENGINE_HOOKS.length} 项齐全，initiator 声明 ${INITIATOR_REQUIRED.length} 项齐全，身份字段 ${catalogAll.events.length} 事件全量声明）`);

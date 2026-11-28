@@ -9,6 +9,7 @@ import { generate as generateTeaching, supportedScript } from './services/ai-ser
 import { npcChat, generateEcho, factCheck } from './services/npc-chat-service.js';
 import { createSession, getSessionByCode, sessionView, updatePacing, recordTally, buildRoleCards, moderate } from './services/classroom-service.js';
 import { applyInitiator } from '../assets/js/event-initiator.js';
+import { aggregateAttempts } from './services/attempt-analytics.js';
 
 const eventCatalogValue = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'data/event_catalog.json'), 'utf8'));
 const eventCatalog = new Map(eventCatalogValue.events.map((event) => [event.name, event]));
@@ -426,6 +427,7 @@ function handleAdminDashboard(response, db) {
     sessionsToday: db.prepare('SELECT COUNT(*) count FROM product_sessions WHERE started_at>=?').get(since).count,
     eventsToday: db.prepare('SELECT COUNT(*) count FROM product_events WHERE received_at>=?').get(since).count,
     scriptsStartedToday: db.prepare("SELECT COUNT(*) count FROM product_events WHERE name='script.start' AND received_at>=?").get(since).count,
+    newAttemptsToday: db.prepare("SELECT COUNT(DISTINCT json_extract(payload_json,'$.attemptId')) count FROM product_events WHERE name='script.start' AND received_at>=? AND json_extract(payload_json,'$.attemptId') IS NOT NULL").get(since).count,
     scriptsEndedToday: db.prepare("SELECT COUNT(*) count FROM product_events WHERE name='script.ending' AND received_at>=?").get(since).count,
     aiRunsToday: db.prepare('SELECT COUNT(*) count FROM ai_runs WHERE created_at>=?').get(since).count,
     aiRuleFallbackToday: db.prepare("SELECT COUNT(*) count FROM ai_runs WHERE mode='rule' AND created_at>=?").get(since).count,
@@ -565,7 +567,16 @@ function handleAdminAnalytics(url, response, db) {
     autonomousRate: row.attempts ? Math.round((row.autonomous_attempts / row.attempts) * 100) / 100 : 0
   }));
 
-  sendJson(response, 200, { success: true, funnel, funnelByScript, dropoff, choiceDistribution, wrongHeatmap, autonomy: { n: AUTONOMY_N, byScript: autonomyByScript } });
+  // W05 attempt 维度聚合：新版（attemptId+contentVersion）与 legacy 会话口径并列展示，
+  // 不跨口径拼接趋势；聚合逻辑在 services/attempt-analytics.js（纯函数），此处只做查询
+  const attemptEventNames = ['script.start', 'script.ending', 'quiz.complete', 'script.act_enter', 'quiz.answer', 'script.card', 'npc.message_sent', 'npc.free_input_submitted'];
+  const attemptRows = db.prepare(`SELECT event_id,actor_id,session_id,name,occurred_at,payload_json FROM product_events
+    WHERE name IN (${attemptEventNames.map(() => '?').join(',')}) ORDER BY occurred_at ASC`)
+    .all(...attemptEventNames)
+    .map((row) => ({ eventId: row.event_id, actorId: row.actor_id, sessionId: row.session_id, name: row.name, occurredAt: row.occurred_at, payload: parseJson(row.payload_json, {}) }));
+  const attempt = aggregateAttempts(attemptRows);
+
+  sendJson(response, 200, { success: true, funnel, funnelByScript, dropoff, choiceDistribution, wrongHeatmap, autonomy: { n: AUTONOMY_N, byScript: autonomyByScript }, attempt });
 }
 
 function serveStatic(url, response) {

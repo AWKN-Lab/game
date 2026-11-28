@@ -492,6 +492,7 @@
   // PC-XR-3：清帝退位——如何对待满清皇室
   {
     type: "pressure_choice",
+    id: "pc_xr_3_royalty",
     timeout: 6,
     defaultChoice: 2,
     urgentText: "清帝即将退位。有人主张严惩满清皇室，有人主张优待——",
@@ -510,7 +511,7 @@
     eventText: "袁世凯称帝83天后被迫取消。他在众叛亲离中病死，留下了一个四分五裂的中国。" },
 
   { type: "collectible_conditional", name: "武昌起义的子弹壳",
-    condition: () => lastChoiceIndex === 0 },
+    condition: () => choiceAt('pc_xr_3_royalty', 0) },
 
   { type: "if_card_used", cardId: "patriotism",
     speaker: "hutao", text: "（认真地）辛亥革命的先烈们……他们不是为了自己而战，是为了一个他们可能看不到的未来。在星轨书院，我们管这叫'最大的勇气'。" },

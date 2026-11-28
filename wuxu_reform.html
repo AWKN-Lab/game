@@ -729,6 +729,7 @@
   // EV-WR-2：谭嗣同为什么选择留下
   {
     type: "evidence",
+    id: "wx_tan_shitong",
     items: [
       { type: "📜 诗文", title: "谭嗣同《狱中题壁》",
         content: "望门投止思张俭，忍死须臾待杜根。我自横刀向天笑，去留肝胆两昆仑。" },
@@ -757,7 +758,7 @@
     eventText: "康有为逃亡海外，继续宣传维新思想。他说：'变法虽然失败了，但变法的思想不会死。'" },
 
   { type: "collectible_conditional", name: "谭嗣同的血衣",
-    condition: () => lastChoiceIndex >= 0 },
+    condition: () => choseAtNode('wx_tan_shitong') },
 
   { type: "if_card_used", cardId: "responsibility",
     speaker: "hutao", text: "（声音很轻）谭嗣同选择了承担……在星轨书院，我们说每个人都要为自己的选择负责。可他的选择，不只是为自己负责——他是为四万万同胞负责。" },

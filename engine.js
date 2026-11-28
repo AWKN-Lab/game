@@ -525,6 +525,22 @@ let collectedKnowledge = [];  // 知识点碎片追踪
 let wrongChoices = [];  // 选错记录（用于论述题复习卡）
 let quizScore = 0;        // 知识测试得分
 let lastChoiceIndex = -1; // 记录玩家上次选择的选项索引
+let nodeChoices = {}; // 稳定节点选择记录：nodeChoices[节点ID] = 玩家在该节点选择的选项索引
+
+// 稳定节点 flag：收集品条件应绑定具体剧情节点，而不是全局「最后一次选择」
+// （lastChoiceIndex 跨节点误触发/做过任意选择后恒真，见 ENG-14 W02）
+function recordNodeChoice(nodeId, idx) {
+  if (!nodeId) return;
+  nodeChoices[nodeId] = idx;
+}
+// 该节点是否做出了指定选项的选择
+function choiceAt(nodeId, idx) {
+  return nodeChoices[nodeId] === idx;
+}
+// 该节点是否做出过任意选择（含证据题作答、限时抉择超时默认）
+function choseAtNode(nodeId) {
+  return Object.prototype.hasOwnProperty.call(nodeChoices, nodeId);
+}
 
 // ============================================================
 // Menu按钮 - 简单确认对话框
@@ -1424,6 +1440,7 @@ function restartGame() {
   wrongChoices = [];
   quizScore = 0;
   lastChoiceIndex = -1;
+  nodeChoices = {};
   usedCards = new Set();
   endingDialog = null;
   endingDialogIndex = 0;
@@ -1619,6 +1636,7 @@ function showStarChoice(line) {
       playCorrectSFX();
 
       lastChoiceIndex = idx;
+      recordNodeChoice('star_' + (line.id || dialogIndex), idx);
       ttHook('script.choice', {
         nodeId: 'star_' + (line.id || dialogIndex),
         choiceIndex: idx,
@@ -1697,8 +1715,9 @@ function showChoices(line) {
         return;
       }
       lastChoiceIndex = idx;
+      recordNodeChoice(line.id || ('dialog_' + dialogIndex), idx);
       ttHook('script.choice', {
-        nodeId: 'dialog_' + dialogIndex,
+        nodeId: line.id || ('dialog_' + dialogIndex),
         choiceIndex: idx,
         choiceText: String(choice.text || '').slice(0, 200),
         actId: ttCurrentAct(),
@@ -2051,6 +2070,7 @@ function selectEvidenceOption(idx) {
   const line = window._currentEvidence;
   if (!line) return;
   const opt = line.options[idx];
+  recordNodeChoice(line.id || ('evidence_' + dialogIndex), idx);
   ttHook('quiz.answer', {
     questionId: 'evidence_' + dialogIndex,
     choiceIndex: idx,
@@ -2215,6 +2235,7 @@ function pressureTimeout() {
       }
     }
     lastChoiceIndex = defaultIdx;
+    recordNodeChoice(line.id || ('pressure_' + dialogIndex), defaultIdx);
     dialogIndex++;
     showDialogLine();
   };
@@ -2243,6 +2264,7 @@ function selectPressureChoice(idx) {
     }
   }
   lastChoiceIndex = idx;
+  recordNodeChoice(line.id || ('pressure_' + dialogIndex), idx);
   playCorrectSFX();
   dialogIndex++;
   showDialogLine();

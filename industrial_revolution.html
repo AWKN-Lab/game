@@ -860,6 +860,7 @@
   // PC-IR-3：铁路征地
   {
     type: "pressure_choice",
+    id: "pc_ir_3_railway",
     timeout: 8,
     defaultChoice: 2,
     urgentText: "村民们堵在铁轨上不肯离开。史蒂芬孙说铁路不能改道。你只有几秒——",
@@ -876,7 +877,7 @@
     eventText: "一位善良的医生免费为汤姆治疗了手臂。汤姆第一次知道，原来这个世界上还有不收钱的善意。" },
 
   { type: "collectible_conditional", name: "被拆迁村民的请愿书",
-    condition: () => lastChoiceIndex === 0 },
+    condition: () => choiceAt('pc_ir_3_railway', 0) },
 
   { type: "hook", text: "火车把世界变小了，但铁轨碾过的地方，有些东西永远消失了。" },
 

@@ -489,7 +489,7 @@
       { speaker: "robespierre", text: "（自言自语）如果不处决他们...王党就会复辟。革命就会失败。我知道很多人是无辜的...但为了大多数人的安全，必须有人牺牲。" },
       { speaker: null, text: "一个士兵冲进来：「公民代表！一个16岁的男孩被举报『同情贵族』。他只是在自己的日记里写了一句『也许国王也不全是坏的』。怎么处理？」" },
       {
-        type: "choice", scene: "第四幕 · 恐怖统治",
+        type: "choice", id: "fr_boy_diary", scene: "第四幕 · 恐怖统治",
         prompt: "一个16岁的男孩因为日记里的一句话被举报。你会怎么做？",
         choices: [
           { text: "释放那个男孩——他只是写了自己的想法，这不构成犯罪", effects: { freedom: 15, rule: 10, justice: -5 } },
@@ -497,7 +497,7 @@
           { text: "理解罗伯斯庇尔的困境——革命确实面临威胁", effects: { justice: 10, equality: 5 } }
         ]
       },
-      { type: "collectible_conditional", name: "无辜市民的亡魂碎片", condition: () => lastChoiceIndex >= 0 },
+      { type: "collectible_conditional", name: "无辜市民的亡魂碎片", condition: () => choseAtNode('fr_boy_diary') },
       { speaker: "robespierre", text: "（独白）我...我做错了吗？不，我是为了共和国...为了人民...可是为什么，所有人都在害怕我？" },
       { speaker: "robespierre", text: "（独白）我知道...我正在变成我反对的人。但如果我手软，革命就会失败。你说，我该怎么办？" },
       { speaker: null, text: "1794年7月，热月政变。罗伯斯庇尔被送上断头台。雅各宾派统治结束。", scene: "第四幕 · 热月政变" },

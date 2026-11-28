@@ -1180,6 +1180,7 @@
   },
   {
     type: 'choice',
+    id: 'ar_world_impact',
     scene: '第六幕 · 自由星火永不灭',
     prompt: '美国独立战争对世界历史产生了怎样的深远影响？',
     choices: [
@@ -1209,7 +1210,7 @@
   },
 
   { type: "collectible_conditional", name: "杰斐逊被删改的手稿",
-    condition: () => lastChoiceIndex === 0 },
+    condition: () => choiceAt('ar_world_impact', 0) },
 
   { type: "if_card_used", cardId: "freedom",
     speaker: "hutao", text: "（举起星轨手札）自由……在星轨书院，灵魂是自由的，不受任何束缚。可人间的不自由，有时候比死亡更让人窒息。" },

@@ -8,6 +8,8 @@
 
 <section class="tt-card"><div class="tt-section-title"><h2>错题热力图</h2><span class="tt-chip">按题目 · 错误率</span></div><div id="heatmapTable"></div></section>
 
+<section class="tt-card"><div class="tt-section-title"><h2>尝试分析（新版口径）</h2><span class="tt-chip">按 attemptId 聚合 · 与上方会话口径并列，不跨口径拼接</span></div><div id="attemptSummary"></div><div id="attemptTable" style="margin-top:12px"></div><div id="attemptIsolated" style="margin-top:12px"></div></section>
+
 </main></div><script src="../assets/js/api-client.js"></script><script>
 (function(){
   function e(v){return String(v||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]})}
@@ -49,6 +51,23 @@
         var color=rate>=0.5?'#ef4444':(rate>=0.3?'#f59e0b':'#22c55e');
         return '<tr><td>'+e(row.script_id)+'</td><td>'+e(row.question_id)+'</td><td>'+e(row.knowledge_id||'—')+'</td><td>'+row.wrong+'/'+row.total+'</td><td><span class="tt-chip" style="background:'+color+'22;color:'+color+'">'+Math.round(rate*100)+'%</span></td></tr>'}).join('');
       document.getElementById('heatmapTable').innerHTML=heatRows?'<table><thead><tr><th>剧本</th><th>题目</th><th>知识点</th><th>错误/总答</th><th>错误率</th></tr></thead><tbody>'+heatRows+'</tbody></table>':'<p class="tt-muted">暂无数据</p>';
+
+      // 尝试分析（W05 新版口径：attemptId 聚合，legacy 会话口径保留在上方，不跨口径拼接）
+      var at=data.attempt;
+      if(at&&at.totals){
+        var t=at.totals;
+        document.getElementById('attemptSummary').innerHTML='<div class="tt-grid four">'
+          +'<div class="tt-card"><div class="tt-kicker">合法开始尝试</div><h2>'+t.validStarts+'</h2></div>'
+          +'<div class="tt-card"><div class="tt-kicker">到达结局</div><h2>'+t.completed+'</h2></div>'
+          +'<div class="tt-card"><div class="tt-kicker">完成测验</div><h2>'+t.quizCompleted+'</h2></div>'
+          +'<div class="tt-card"><div class="tt-kicker">自主有效探索率（N='+at.autonomyN+'）</div><h2>'+(t.autonomyRate==null?'不可计算':Math.round(t.autonomyRate*100)+'%')+'</h2></div>'
+          +'</div>';
+        var atRows=(at.byScript||[]).map(function(row){
+          return '<tr><td>'+e(row.scriptId)+'</td><td>'+e(row.contentVersion||'—')+'</td><td>'+row.attempts+'</td><td>'+row.completed+'</td><td>'+row.quizCompleted+'</td><td>'+row.autonomousAttempts+'（'+(row.autonomyRate==null?'—':Math.round(row.autonomyRate*100)+'%')+'）</td></tr>'}).join('');
+        document.getElementById('attemptTable').innerHTML=atRows?'<table><thead><tr><th>剧本</th><th>版本</th><th>开始</th><th>结局</th><th>测验</th><th>自主探索</th></tr></thead><tbody>'+atRows+'</tbody></table>':'<p class="tt-muted">暂无新版尝试数据（旧版会话见上方漏斗）</p>';
+        var iso=at.isolated||{};
+        document.getElementById('attemptIsolated').innerHTML='<p class="tt-muted">隔离计数：非法身份事件 '+(iso.invalidEvents||0)+' · legacy 事件 '+(iso.legacyEvents||0)+' · 冲突尝试 '+((iso.conflictAttempts||[]).length)+' · 孤立完成 '+((iso.unknownCompletions||[]).length)+'（均不进新版分子分母）</p>';
+      }
     }catch(error){
       document.getElementById('pageError').hidden=false;
       document.getElementById('pageError').textContent=error.message||'加载失败';

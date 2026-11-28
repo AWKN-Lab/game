@@ -134,6 +134,9 @@
       return;
     }
     // 增量合并：未传字段沿用上次存档，避免部分保存丢失 npcFate / choicesByAct / npcTrust
+    // W04（ENG-14 §5）：attempt 生命周期字段同样走增量合并——saveProgressWithPresence、
+    // updateValue、收集品、initGameHUD、restartGame、测验等全部写入点均经由本入口，
+    // 未传 attempt 字段时沿用旧值，部分更新不会丢失尝试身份与阶段记录
     var prev = _get('progress_' + data.scriptId, null) || {};
     _set('progress_' + data.scriptId, {
       scriptId: data.scriptId,
@@ -144,8 +147,54 @@
       npcFate: data.npcFate !== undefined ? data.npcFate : (prev.npcFate || null),
       choicesByAct: data.choicesByAct !== undefined ? data.choicesByAct : (prev.choicesByAct || {}),
       npcTrust: data.npcTrust !== undefined ? data.npcTrust : (prev.npcTrust || {}),
+      // W04 attempt 字段：未传沿用旧值；清除走 resetAttempt 显式重置
+      attemptId: data.attemptId !== undefined ? data.attemptId : (prev.attemptId || null),
+      attemptState: data.attemptState !== undefined ? data.attemptState : (prev.attemptState || null),
+      contentVersion: data.contentVersion !== undefined ? data.contentVersion : (prev.contentVersion || null),
+      answeredQuestions: data.answeredQuestions !== undefined ? data.answeredQuestions : (prev.answeredQuestions || []),
+      quizState: data.quizState !== undefined ? data.quizState : (prev.quizState || null),
+      emittedStages: data.emittedStages !== undefined ? data.emittedStages : (prev.emittedStages || []),
       savedAt: Date.now()
     });
+  };
+
+  /**
+   * W04 显式重置 attempt 字段（restartGame 显式重开调用；续玩不得调用本方法）。
+   * 清除 attemptId/attemptState/contentVersion/answeredQuestions/quizState/emittedStages，
+   * 游戏进度本体（dialogIndex/gameValues/收集品/NPC 命运等）不触碰，重置边界由调用方业务验证。
+   * 同样受 D2 写锁守卫：他签持新鲜锁时拒绝重置，禁止静默覆盖。
+   *
+   * @param {string} scriptId - 剧本 ID
+   * @returns {boolean} 是否执行了重置（false=被写锁阻止）
+   */
+  DataStore.resetAttempt = function (scriptId) {
+    var lock = _get('lock_' + scriptId, null);
+    if (lock && lock.tabId && lock.tabId !== _tabId && (Date.now() - lock.ts) < LOCK_TTL_MS) {
+      DataStore._blockedSaves = (DataStore._blockedSaves || 0) + 1;
+      if (typeof DataStore.onSaveBlocked === 'function') {
+        try { DataStore.onSaveBlocked(scriptId, lock.tabId); } catch (e) { /* 提示层异常不阻断 */ }
+      }
+      return false;
+    }
+    var prev = _get('progress_' + scriptId, null) || {};
+    _set('progress_' + scriptId, {
+      scriptId: prev.scriptId || scriptId,
+      dialogIndex: prev.dialogIndex || 0,
+      gameValues: prev.gameValues || {},
+      collectedItems: prev.collectedItems || [],
+      currentAct: prev.currentAct || '',
+      npcFate: prev.npcFate || null,
+      choicesByAct: prev.choicesByAct || {},
+      npcTrust: prev.npcTrust || {},
+      attemptId: null,
+      attemptState: null,
+      contentVersion: null,
+      answeredQuestions: [],
+      quizState: null,
+      emittedStages: [],
+      savedAt: Date.now()
+    });
+    return true;
   };
 
   /**
